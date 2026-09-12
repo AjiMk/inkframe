@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_FACE_SET, type ReplacementFace } from "@/lib/comics/faces";
+import { putMedia, useMediaUrl } from "@/lib/comics/media";
 import { useComicStore } from "@/lib/comics/store";
 import type { Panel } from "@/lib/comics/types";
 import {
@@ -54,14 +55,14 @@ export function HeadReplacementDialog({
   const [selectedFace, setSelectedFace] = useState<ReplacementFace>(DEFAULT_FACE_SET[0]);
   const [customFaces, setCustomFaces] = useState<ReplacementFace[]>([]);
   const [scale, setScale] = useState(1.0);
-  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const sourceImageSrc = panel.originalImage || panel.image;
+  const rawImageRef = panel.originalImage || panel.image;
+  const resolvedImageSrc = useMediaUrl(rawImageRef);
 
   // Detect faces via server API on open
   useEffect(() => {
-    if (!open || !sourceImageSrc) return;
+    if (!open || !resolvedImageSrc) return;
 
     let isMounted = true;
     setLoading(true);
@@ -71,7 +72,7 @@ export function HeadReplacementDialog({
         const res = await fetch("/api/detect-faces", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: sourceImageSrc }),
+          body: JSON.stringify({ image: resolvedImageSrc }),
         });
 
         if (!res.ok) throw new Error("Server detection failed");
@@ -84,7 +85,6 @@ export function HeadReplacementDialog({
         }
       } catch (err) {
         console.error("Server face detection error:", err);
-        // Fallback face box if server response encounters issues
         const fallbackFaces: FaceBox[] = [
           { id: "face-center", x: 0.28, y: 0.18, width: 0.44, height: 0.48, confidence: 0.9 },
         ];
@@ -102,15 +102,15 @@ export function HeadReplacementDialog({
     return () => {
       isMounted = false;
     };
-  }, [open, sourceImageSrc]);
+  }, [open, resolvedImageSrc]);
 
   // Render composite image with head replacement on Canvas
   useEffect(() => {
-    if (!open || !sourceImageSrc) return;
+    if (!open || !resolvedImageSrc) return;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.src = sourceImageSrc;
+    img.src = resolvedImageSrc;
 
     img.onload = () => {
       const canvas = canvasRef.current;
@@ -142,7 +142,7 @@ export function HeadReplacementDialog({
           const drawY = targetY - (targetH - activeFaceBox.height * canvas.height) / 2;
 
           ctx.save();
-          // Subtle clip mask for seamless head integration
+          // Clip oval mask for seamless head placement
           ctx.beginPath();
           ctx.ellipse(
             drawX + targetW / 2,
@@ -157,14 +157,10 @@ export function HeadReplacementDialog({
 
           ctx.drawImage(faceImg, drawX, drawY, targetW, targetH);
           ctx.restore();
-
-          setPreviewSrc(canvas.toDataURL("image/png"));
         };
-      } else {
-        setPreviewSrc(canvas.toDataURL("image/png"));
       }
     };
-  }, [open, sourceImageSrc, faces, selectedFaceId, selectedFace, scale]);
+  }, [open, resolvedImageSrc, faces, selectedFaceId, selectedFace, scale]);
 
   const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -188,25 +184,36 @@ export function HeadReplacementDialog({
   };
 
   const handleApply = async () => {
-    if (!previewSrc || !selectedFaceId) return;
+    const canvas = canvasRef.current;
+    if (!canvas || !selectedFaceId) return;
 
     const activeFaceBox = faces.find((f) => f.id === selectedFaceId);
     if (!activeFaceBox) return;
 
     try {
-      // Confirm with server replacement API route
+      // 1. Encode composite canvas as image Blob
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.9),
+      );
+      if (!blob) throw new Error("Could not encode composite image");
+
+      // 2. Save composite image to IndexedDB store
+      const newMediaRef = await putMedia(blob);
+
+      // 3. Confirm with server replacement API route
       await fetch("/api/replace-head", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          targetImage: sourceImageSrc,
+          targetImage: rawImageRef,
           faceBox: activeFaceBox,
           replacementFaceSrc: selectedFace.src,
           scale,
         }),
       });
 
-      replacePanelFace(comicId, pageId, panel.id, previewSrc, {
+      // 4. Update panel in comic store
+      replacePanelFace(comicId, pageId, panel.id, newMediaRef, {
         faceId: selectedFace.id,
         faceBox: activeFaceBox,
         replacementFaceSrc: selectedFace.src,
