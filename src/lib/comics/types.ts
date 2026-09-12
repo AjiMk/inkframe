@@ -32,6 +32,8 @@ export interface FaceReplacement {
   };
   replacementFaceSrc: string;
   scale?: number;
+  rotation?: number;
+  mirror?: boolean;
   feather?: number;
   opacity?: number;
   matchTone?: boolean;
@@ -87,4 +89,9 @@ export interface NormBox {
   y: number;
   width: number;
   height: number;
+}
+
+export interface NormPoint {
+  x: number;
+  y: number;
 }

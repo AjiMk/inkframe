@@ -147,6 +147,17 @@
   }
 }
 
+@keyframes marching-ants {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+.selection-ants {
+  stroke-dasharray: 8 6;
+  animation: marching-ants 700ms linear infinite;
+}
+
 /* Reader + studio motion */
 @keyframes rise-in {
   from {
@@ -258,7 +269,8 @@
   .anim-page-prev,
   .anim-panel,
   .anim-bubble,
-  .anim-kenburns {
+  .anim-kenburns,
+  .selection-ants {
     animation: none;
   }
 }

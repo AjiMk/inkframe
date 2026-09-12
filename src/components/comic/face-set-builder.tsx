@@ -2,19 +2,21 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ImagePlus, ScanFace, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { FaceThumb } from "@/components/comic/face-thumb";
-import { ImageStage, OvalMarks } from "@/components/comic/image-stage";
+import { ImageStage } from "@/components/comic/image-stage";
+import { LassoMarks } from "@/components/comic/lasso-marks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useFaceSetStore } from "@/lib/comics/face-sets";
-import { cropFaceBlob, loadImageElement } from "@/lib/comics/faces";
+import { cropFacePathBlob, loadImageElement, polygonArea } from "@/lib/comics/faces";
 import { compressImage, putMedia } from "@/lib/comics/media";
-import type { FaceSetFace, NormBox } from "@/lib/comics/types";
+import type { FaceSetFace, NormPoint } from "@/lib/comics/types";
 import { nid } from "@/lib/utils";
 
-interface Mark extends NormBox {
+interface Mark {
   id: string;
   name: string;
+  points: NormPoint[];
 }
 
 export function FaceSetBuilder({
@@ -128,11 +130,11 @@ export function FaceSetBuilder({
     );
   }
 
-  function handleCreate(box: NormBox) {
+  function handleCreate(points: NormPoint[]) {
     const mark: Mark = {
       id: nid(),
       name: `Face ${marks.length + 1}`,
-      ...box,
+      points,
     };
     setMarks((prev) => [...prev, mark]);
     setSelectedId(mark.id);
@@ -160,9 +162,9 @@ export function FaceSetBuilder({
   }
 
   async function handleSave() {
-    const usable = marks.filter((mark) => mark.width >= 0.04 && mark.height >= 0.04);
+    const usable = marks.filter((mark) => polygonArea(mark.points) >= 0.004);
     if (!photoUrl || usable.length === 0) {
-      toast.error("Mark at least one face on the photo.");
+      toast.error("Draw a selection around at least one face.");
       return;
     }
     setBusy(true);
@@ -170,7 +172,7 @@ export function FaceSetBuilder({
       const img = await loadImageElement(photoUrl);
       const faces: FaceSetFace[] = [];
       for (const [index, mark] of usable.entries()) {
-        const blob = await cropFaceBlob(img, mark);
+        const blob = await cropFacePathBlob(img, mark.points);
         const src = await putMedia(blob);
         faces.push({
           id: nid(),
@@ -202,7 +204,7 @@ export function FaceSetBuilder({
       <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="flex min-h-0 flex-col gap-2">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Drag on the photo to mark a face
+            Draw around the head · scroll to zoom · Space-drag to pan
           </p>
           <ImageStage imgW={imgSize.w} imgH={imgSize.h} className="aspect-[4/3] min-h-72 rounded-lg">
             <img
@@ -218,24 +220,20 @@ export function FaceSetBuilder({
                 });
               }}
             />
-            <OvalMarks
-              boxes={marks.map((mark, index) => ({
-                ...mark,
+            <LassoMarks
+              paths={marks.map((mark, index) => ({
+                id: mark.id,
+                points: mark.points,
                 label: mark.name || `Face ${index + 1}`,
               }))}
               selectedId={selectedId}
-              allowCreate
               onSelect={setSelectedId}
-              onChange={(id, next) =>
+              onChange={(id, points) =>
                 setMarks((prev) =>
-                  prev.map((mark) => (mark.id === id ? { ...mark, ...next } : mark)),
+                  prev.map((mark) => (mark.id === id ? { ...mark, points } : mark)),
                 )
               }
               onCreate={handleCreate}
-              onRemove={(id) => {
-                setMarks((prev) => prev.filter((mark) => mark.id !== id));
-                setSelectedId((current) => (current === id ? null : current));
-              }}
             />
           </ImageStage>
         </div>
@@ -257,7 +255,7 @@ export function FaceSetBuilder({
             </p>
             {marks.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border bg-secondary/50 px-4 py-8 text-center text-sm text-muted-foreground">
-                Click and drag around each head. Corners resize. Click a ring to name it.
+                Click and drag around the head like a lasso. Click without dragging to place polygonal points, then Enter or click the start to close. Drag a point to refine.
               </div>
             ) : (
               <ul className="grid max-h-64 grid-cols-1 gap-2 overflow-y-auto pr-1">
@@ -311,7 +309,7 @@ export function FaceSetBuilder({
 
           {selectedMark ? (
             <p className="text-xs text-muted-foreground">
-              Selected {selectedMark.name}. Drag the ring or its corners to fit the head.
+              Selected {selectedMark.name}. Drag the outline or its points to trim extra background.
             </p>
           ) : null}
 
@@ -359,7 +357,7 @@ export function FaceSetBuilder({
         <div className="space-y-1">
           <p className="font-medium text-foreground">Mark faces from a photo</p>
           <p className="max-w-md text-sm text-muted-foreground">
-            Upload a still, group shot, or character sheet. Draw a ring around each head — those crops become the only faces you can drop onto a panel.
+            Upload a still, group shot, or character sheet. Lasso each head — only pixels inside the outline become a replacement face.
           </p>
         </div>
         <div className="flex flex-wrap justify-center gap-2">
@@ -382,7 +380,7 @@ export function FaceSetBuilder({
 
       {sets.length === 0 ? (
         <p className="text-center text-sm text-muted-foreground">
-          No face sets yet. Upload a photo and draw a ring around each head.
+          No face sets yet. Upload a photo and lasso each head.
         </p>
       ) : (
         <ul className="grid min-h-0 gap-3 overflow-y-auto md:grid-cols-2">
@@ -410,7 +408,7 @@ export function FaceSetBuilder({
                     <FaceThumb
                       src={face.src}
                       alt={face.name}
-                      className="size-16 rounded-full border border-border"
+                      className="size-16 rounded-lg border border-border object-contain bg-secondary"
                     />
                     <button
                       type="button"

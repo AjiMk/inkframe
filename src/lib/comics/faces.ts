@@ -1,4 +1,4 @@
-import type { NormBox } from "./types";
+import type { NormBox, NormPoint } from "./types";
 
 export function clampNormBox(box: NormBox, min = 0.04): NormBox {
   let { x, y, width, height } = box;
@@ -43,7 +43,7 @@ export function loadImageElement(src: string): Promise<HTMLImageElement> {
   });
 }
 
-function coverDraw(
+function coverDrawCentered(
   ctx: CanvasRenderingContext2D,
   img: CanvasImageSource,
   w: number,
@@ -55,48 +55,155 @@ function coverDraw(
   const boxAspect = w / h;
   let dw = w;
   let dh = h;
-  let dx = 0;
-  let dy = 0;
   if (imageAspect > boxAspect) {
     dw = h * imageAspect;
-    dx = (w - dw) / 2;
   } else {
     dh = w / imageAspect;
-    dy = (h - dh) / 2;
   }
-  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
 }
 
-function applyEllipseFeather(
+export function normalizeDeg(deg: number) {
+  const wrapped = ((((deg + 180) % 360) + 360) % 360) - 180;
+  return wrapped === -180 ? 180 : wrapped;
+}
+
+export function distPoint(a: NormPoint, b: NormPoint) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+export function polygonArea(points: NormPoint[]) {
+  if (points.length < 3) return 0;
+  let area = 0;
+  for (let i = 0; i < points.length; i++) {
+    const current = points[i];
+    const next = points[(i + 1) % points.length];
+    area += current.x * next.y - next.x * current.y;
+  }
+  return Math.abs(area) / 2;
+}
+
+export function pathBounds(points: NormPoint[], pad = 0.02): NormBox {
+  let minX = 1;
+  let minY = 1;
+  let maxX = 0;
+  let maxY = 0;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  }
+  return clampNormBox(
+    {
+      x: minX - pad,
+      y: minY - pad,
+      width: maxX - minX + pad * 2,
+      height: maxY - minY + pad * 2,
+    },
+    0.02,
+  );
+}
+
+export function pointInPolygon(point: NormPoint, polygon: NormPoint[]) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const a = polygon[i];
+    const b = polygon[j];
+    const intersect =
+      a.y > point.y !== b.y > point.y &&
+      point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y + Number.EPSILON) + a.x;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function perpendicularDistance(point: NormPoint, start: NormPoint, end: NormPoint) {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  if (dx === 0 && dy === 0) return distPoint(point, start);
+  const t = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)));
+  return distPoint(point, { x: start.x + t * dx, y: start.y + t * dy });
+}
+
+export function simplifyPath(points: NormPoint[], epsilon = 0.004): NormPoint[] {
+  if (points.length < 5) return points;
+  let maxDist = 0;
+  let index = 0;
+  const last = points.length - 1;
+  for (let i = 1; i < last; i++) {
+    const dist = perpendicularDistance(points[i], points[0], points[last]);
+    if (dist > maxDist) {
+      index = i;
+      maxDist = dist;
+    }
+  }
+  if (maxDist > epsilon) {
+    const left = simplifyPath(points.slice(0, index + 1), epsilon);
+    const right = simplifyPath(points.slice(index), epsilon);
+    return [...left.slice(0, -1), ...right];
+  }
+  return [points[0], points[last]];
+}
+
+export function movePath(points: NormPoint[], dx: number, dy: number): NormPoint[] {
+  let minX = 1;
+  let minY = 1;
+  let maxX = 0;
+  let maxY = 0;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    minY = Math.min(minY, point.y);
+    maxX = Math.max(maxX, point.x);
+    maxY = Math.max(maxY, point.y);
+  }
+  const ox = Math.max(-minX, Math.min(1 - maxX, dx));
+  const oy = Math.max(-minY, Math.min(1 - maxY, dy));
+  return points.map((point) => ({ x: point.x + ox, y: point.y + oy }));
+}
+
+function tracePath(ctx: CanvasRenderingContext2D, points: NormPoint[], width: number, height: number) {
+  ctx.beginPath();
+  ctx.moveTo(points[0].x * width, points[0].y * height);
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i].x * width, points[i].y * height);
+  }
+  ctx.closePath();
+}
+
+function applyAlphaFeather(
   ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
+  source: HTMLCanvasElement,
   feather: number,
 ) {
+  const amount = Math.max(0, Math.min(0.6, feather));
+  if (amount < 0.04) return;
+  const mask = scratchMask ?? document.createElement("canvas");
+  mask.width = source.width;
+  mask.height = source.height;
+  const mctx = mask.getContext("2d");
+  if (!mctx) return;
+  mctx.setTransform(1, 0, 0, 1, 0, 0);
+  mctx.clearRect(0, 0, mask.width, mask.height);
+  const blur = Math.max(1, Math.min(source.width, source.height) * amount * 0.22);
+  mctx.filter = `blur(${blur}px)`;
+  mctx.drawImage(source, 0, 0);
+  mctx.filter = "none";
   ctx.save();
   ctx.globalCompositeOperation = "destination-in";
-  ctx.translate(w / 2, h / 2);
-  ctx.scale(Math.max(1, w / 2), Math.max(1, h / 2));
-  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
-  const inner = Math.max(0, Math.min(0.97, 1 - Math.max(0.04, feather)));
-  gradient.addColorStop(0, "rgba(0,0,0,1)");
-  gradient.addColorStop(inner, "rgba(0,0,0,1)");
-  gradient.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = gradient;
-  ctx.beginPath();
-  ctx.arc(0, 0, 1, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.drawImage(mask, 0, 0);
   ctx.restore();
 }
 
-export async function cropFaceBlob(img: HTMLImageElement, box: NormBox): Promise<Blob> {
+export async function cropFacePathBlob(img: HTMLImageElement, points: NormPoint[]): Promise<Blob> {
+  if (points.length < 3) throw new Error("Draw a closed selection around the face.");
   const nw = img.naturalWidth;
   const nh = img.naturalHeight;
-  const pad = 0.1;
-  let sx = (box.x - box.width * pad) * nw;
-  let sy = (box.y - box.height * pad) * nh;
-  let sw = box.width * (1 + pad * 2) * nw;
-  let sh = box.height * (1 + pad * 2) * nh;
+  const bounds = pathBounds(points, 0.03);
+  let sx = bounds.x * nw;
+  let sy = bounds.y * nh;
+  let sw = bounds.width * nw;
+  let sh = bounds.height * nh;
   if (sx < 0) {
     sw += sx;
     sx = 0;
@@ -117,13 +224,35 @@ export async function cropFaceBlob(img: HTMLImageElement, box: NormBox): Promise
   canvas.height = Math.max(1, Math.round(sh * scale));
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas is unavailable");
+
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
 
+  const local = points.map((point) => ({
+    x: (point.x * nw - sx) / sw,
+    y: (point.y * nh - sy) / sh,
+  }));
+  ctx.globalCompositeOperation = "destination-in";
+  const feather = Math.max(1.2, Math.min(canvas.width, canvas.height) * 0.018);
+  ctx.filter = `blur(${feather}px)`;
+  tracePath(ctx, local, canvas.width, canvas.height);
+  ctx.fill();
+  ctx.filter = "none";
+  ctx.globalCompositeOperation = "source-over";
+
   const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/jpeg", 0.92),
+    canvas.toBlob(resolve, "image/png"),
   );
   if (!blob) throw new Error("Could not crop that face");
   return blob;
+}
+
+export async function cropFaceBlob(img: HTMLImageElement, box: NormBox): Promise<Blob> {
+  return cropFacePathBlob(img, [
+    { x: box.x, y: box.y },
+    { x: box.x + box.width, y: box.y },
+    { x: box.x + box.width, y: box.y + box.height },
+    { x: box.x, y: box.y + box.height },
+  ]);
 }
 
 export function sampleRingColor(
@@ -157,6 +286,7 @@ export function sampleRingColor(
 }
 
 const scratch = typeof document === "undefined" ? null : document.createElement("canvas");
+const scratchMask = typeof document === "undefined" ? null : document.createElement("canvas");
 
 export function drawSoftFace(
   ctx: CanvasRenderingContext2D,
@@ -166,6 +296,8 @@ export function drawSoftFace(
     scale: number;
     feather: number;
     opacity: number;
+    rotation?: number;
+    mirror?: boolean;
     tint?: { r: number; g: number; b: number } | null;
   },
 ) {
@@ -173,6 +305,8 @@ export function drawSoftFace(
   const h = Math.max(2, box.h * opts.scale);
   const x = box.x - (w - box.w) / 2;
   const y = box.y - (h - box.h) / 2;
+  const rotation = normalizeDeg(opts.rotation ?? 0);
+  const rad = (rotation * Math.PI) / 180;
 
   const off = scratch ?? document.createElement("canvas");
   off.width = Math.max(2, Math.round(w));
@@ -184,18 +318,26 @@ export function drawSoftFace(
   octx.globalAlpha = 1;
   octx.clearRect(0, 0, off.width, off.height);
 
-  coverDraw(octx, face, off.width, off.height, face.naturalWidth, face.naturalHeight);
+  octx.translate(off.width / 2, off.height / 2);
+  if (rad) octx.rotate(rad);
+  if (opts.mirror) octx.scale(-1, 1);
+  const span = rad ? Math.hypot(off.width, off.height) : Math.max(off.width, off.height);
+  const targetW = rad ? span : off.width;
+  const targetH = rad ? span : off.height;
+  coverDrawCentered(octx, face, targetW, targetH, face.naturalWidth, face.naturalHeight);
 
   if (opts.tint) {
     octx.globalCompositeOperation = "source-atop";
     octx.globalAlpha = 0.26;
     octx.fillStyle = `rgb(${Math.round(opts.tint.r)} ${Math.round(opts.tint.g)} ${Math.round(opts.tint.b)})`;
-    octx.fillRect(0, 0, off.width, off.height);
+    const pad = Math.hypot(off.width, off.height);
+    octx.fillRect(-pad, -pad, pad * 2, pad * 2);
     octx.globalAlpha = 1;
     octx.globalCompositeOperation = "source-over";
   }
 
-  applyEllipseFeather(octx, off.width, off.height, opts.feather);
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  applyAlphaFeather(octx, off, opts.feather);
 
   ctx.save();
   ctx.globalAlpha = Math.max(0, Math.min(1, opts.opacity));
@@ -215,6 +357,8 @@ export function paintPanelWithFaces(
     feather: number;
     opacity: number;
     matchTone: boolean;
+    rotation?: number;
+    mirror?: boolean;
     face: HTMLImageElement | null;
   }>,
 ) {
@@ -242,6 +386,8 @@ export function paintPanelWithFaces(
       scale: slot.scale,
       feather: slot.feather,
       opacity: slot.opacity,
+      rotation: slot.rotation ?? 0,
+      mirror: Boolean(slot.mirror),
       tint,
     });
   }

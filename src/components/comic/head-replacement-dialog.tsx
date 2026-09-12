@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScanFace, SunMedium, Trash2, UserRound } from "lucide-react";
+import { FlipHorizontal, RotateCcw, RotateCw, ScanFace, SunMedium, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { FaceSetBuilder } from "@/components/comic/face-set-builder";
 import { FaceThumb } from "@/components/comic/face-thumb";
@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFaceSetStore } from "@/lib/comics/face-sets";
-import { loadImageElement, paintPanelWithFaces } from "@/lib/comics/faces";
+import { loadImageElement, normalizeDeg, paintPanelWithFaces } from "@/lib/comics/faces";
 import { putMedia, resolveMediaUrl, useMediaUrl } from "@/lib/comics/media";
 import { useComicStore } from "@/lib/comics/store";
 import type { FaceSetFace, NormBox, Panel } from "@/lib/comics/types";
@@ -36,6 +36,8 @@ interface HeadSlot extends NormBox {
   faceId: string | null;
   faceSrc: string | null;
   scale: number;
+  rotation: number;
+  mirror: boolean;
   feather: number;
   opacity: number;
 }
@@ -50,7 +52,9 @@ function defaultSlot(): HeadSlot {
     faceId: null,
     faceSrc: null,
     scale: 1,
-    feather: 0.34,
+    rotation: 0,
+    mirror: false,
+    feather: 0.18,
     opacity: 1,
   };
 }
@@ -103,6 +107,8 @@ export function HeadReplacementDialog({
         width: slot.width,
         height: slot.height,
         scale: slot.scale,
+        rotation: slot.rotation,
+        mirror: slot.mirror,
         feather: slot.feather,
         opacity: slot.opacity,
         matchTone,
@@ -133,7 +139,9 @@ export function HeadReplacementDialog({
         faceId: item.faceId,
         faceSrc: item.replacementFaceSrc,
         scale: item.scale ?? 1,
-        feather: item.feather ?? 0.34,
+        rotation: item.rotation ?? 0,
+        mirror: item.mirror ?? false,
+        feather: item.feather ?? 0.18,
         opacity: item.opacity ?? 1,
       }));
       setSlots(restored);
@@ -238,6 +246,8 @@ export function HeadReplacementDialog({
           faceBox: { x: slot.x, y: slot.y, width: slot.width, height: slot.height },
           replacementFaceSrc: slot.faceSrc!,
           scale: slot.scale,
+          rotation: slot.rotation,
+          mirror: slot.mirror,
           feather: slot.feather,
           opacity: slot.opacity,
           matchTone,
@@ -270,7 +280,7 @@ export function HeadReplacementDialog({
               <DialogDescription>
                 {view === "sets"
                   ? "Upload a photo and mark each head. Those crops are the only faces available to drop onto a panel."
-                  : "Place the ring over a head, then pick a face you marked from a photo."}
+                  : "Place the ring over a head, pick a marked face, then rotate or mirror to match the pose."}
               </DialogDescription>
             </div>
             <Tabs value={view} onValueChange={(value) => setView(value as "replace" | "sets")}>
@@ -296,7 +306,7 @@ export function HeadReplacementDialog({
               <div className="flex min-h-0 flex-col gap-3">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                    Panel · drag the ring, corners resize
+                    Panel · scroll to zoom · drag the box, corners resize, stem rotates
                   </p>
                   <div className="flex gap-1.5">
                     {slots.length > 1 ? (
@@ -337,10 +347,12 @@ export function HeadReplacementDialog({
                     boxes={slots.map((slot, index) => ({
                       ...slot,
                       label: `Head ${index + 1}`,
+                      rotation: slot.rotation,
                     }))}
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     onChange={(id, next) => patchSlot(id, next)}
+                    onRotate={(id, rotation) => patchSlot(id, { rotation })}
                   />
                 </ImageStage>
               </div>
@@ -393,7 +405,14 @@ export function HeadReplacementDialog({
                                   <FaceThumb
                                     src={face.src}
                                     alt={face.name}
-                                    className="size-16 rounded-full border border-border"
+                                    className="size-16 rounded-lg border border-border object-contain bg-secondary transition-transform duration-150 ease-out"
+                                    style={
+                                      active
+                                        ? {
+                                            transform: `rotate(${selected?.rotation ?? 0}deg) scaleX(${selected?.mirror ? -1 : 1})`,
+                                          }
+                                        : undefined
+                                    }
                                   />
                                   <span className="w-full truncate text-center text-xs font-medium">
                                     {face.name}
@@ -423,8 +442,81 @@ export function HeadReplacementDialog({
                       max={1.8}
                       step={0.02}
                       value={[selected.scale]}
-                      onValueChange={([value]) => patchSlot(selected.id, { scale: value })}
+                      onValueChange={([value]) => {
+                        if (typeof value === "number") patchSlot(selected.id, { scale: value });
+                      }}
                     />
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Rotate
+                      </Label>
+                      <span className="font-mono text-xs text-primary">
+                        {Math.round(selected.rotation)}°
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="size-9 shrink-0"
+                        aria-label="Rotate left 15 degrees"
+                        onClick={() =>
+                          patchSlot(selected.id, {
+                            rotation: normalizeDeg(selected.rotation - 15),
+                          })
+                        }
+                      >
+                        <RotateCcw className="size-4" />
+                      </Button>
+                      <Slider
+                        min={-180}
+                        max={180}
+                        step={1}
+                        value={[selected.rotation]}
+                        onValueChange={([value]) => {
+                          if (typeof value === "number") {
+                            patchSlot(selected.id, { rotation: normalizeDeg(value) });
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="outline"
+                        className="size-9 shrink-0"
+                        aria-label="Rotate right 15 degrees"
+                        onClick={() =>
+                          patchSlot(selected.id, {
+                            rotation: normalizeDeg(selected.rotation + 15),
+                          })
+                        }
+                      >
+                        <RotateCw className="size-4" />
+                      </Button>
+                    </div>
+                    {selected.rotation !== 0 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => patchSlot(selected.id, { rotation: 0 })}
+                      >
+                        Straighten
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={selected.mirror ? "default" : "outline"}
+                      className="w-full"
+                      aria-pressed={selected.mirror}
+                      onClick={() => patchSlot(selected.id, { mirror: !selected.mirror })}
+                    >
+                      <FlipHorizontal className="size-4" />
+                      {selected.mirror ? "Mirrored" : "Mirror face"}
+                    </Button>
                     <div className="flex items-center justify-between gap-3">
                       <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                         Edge blend
