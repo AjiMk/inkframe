@@ -378,14 +378,14 @@ export function HeadReplacementDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-stone-900 border-stone-800 text-stone-100">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border text-foreground shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold font-comic tracking-wide text-amber-400">
-            <Sparkles className="w-5 h-5 text-amber-400" />
+          <DialogTitle className="flex items-center gap-2 text-xl font-bold font-display tracking-wide text-primary">
+            <Sparkles className="w-5 h-5 text-primary" />
             Head Target & Replacement Editor
           </DialogTitle>
-          <DialogDescription className="text-stone-400">
-            Reposition, scale, or remove the replacement head on your comic panel image.
+          <DialogDescription className="text-muted-foreground">
+            Reposition, scale, or edit the replacement head on your panel image.
           </DialogDescription>
         </DialogHeader>
 
@@ -393,15 +393,15 @@ export function HeadReplacementDialog({
           {/* Canvas Live Preview & Pixel-Aligned Drag Handles */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider flex items-center gap-1">
-                <Move className="w-3.5 h-3.5 text-amber-400" /> Drag Box or Corner to Resize
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                <Move className="w-3.5 h-3.5 text-primary" /> Drag Box or Corner to Resize
               </span>
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
                 onClick={handleAddTarget}
-                className="h-6 text-[11px] px-2 border-stone-700 text-amber-300 hover:bg-stone-800"
+                className="h-6 text-[11px] px-2 border-border text-foreground hover:bg-secondary"
               >
                 <Plus className="w-3 h-3 mr-1" /> Add Target Box
               </Button>
@@ -413,7 +413,7 @@ export function HeadReplacementDialog({
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              className="relative aspect-square rounded-lg border border-stone-800 bg-stone-950 overflow-hidden flex items-center justify-center p-2 cursor-crosshair select-none"
+              className="relative aspect-square rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center p-2 cursor-crosshair select-none paper-shadow"
             >
               <canvas ref={canvasRef} className="max-w-full max-h-full object-contain rounded" />
 
@@ -437,11 +437,11 @@ export function HeadReplacementDialog({
                     }}
                     className={`absolute rounded-full border-2 cursor-move transition-shadow duration-100 flex items-center justify-center ${
                       isSelected
-                        ? "border-amber-400 bg-amber-400/20 shadow-xl shadow-amber-500/30"
-                        : "border-cyan-400/70 hover:border-cyan-400 bg-cyan-400/10"
+                        ? "border-primary bg-primary/20 shadow-lg shadow-primary/20 ring-2 ring-primary/40 ring-offset-1"
+                        : "border-muted-foreground/60 hover:border-primary bg-background/30"
                     }`}
                   >
-                    <span className="text-[10px] font-bold bg-stone-900/90 text-amber-300 px-1.5 py-0.5 rounded border border-stone-700 pointer-events-none">
+                    <span className="text-[10px] font-bold bg-card text-foreground px-1.5 py-0.5 rounded border border-border shadow-sm pointer-events-none">
                       Head #{idx + 1}
                     </span>
 
@@ -449,10 +449,10 @@ export function HeadReplacementDialog({
                     {isSelected && (
                       <div
                         onMouseDown={(e) => handleMouseDown(e, t.id, "resize-se")}
-                        className="absolute bottom-0 right-0 w-4 h-4 bg-amber-400 rounded-full border-2 border-stone-900 cursor-se-resize flex items-center justify-center transform translate-x-1 translate-y-1 shadow-md hover:scale-125 transition-transform"
+                        className="absolute bottom-0 right-0 w-4 h-4 bg-primary rounded-full border-2 border-card cursor-se-resize flex items-center justify-center transform translate-x-1 translate-y-1 shadow-md hover:scale-125 transition-transform"
                         title="Drag to resize target box"
                       >
-                        <Maximize2 className="w-2.5 h-2.5 text-stone-950" />
+                        <Maximize2 className="w-2.5 h-2.5 text-primary-foreground" />
                       </div>
                     )}
                   </div>
@@ -462,9 +462,9 @@ export function HeadReplacementDialog({
 
             {/* Target Controls */}
             {activeTarget && (
-              <div className="flex items-center justify-between text-xs bg-stone-950 p-2 rounded-lg border border-stone-800">
+              <div className="flex items-center justify-between text-xs bg-secondary/60 p-2 rounded-lg border border-border">
                 <div className="flex items-center gap-2">
-                  <span className="text-stone-400">Target:</span>
+                  <span className="text-muted-foreground">Target:</span>
                   <div className="flex gap-1">
                     {targets.map((t, idx) => (
                       <Button
@@ -472,7 +472,7 @@ export function HeadReplacementDialog({
                         size="sm"
                         variant={selectedTargetId === t.id ? "default" : "outline"}
                         className={`h-6 text-[11px] px-2 ${
-                          selectedTargetId === t.id ? "bg-amber-500 text-stone-950 hover:bg-amber-400" : ""
+                          selectedTargetId === t.id ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-card"
                         }`}
                         onClick={() => setSelectedTargetId(t.id)}
                       >
@@ -483,7 +483,7 @@ export function HeadReplacementDialog({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-stone-400">Box Size:</span>
+                  <span className="text-muted-foreground">Box Size:</span>
                   <input
                     type="range"
                     min="0.1"
@@ -498,7 +498,7 @@ export function HeadReplacementDialog({
                         ),
                       );
                     }}
-                    className="w-20 accent-amber-400"
+                    className="w-20 accent-primary"
                   />
                 </div>
               </div>
@@ -508,7 +508,7 @@ export function HeadReplacementDialog({
           {/* Replacement Face Set Gallery */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider">
+              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
                 Available Face Set
               </span>
               <label className="cursor-pointer">
@@ -518,18 +518,18 @@ export function HeadReplacementDialog({
                   onChange={handleCustomUpload}
                   className="hidden"
                 />
-                <span className="inline-flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 font-medium">
+                <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium">
                   <Upload className="w-3.5 h-3.5" /> Upload Custom Head
                 </span>
               </label>
             </div>
 
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="bg-stone-950 border border-stone-800 w-full justify-start">
-                <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
-                <TabsTrigger value="comic" className="text-xs">Comic</TabsTrigger>
-                <TabsTrigger value="cartoon" className="text-xs">Cartoon</TabsTrigger>
-                <TabsTrigger value="emoji" className="text-xs">Emoji</TabsTrigger>
+              <TabsList className="bg-secondary border border-border w-full justify-start">
+                <TabsTrigger value="all" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">All</TabsTrigger>
+                <TabsTrigger value="comic" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Comic</TabsTrigger>
+                <TabsTrigger value="cartoon" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Cartoon</TabsTrigger>
+                <TabsTrigger value="mascot" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Mascot</TabsTrigger>
               </TabsList>
 
               <TabsContent value="all" className="mt-3">
@@ -540,12 +540,12 @@ export function HeadReplacementDialog({
                       onClick={() => setSelectedFace(item)}
                       className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
                         selectedFace?.id === item.id
-                          ? "border-amber-400 bg-amber-400/10"
-                          : "border-stone-800 bg-stone-950 hover:border-stone-700"
+                          ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                          : "border-border bg-card hover:border-primary/50"
                       }`}
                     >
                       <img src={item.src} alt={item.name} className="w-12 h-12 object-contain" />
-                      <span className="text-[11px] font-medium text-stone-300 truncate w-full text-center mt-1">
+                      <span className="text-[11px] font-medium text-foreground truncate w-full text-center mt-1">
                         {item.name}
                       </span>
                     </button>
@@ -553,7 +553,7 @@ export function HeadReplacementDialog({
                 </div>
               </TabsContent>
 
-              {["comic", "cartoon", "emoji"].map((cat) => (
+              {["comic", "cartoon", "mascot"].map((cat) => (
                 <TabsContent key={cat} value={cat} className="mt-3">
                   <div className="grid grid-cols-3 gap-3 max-h-56 overflow-y-auto p-1">
                     {allFaces
@@ -564,12 +564,12 @@ export function HeadReplacementDialog({
                           onClick={() => setSelectedFace(item)}
                           className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
                             selectedFace?.id === item.id
-                              ? "border-amber-400 bg-amber-400/10"
-                              : "border-stone-800 bg-stone-950 hover:border-stone-700"
+                              ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                              : "border-border bg-card hover:border-primary/50"
                           }`}
                         >
                           <img src={item.src} alt={item.name} className="w-12 h-12 object-contain" />
-                          <span className="text-[11px] font-medium text-stone-300 truncate w-full text-center mt-1">
+                          <span className="text-[11px] font-medium text-foreground truncate w-full text-center mt-1">
                             {item.name}
                           </span>
                         </button>
@@ -580,12 +580,12 @@ export function HeadReplacementDialog({
             </Tabs>
 
             {/* Replacement Head Fine Scale */}
-            <div className="flex flex-col gap-2 bg-stone-950 p-3 rounded-lg border border-stone-800">
-              <div className="flex justify-between items-center text-xs text-stone-300">
-                <span className="flex items-center gap-1">
-                  <ZoomIn className="w-3.5 h-3.5 text-stone-400" /> Replacement Head Zoom & Scale
+            <div className="flex flex-col gap-2 bg-secondary/60 p-3 rounded-lg border border-border">
+              <div className="flex justify-between items-center text-xs text-foreground">
+                <span className="flex items-center gap-1 font-medium">
+                  <ZoomIn className="w-3.5 h-3.5 text-muted-foreground" /> Replacement Head Zoom & Scale
                 </span>
-                <span className="font-mono text-amber-400">{Math.round(scale * 100)}%</span>
+                <span className="font-mono font-bold text-primary">{Math.round(scale * 100)}%</span>
               </div>
               <input
                 type="range"
@@ -594,13 +594,13 @@ export function HeadReplacementDialog({
                 step="0.05"
                 value={scale}
                 onChange={(e) => setScale(parseFloat(e.target.value))}
-                className="w-full accent-amber-400"
+                className="w-full accent-primary"
               />
             </div>
           </div>
         </div>
 
-        <DialogFooter className="flex items-center justify-between gap-2 border-t border-stone-800 pt-4">
+        <DialogFooter className="flex items-center justify-between gap-2 border-t border-border pt-4">
           <div>
             {hasAppliedReplacement && (
               <Button
@@ -608,7 +608,7 @@ export function HeadReplacementDialog({
                 variant="destructive"
                 size="sm"
                 onClick={handleReset}
-                className="bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 <Trash2 className="w-3.5 h-3.5 mr-1.5" />
                 Remove Replacement Head
@@ -622,7 +622,7 @@ export function HeadReplacementDialog({
               variant="outline"
               size="sm"
               onClick={() => onOpenChange(false)}
-              className="border-stone-700 text-stone-300 hover:bg-stone-800"
+              className="border-border text-foreground hover:bg-secondary"
             >
               Cancel
             </Button>
@@ -630,7 +630,7 @@ export function HeadReplacementDialog({
               type="button"
               size="sm"
               onClick={handleApply}
-              className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-semibold"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
             >
               <UserCheck className="w-4 h-4 mr-1.5" />
               Save Changes

@@ -686,11 +686,11 @@ function Inspector({
               type="button"
               variant="secondary"
               size="sm"
-              className="w-full text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-300 hover:bg-amber-500/25 border border-amber-500/30"
+              className="w-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30"
               onClick={onReplaceHead}
             >
-              <Sparkles className="size-3.5 mr-1 text-amber-500" />
-              {hasFaceReplacement ? "Edit / Resize Head" : "Replace Head / Detect Faces"}
+              <Sparkles className="size-3.5 mr-1 text-primary" />
+              {hasFaceReplacement ? "Edit / Resize Head" : "Replace Head / Target Box"}
             </Button>
 
             {/* Selectable Side Element Card for Head Replacement */}
@@ -699,24 +699,24 @@ function Inspector({
                 onClick={() => onSelectHead(!selectedHead)}
                 className={`group relative flex items-center justify-between p-2 rounded-md border cursor-pointer transition-all ${
                   selectedHead
-                    ? "border-amber-500 bg-amber-500/15 shadow-sm"
-                    : "border-stone-800 bg-card hover:border-amber-500/50"
+                    ? "border-primary bg-primary/15 shadow-sm ring-1 ring-primary/40"
+                    : "border-border bg-card hover:border-primary/50"
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <div className="flex size-7 items-center justify-center rounded-full bg-amber-500/20 text-amber-500">
+                  <div className="flex size-7 items-center justify-center rounded-full bg-primary/15 text-primary">
                     <Sparkles className="size-3.5" />
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold text-foreground">Replacement Head</span>
-                    <span className="text-[10px] text-muted-foreground">Selectable • Press ⌫ Backspace to remove</span>
+                    <span className="text-[10px] text-muted-foreground">Selectable • Press Backspace to remove</span>
                   </div>
                 </div>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  className="h-6 text-[11px] px-2 text-amber-500 hover:bg-amber-500/20"
+                  className="h-6 text-[11px] px-2 text-primary hover:bg-primary/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     onReplaceHead();
