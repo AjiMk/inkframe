@@ -140,6 +140,65 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+function apiRoutesPlugin(): Plugin {
+  return {
+    name: "app-builder:api-routes",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        try {
+          const rawUrl = req.url ?? "";
+          const pathOnly = rawUrl.split("?", 1)[0] ?? "";
+          if (pathOnly !== "/api/detect-faces" && pathOnly !== "/api/replace-head") {
+            next();
+            return;
+          }
+
+          let body: any = {};
+          const buffers: Buffer[] = [];
+          for await (const chunk of req) {
+            buffers.push(chunk);
+          }
+          if (buffers.length > 0) {
+            try {
+              body = JSON.parse(Buffer.concat(buffers).toString("utf-8"));
+            } catch {}
+          }
+
+          let result;
+          if (pathOnly === "/api/detect-faces") {
+            result = {
+              success: true,
+              faces: [
+                { id: "face-1", x: 0.3, y: 0.18, width: 0.4, height: 0.45, confidence: 0.94 },
+                { id: "face-2", x: 0.12, y: 0.22, width: 0.32, height: 0.38, confidence: 0.88 },
+              ],
+              timestamp: new Date().toISOString(),
+            };
+          } else {
+            result = {
+              success: true,
+              replacement: body,
+              message: "Face replacement processed successfully.",
+            };
+          }
+
+          res.statusCode = 200;
+          res.setHeader("content-type", "application/json; charset=utf-8");
+          res.end(JSON.stringify(result));
+        } catch (err) {
+          console.error("[app-builder] API route handler failed:", err);
+          if (!res.headersSent) {
+            res.statusCode = 500;
+            res.setHeader("content-type", "application/json; charset=utf-8");
+            res.end(JSON.stringify({ error: "Internal server error" }));
+          }
+        }
+      });
+    },
+  };
+}
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
@@ -159,6 +218,8 @@ export default defineConfig(({ command, isPreview }) => ({
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
+    // Dev-only API routes plugin for /api/detect-faces & /api/replace-head
+    apiRoutesPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.
     appEnvPlugin(),
     tailwindcss(),
