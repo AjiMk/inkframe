@@ -181,11 +181,10 @@ export function VideoCaptureDialog({
     clearExtractedUrls();
 
     const step = Math.max(1, intervalSec);
-    const timestamps: number[] = [];
+    const targetTimes: number[] = [];
     for (let t = 0; t <= duration; t += step) {
-      timestamps.push(t);
+      targetTimes.push(t);
     }
-    const targetTimes = timestamps.slice(0, 30);
     const frames: ExtractedFrame[] = [];
 
     try {
