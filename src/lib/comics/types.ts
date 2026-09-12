@@ -22,11 +22,27 @@ export interface SpeechBubble {
   tail: TailDir;
 }
 
+export interface FaceReplacement {
+  faceId: string;
+  faceBox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
+  replacementFaceSrc: string;
+  scale?: number;
+  offsetX?: number;
+  offsetY?: number;
+}
+
 export interface Panel {
   id: string;
   image: string | null;
+  originalImage?: string | null;
   filter: PanelFilter;
   bubbles: SpeechBubble[];
+  faceReplacements?: FaceReplacement[];
 }
 
 export interface Page {

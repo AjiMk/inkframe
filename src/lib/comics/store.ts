@@ -10,6 +10,7 @@ import { deleteMediaRef } from "./media";
 import type {
   BubbleKind,
   Comic,
+  FaceReplacement,
   PageLayoutId,
   PanelFilter,
   SpeechBubble,
@@ -56,6 +57,14 @@ interface ComicState {
   reorderPageIndices: (comicId: string, fromIndex: number, toIndex: number) => void;
   setLayout: (comicId: string, pageId: string, layout: PageLayoutId) => void;
   setPanelImage: (comicId: string, pageId: string, panelId: string, image: string | null) => void;
+  replacePanelFace: (
+    comicId: string,
+    pageId: string,
+    panelId: string,
+    replacementImage: string,
+    faceReplacement: FaceReplacement,
+  ) => void;
+  resetPanelFace: (comicId: string, pageId: string, panelId: string) => void;
   setPanelFilter: (comicId: string, pageId: string, panelId: string, filter: PanelFilter) => void;
   addBubble: (comicId: string, pageId: string, panelId: string, kind: BubbleKind) => string;
   updateBubble: (
@@ -220,7 +229,60 @@ export const useComicStore = create<ComicState>((set, get) => ({
           ...p,
           panels: p.panels.map((panel) => {
             if (panel.id !== panelId) return panel;
-            return { ...panel, image };
+            return {
+              ...panel,
+              image,
+              originalImage: image ? (panel.originalImage ?? image) : null,
+              faceReplacements: image ? panel.faceReplacements : [],
+            };
+          }),
+        };
+      }),
+    }));
+    writeComics(comics);
+    set({ comics });
+  },
+
+  replacePanelFace: (comicId, pageId, panelId, replacementImage, faceReplacement) => {
+    const comics = mapComic(get().comics, comicId, (c) => ({
+      ...c,
+      pages: c.pages.map((p) => {
+        if (p.id !== pageId) return p;
+        return {
+          ...p,
+          panels: p.panels.map((panel) => {
+            if (panel.id !== panelId) return panel;
+            const originalImage = panel.originalImage || panel.image || replacementImage;
+            const existingReplacements = panel.faceReplacements || [];
+            return {
+              ...panel,
+              image: replacementImage,
+              originalImage,
+              faceReplacements: [...existingReplacements, faceReplacement],
+            };
+          }),
+        };
+      }),
+    }));
+    writeComics(comics);
+    set({ comics });
+  },
+
+  resetPanelFace: (comicId, pageId, panelId) => {
+    const comics = mapComic(get().comics, comicId, (c) => ({
+      ...c,
+      pages: c.pages.map((p) => {
+        if (p.id !== pageId) return p;
+        return {
+          ...p,
+          panels: p.panels.map((panel) => {
+            if (panel.id !== panelId) return panel;
+            const restoredImage = panel.originalImage || panel.image;
+            return {
+              ...panel,
+              image: restoredImage,
+              faceReplacements: [],
+            };
           }),
         };
       }),

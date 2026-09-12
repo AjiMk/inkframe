@@ -14,6 +14,7 @@ import {
   Megaphone,
   Captions,
   Plus,
+  Sparkles,
   Trash2,
   Video,
 } from "lucide-react";
@@ -43,6 +44,7 @@ import { FILTERS } from "@/lib/comics/factory";
 import { compressImage, putMedia } from "@/lib/comics/media";
 import { getComicMediaRefs, useComicStore } from "@/lib/comics/store";
 import type { BubbleKind, PageLayoutId, Panel, TailDir } from "@/lib/comics/types";
+import { HeadReplacementDialog } from "./head-replacement-dialog";
 import { LayoutPicker } from "./layout-picker";
 import { PageCanvas } from "./page-canvas";
 import { VideoCaptureDialog } from "./video-capture-dialog";
@@ -128,6 +130,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
     );
   }
 
+  const [headReplaceOpen, setHeadReplaceOpen] = useState(false);
   const [mediaTab, setMediaTab] = useState<"video" | "library">("video");
   const inspector = (
     <Inspector
@@ -150,6 +153,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         setMediaTab("library");
         setVideoOpen(true);
       }}
+      onReplaceHead={() => setHeadReplaceOpen(true)}
       onClearImage={() => store.setPanelImage(comicId, page.id, panel.id, null)}
       onFilter={(filter) => store.setPanelFilter(comicId, page.id, panel.id, filter)}
       onBubblePatch={(patch) => {
@@ -500,6 +504,14 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         comicMediaRefs={getComicMediaRefs(comic)}
       />
 
+      <HeadReplacementDialog
+        open={headReplaceOpen}
+        onOpenChange={setHeadReplaceOpen}
+        comicId={comicId}
+        pageId={page.id}
+        panel={panel}
+      />
+
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -537,6 +549,7 @@ function Inspector({
   onPickPhoto,
   onPickVideo,
   onPickLibrary,
+  onReplaceHead,
   onClearImage,
   onFilter,
   onBubblePatch,
@@ -553,6 +566,7 @@ function Inspector({
   onPickPhoto: () => void;
   onPickVideo: () => void;
   onPickLibrary: () => void;
+  onReplaceHead: () => void;
   onClearImage: () => void;
   onFilter: (filter: Panel["filter"]) => void;
   onBubblePatch: (patch: {
@@ -609,9 +623,21 @@ function Inspector({
           </Button>
         </div>
         {panel.image ? (
-          <Button type="button" variant="ghost" className="w-full" onClick={onClearImage}>
-            Remove image
-          </Button>
+          <div className="flex flex-col gap-1.5 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="w-full text-xs font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-300 hover:bg-amber-500/25 border border-amber-500/30"
+              onClick={onReplaceHead}
+            >
+              <Sparkles className="size-3.5 mr-1 text-amber-500" />
+              Replace Head / Detect Faces
+            </Button>
+            <Button type="button" variant="ghost" className="w-full text-xs h-7" onClick={onClearImage}>
+              Remove image
+            </Button>
+          </div>
         ) : null}
         <div className="grid grid-cols-2 gap-1.5">
           {FILTERS.map((f) => (
