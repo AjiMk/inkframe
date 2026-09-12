@@ -9,6 +9,7 @@ import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { Toaster } from "@/components/ui/sonner";
 import { useComicStore } from "@/lib/comics/store";
+import { AppNotFoundComponent } from "@/lib/error-component";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "Inkframe";
@@ -33,12 +34,12 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Bangers&family=Figtree:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap",
       },
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
     ],
   }),
+  notFoundComponent: AppNotFoundComponent,
   component: RootDocument,
 });
+
 
 function RootDocument() {
   return (

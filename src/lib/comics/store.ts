@@ -52,6 +52,8 @@ interface ComicState {
   removePage: (comicId: string, pageId: string) => void;
   duplicatePage: (comicId: string, pageId: string) => void;
   movePage: (comicId: string, pageId: string, dir: -1 | 1) => void;
+  reversePages: (comicId: string) => void;
+  reorderPageIndices: (comicId: string, fromIndex: number, toIndex: number) => void;
   setLayout: (comicId: string, pageId: string, layout: PageLayoutId) => void;
   setPanelImage: (comicId: string, pageId: string, panelId: string, image: string | null) => void;
   setPanelFilter: (comicId: string, pageId: string, panelId: string, filter: PanelFilter) => void;
@@ -165,6 +167,35 @@ export const useComicStore = create<ComicState>((set, get) => ({
       const pages = [...c.pages];
       const [item] = pages.splice(idx, 1);
       pages.splice(next, 0, item);
+      return { ...c, pages };
+    });
+    writeComics(comics);
+    set({ comics });
+  },
+
+  reversePages: (comicId) => {
+    const comics = mapComic(get().comics, comicId, (c) => ({
+      ...c,
+      pages: [...c.pages].reverse(),
+    }));
+    writeComics(comics);
+    set({ comics });
+  },
+
+  reorderPageIndices: (comicId, fromIndex, toIndex) => {
+    const comics = mapComic(get().comics, comicId, (c) => {
+      if (
+        fromIndex < 0 ||
+        fromIndex >= c.pages.length ||
+        toIndex < 0 ||
+        toIndex >= c.pages.length ||
+        fromIndex === toIndex
+      ) {
+        return c;
+      }
+      const pages = [...c.pages];
+      const [item] = pages.splice(fromIndex, 1);
+      pages.splice(toIndex, 0, item);
       return { ...c, pages };
     });
     writeComics(comics);
@@ -295,3 +326,15 @@ export const useComicStore = create<ComicState>((set, get) => ({
     set({ comics });
   },
 }));
+
+export function getComicMediaRefs(comic: Comic): string[] {
+  const set = new Set<string>();
+  if (comic.cover) set.add(comic.cover);
+  for (const page of comic.pages) {
+    for (const panel of page.panels) {
+      if (panel.image) set.add(panel.image);
+    }
+  }
+  return Array.from(set);
+}
+

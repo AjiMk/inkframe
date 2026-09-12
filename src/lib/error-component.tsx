@@ -27,3 +27,15 @@ export function AppErrorComponent({ error }: ErrorComponentProps) {
     </main>
   );
 }
+
+export function AppNotFoundComponent() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-3 px-6 text-center bg-background text-foreground">
+      <h1 className="font-display text-4xl leading-none">Page Not Found</h1>
+      <p className="max-w-md text-sm text-muted-foreground">
+        The page or comic panel you're looking for doesn't exist or has moved.
+      </p>
+    </main>
+  );
+}
+

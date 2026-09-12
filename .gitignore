@@ -13,3 +13,12 @@ screenshots
 !.env.example
 .node_modules.lock
 .DS_Store
+
+# Ignore generated media and demo images
+public/demo/
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.avif

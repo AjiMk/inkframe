@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  ArrowDownUp,
   ArrowLeft,
   BookOpen,
   ChevronDown,
   ChevronUp,
   Copy,
   ImagePlus,
+  Images,
   MessageCircle,
   Cloud,
   Megaphone,
@@ -39,8 +41,8 @@ import {
 } from "@/components/ui/sheet";
 import { FILTERS } from "@/lib/comics/factory";
 import { compressImage, putMedia } from "@/lib/comics/media";
-import { useComicStore } from "@/lib/comics/store";
-import type { BubbleKind, Panel, TailDir } from "@/lib/comics/types";
+import { getComicMediaRefs, useComicStore } from "@/lib/comics/store";
+import type { BubbleKind, PageLayoutId, Panel, TailDir } from "@/lib/comics/types";
 import { LayoutPicker } from "./layout-picker";
 import { PageCanvas } from "./page-canvas";
 import { VideoCaptureDialog } from "./video-capture-dialog";
@@ -58,6 +60,8 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   const [videoSource, setVideoSource] = useState<File | string | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [draggedPageIndex, setDraggedPageIndex] = useState<number | null>(null);
+  const [dragOverPageIndex, setDragOverPageIndex] = useState<number | null>(null);
   const photoRef = useRef<HTMLInputElement>(null);
 
   const page = useMemo(
@@ -124,6 +128,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
     );
   }
 
+  const [mediaTab, setMediaTab] = useState<"video" | "library">("video");
   const inspector = (
     <Inspector
       comicTitle={comic.title}
@@ -137,6 +142,12 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       onPickPhoto={() => photoRef.current?.click()}
       onPickVideo={() => {
         setVideoSource(null);
+        setMediaTab("video");
+        setVideoOpen(true);
+      }}
+      onPickLibrary={() => {
+        setVideoSource(null);
+        setMediaTab("library");
         setVideoOpen(true);
       }}
       onClearImage={() => store.setPanelImage(comicId, page.id, panel.id, null)}
@@ -152,6 +163,48 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       }}
     />
   );
+
+  function handleBatchCapture(refs: string[], targetLayout: PageLayoutId = "two-h") {
+    if (refs.length === 0 || !page || !comic) return;
+
+    let refIdx = 0;
+
+    // 1. Fill empty panels on current page
+    for (const p of page.panels) {
+      if (!p.image && refIdx < refs.length) {
+        store.setPanelImage(comicId, page.id, p.id, refs[refIdx++]);
+      }
+    }
+
+    // 2. If no panel was empty, replace selected panel with first frame
+    if (refIdx === 0 && panel && refs.length > 0) {
+      store.setPanelImage(comicId, page.id, panel.id, refs[refIdx++]);
+    }
+
+    // 3. Create new pages using targetLayout for remaining frames
+    while (refIdx < refs.length) {
+      const remaining = refs.length - refIdx;
+      const layout = remaining === 1 ? "splash" : targetLayout;
+      const newPageId = store.addPage(comicId, layout);
+
+      const latestComic = useComicStore.getState().comics.find((c) => c.id === comicId);
+      const newPage = latestComic?.pages.find((p) => p.id === newPageId);
+
+      if (newPage) {
+        for (const p of newPage.panels) {
+          if (refIdx < refs.length) {
+            store.setPanelImage(comicId, newPage.id, p.id, refs[refIdx++]);
+          }
+        }
+      }
+    }
+
+    if (!comic.cover && refs[0]) {
+      store.setCover(comicId, refs[0]);
+    }
+
+    toast.success(`Imported ${refs.length} media frame${refs.length > 1 ? "s" : ""}!`);
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -198,43 +251,102 @@ export function StudioEditor({ comicId }: { comicId: string }) {
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Pages
             </p>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="size-8"
-              onClick={() => {
-                const id = store.addPage(comicId, "two-h");
-                setPageId(id);
-                setPanelId(null);
-                setBubbleId(null);
-              }}
-              aria-label="Add page"
-            >
-              <Plus className="size-4" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="size-7 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  store.reversePages(comicId);
+                  toast.success("Reversed page sequence");
+                }}
+                title="Reverse page sequence"
+                aria-label="Reverse pages"
+              >
+                <ArrowDownUp className="size-3.5" />
+              </Button>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className="size-7"
+                onClick={() => {
+                  const id = store.addPage(comicId, "two-h");
+                  setPageId(id);
+                  setPanelId(null);
+                  setBubbleId(null);
+                }}
+                title="Add page"
+                aria-label="Add page"
+              >
+                <Plus className="size-3.5" />
+              </Button>
+            </div>
           </div>
           <div className="flex flex-col gap-2 overflow-y-auto pb-6">
             {comic.pages.map((p, i) => (
-              <button
+              <div
                 key={p.id}
-                type="button"
-                onClick={() => {
-                  setPageId(p.id);
-                  setPanelId(p.panels[0]?.id ?? null);
-                  setBubbleId(null);
+                draggable
+                onDragStart={(e) => {
+                  setDraggedPageIndex(i);
+                  e.dataTransfer.effectAllowed = "move";
+                  e.dataTransfer.setData("text/plain", String(i));
                 }}
-                className={`overflow-hidden rounded-lg border p-1 text-left transition-[border-color] duration-150 ${
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dragOverPageIndex !== i) setDragOverPageIndex(i);
+                }}
+                onDragLeave={() => {
+                  setDragOverPageIndex(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggedPageIndex !== null && draggedPageIndex !== i) {
+                    store.reorderPageIndices(comicId, draggedPageIndex, i);
+                    toast.success(`Moved Page ${draggedPageIndex + 1} to position ${i + 1}`);
+                  }
+                  setDraggedPageIndex(null);
+                  setDragOverPageIndex(null);
+                }}
+                onDragEnd={() => {
+                  setDraggedPageIndex(null);
+                  setDragOverPageIndex(null);
+                }}
+                className={`group relative overflow-hidden rounded-lg border p-1 text-left transition-all duration-150 cursor-grab active:cursor-grabbing ${
                   p.id === page.id
-                    ? "border-primary"
+                    ? "border-primary ring-2 ring-primary/20"
                     : "border-border hover:border-foreground/30"
+                } ${
+                  draggedPageIndex === i ? "opacity-40 scale-95" : ""
+                } ${
+                  dragOverPageIndex === i && draggedPageIndex !== i
+                    ? "ring-2 ring-primary border-primary bg-primary/5 scale-[1.02]"
+                    : ""
                 }`}
               >
-                <PageCanvas page={p} mode="thumb" />
-                <span className="mt-1 block px-1 text-[11px] font-medium text-muted-foreground">
-                  Page {i + 1}
-                </span>
-              </button>
+                <button
+                  type="button"
+                  className="w-full text-left"
+                  onClick={() => {
+                    setPageId(p.id);
+                    setPanelId(p.panels[0]?.id ?? null);
+                    setBubbleId(null);
+                  }}
+                >
+                  <PageCanvas page={p} mode="thumb" />
+                  <div className="mt-1 flex items-center justify-between px-1">
+                    <span className="text-[11px] font-medium text-muted-foreground">
+                      Page {i + 1}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                      Drag to reorder
+                    </span>
+                  </div>
+                </button>
+              </div>
             ))}
           </div>
         </aside>
@@ -379,10 +491,13 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         open={videoOpen}
         onOpenChange={setVideoOpen}
         initialSource={videoSource}
+        initialTab={mediaTab}
         onCapture={(ref) => {
           store.setPanelImage(comicId, page.id, panel.id, ref);
           if (!comic.cover) store.setCover(comicId, ref);
         }}
+        onBatchCapture={handleBatchCapture}
+        comicMediaRefs={getComicMediaRefs(comic)}
       />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
@@ -421,6 +536,7 @@ function Inspector({
   onAddDialogue,
   onPickPhoto,
   onPickVideo,
+  onPickLibrary,
   onClearImage,
   onFilter,
   onBubblePatch,
@@ -436,6 +552,7 @@ function Inspector({
   onAddDialogue: (kind: BubbleKind) => void;
   onPickPhoto: () => void;
   onPickVideo: () => void;
+  onPickLibrary: () => void;
   onClearImage: () => void;
   onFilter: (filter: Panel["filter"]) => void;
   onBubblePatch: (patch: {
@@ -477,14 +594,18 @@ function Inspector({
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Selected panel
         </p>
-        <div className="grid grid-cols-2 gap-2">
-          <Button type="button" variant="outline" onClick={onPickPhoto}>
-            <ImagePlus />
+        <div className="grid grid-cols-3 gap-1.5">
+          <Button type="button" variant="outline" size="sm" className="px-1.5 text-xs" onClick={onPickPhoto}>
+            <ImagePlus className="size-3.5" />
             Photo
           </Button>
-          <Button type="button" variant="outline" onClick={onPickVideo}>
-            <Video />
-            Video frame
+          <Button type="button" variant="outline" size="sm" className="px-1.5 text-xs" onClick={onPickLibrary}>
+            <Images className="size-3.5" />
+            Library
+          </Button>
+          <Button type="button" variant="outline" size="sm" className="px-1.5 text-xs" onClick={onPickVideo}>
+            <Video className="size-3.5" />
+            Video
           </Button>
         </div>
         {panel.image ? (
