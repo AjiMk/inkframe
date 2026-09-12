@@ -59,6 +59,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   const [pageId, setPageId] = useState<string | null>(null);
   const [panelId, setPanelId] = useState<string | null>(null);
   const [bubbleId, setBubbleId] = useState<string | null>(null);
+  const [selectedHead, setSelectedHead] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
   const [videoSource, setVideoSource] = useState<File | string | null>(null);
   const [toolsOpen, setToolsOpen] = useState(false);
@@ -81,6 +82,44 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   useEffect(() => {
     if (panel && !panelId) setPanelId(panel.id);
   }, [panel, panelId]);
+
+  // Backspace / Delete shortcut handler to remove selected element or replacement head
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === "Backspace" || e.key === "Delete") {
+        if (bubble && page && panel) {
+          store.removeBubble(comicId, page.id, panel.id, bubble.id);
+          setBubbleId(null);
+          toast.success("Dialogue bubble removed.");
+          return;
+        }
+
+        const hasHeadReplacement = Boolean(
+          (panel?.faceReplacements && panel.faceReplacements.length > 0) ||
+            (panel?.originalImage && panel.originalImage !== panel.image),
+        );
+
+        if (hasHeadReplacement && page && panel) {
+          store.resetPanelFace(comicId, page.id, panel.id);
+          setSelectedHead(false);
+          toast.success("Head replacement removed via Backspace shortcut.");
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [comicId, page, panel, bubble, store]);
 
   async function assignImage(targetPanel: Panel, file: File) {
     if (file.type.startsWith("video/")) {
@@ -154,9 +193,12 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         setMediaTab("library");
         setVideoOpen(true);
       }}
+      selectedHead={selectedHead}
+      onSelectHead={(sel) => setSelectedHead(sel)}
       onReplaceHead={() => setHeadReplaceOpen(true)}
       onResetHead={() => {
         store.resetPanelFace(comicId, page.id, panel.id);
+        setSelectedHead(false);
         toast.success("Removed head replacement.");
       }}
       onClearImage={() => store.setPanelImage(comicId, page.id, panel.id, null)}
@@ -554,6 +596,8 @@ function Inspector({
   onPickPhoto,
   onPickVideo,
   onPickLibrary,
+  selectedHead,
+  onSelectHead,
   onReplaceHead,
   onResetHead,
   onClearImage,
@@ -572,6 +616,8 @@ function Inspector({
   onPickPhoto: () => void;
   onPickVideo: () => void;
   onPickLibrary: () => void;
+  selectedHead: boolean;
+  onSelectHead: (selected: boolean) => void;
   onReplaceHead: () => void;
   onResetHead: () => void;
   onClearImage: () => void;
@@ -646,18 +692,41 @@ function Inspector({
               <Sparkles className="size-3.5 mr-1 text-amber-500" />
               {hasFaceReplacement ? "Edit / Resize Head" : "Replace Head / Detect Faces"}
             </Button>
+
+            {/* Selectable Side Element Card for Head Replacement */}
             {hasFaceReplacement && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full text-xs h-7 text-amber-600 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10"
-                onClick={onResetHead}
+              <div
+                onClick={() => onSelectHead(!selectedHead)}
+                className={`group relative flex items-center justify-between p-2 rounded-md border cursor-pointer transition-all ${
+                  selectedHead
+                    ? "border-amber-500 bg-amber-500/15 shadow-sm"
+                    : "border-stone-800 bg-card hover:border-amber-500/50"
+                }`}
               >
-                <RotateCcw className="size-3 mr-1" />
-                Remove Head Replacement
-              </Button>
+                <div className="flex items-center gap-2">
+                  <div className="flex size-7 items-center justify-center rounded-full bg-amber-500/20 text-amber-500">
+                    <Sparkles className="size-3.5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-foreground">Replacement Head</span>
+                    <span className="text-[10px] text-muted-foreground">Selectable • Press ⌫ Backspace to remove</span>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 text-[11px] px-2 text-amber-500 hover:bg-amber-500/20"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onReplaceHead();
+                  }}
+                >
+                  Edit
+                </Button>
+              </div>
             )}
+
             <Button type="button" variant="ghost" className="w-full text-xs h-7 text-muted-foreground" onClick={onClearImage}>
               Remove image
             </Button>
