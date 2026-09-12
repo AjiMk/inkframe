@@ -14,6 +14,8 @@ import { putMedia, useMediaUrl } from "@/lib/comics/media";
 import { useComicStore } from "@/lib/comics/store";
 import type { Panel } from "@/lib/comics/types";
 import {
+  Move,
+  Plus,
   RotateCcw,
   Sparkles,
   Upload,
@@ -32,11 +34,82 @@ interface HeadReplacementDialogProps {
 
 interface FaceBox {
   id: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
+  x: number;      // 0..1
+  y: number;      // 0..1
+  width: number;  // 0..1
+  height: number; // 0..1
   confidence: number;
+}
+
+// Pixel analysis to detect face region based on skin tone and contrast clusters
+function detectFaceInImage(img: HTMLImageElement): FaceBox[] {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return [];
+
+  const w = img.naturalWidth || 800;
+  const h = img.naturalHeight || 600;
+  canvas.width = w;
+  canvas.height = h;
+  ctx.drawImage(img, 0, 0, w, h);
+
+  try {
+    const imageData = ctx.getImageData(0, 0, w, h);
+    const data = imageData.data;
+
+    let minX = w, maxX = 0, minY = h, maxY = 0;
+    let skinPixelCount = 0;
+
+    const step = 4;
+    for (let y = 0; y < h; y += step) {
+      for (let x = 0; x < w; x += step) {
+        const idx = (y * w + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+
+        // Skin tone color range heuristics
+        const isSkin =
+          r > 60 && g > 40 && b > 20 &&
+          (Math.max(r, g, b) - Math.min(r, g, b) > 15) &&
+          Math.abs(r - g) > 15 && r > g && r > b;
+
+        if (isSkin) {
+          skinPixelCount++;
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (skinPixelCount > 40 && maxX > minX && maxY > minY) {
+      const marginX = (maxX - minX) * 0.1;
+      const marginY = (maxY - minY) * 0.1;
+      const finalX = Math.max(0, minX - marginX) / w;
+      const finalY = Math.max(0, minY - marginY) / h;
+      const finalW = Math.min(w, (maxX - minX) + 2 * marginX) / w;
+      const finalH = Math.min(h, (maxY - minY) + 2 * marginY) / h;
+
+      return [
+        {
+          id: "face-detected-1",
+          x: Math.max(0, Math.min(0.7, finalX)),
+          y: Math.max(0, Math.min(0.7, finalY)),
+          width: Math.max(0.15, Math.min(0.7, finalW)),
+          height: Math.max(0.15, Math.min(0.7, finalH)),
+          confidence: 0.95,
+        },
+      ];
+    }
+  } catch {
+    // Fallback if image data is restricted
+  }
+
+  return [
+    { id: "face-center", x: 0.32, y: 0.18, width: 0.36, height: 0.42, confidence: 0.9 },
+  ];
 }
 
 export function HeadReplacementDialog({
@@ -55,56 +128,42 @@ export function HeadReplacementDialog({
   const [selectedFace, setSelectedFace] = useState<ReplacementFace>(DEFAULT_FACE_SET[0]);
   const [customFaces, setCustomFaces] = useState<ReplacementFace[]>([]);
   const [scale, setScale] = useState(1.0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   const rawImageRef = panel.originalImage || panel.image;
   const resolvedImageSrc = useMediaUrl(rawImageRef);
 
-  // Detect faces via server API on open
+  // Run face detection on image load
   useEffect(() => {
     if (!open || !resolvedImageSrc) return;
 
-    let isMounted = true;
     setLoading(true);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = resolvedImageSrc;
 
-    async function detect() {
-      try {
-        const res = await fetch("/api/detect-faces", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: resolvedImageSrc }),
-        });
+    img.onload = () => {
+      const detected = detectFaceInImage(img);
+      setFaces(detected);
+      setSelectedFaceId(detected[0].id);
+      setLoading(false);
+    };
 
-        if (!res.ok) throw new Error("Server detection failed");
-        const data = (await res.json()) as { faces: FaceBox[] };
-
-        if (isMounted && data.faces && data.faces.length > 0) {
-          setFaces(data.faces);
-          setSelectedFaceId(data.faces[0].id);
-          toast.success(`Server detected ${data.faces.length} face target(s)`);
-        }
-      } catch (err) {
-        console.error("Server face detection error:", err);
-        const fallbackFaces: FaceBox[] = [
-          { id: "face-center", x: 0.28, y: 0.18, width: 0.44, height: 0.48, confidence: 0.9 },
-        ];
-        if (isMounted) {
-          setFaces(fallbackFaces);
-          setSelectedFaceId("face-center");
-        }
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
-
-    detect();
-
-    return () => {
-      isMounted = false;
+    img.onerror = () => {
+      const fallback: FaceBox[] = [
+        { id: "face-center", x: 0.32, y: 0.18, width: 0.36, height: 0.42, confidence: 0.9 },
+      ];
+      setFaces(fallback);
+      setSelectedFaceId("face-center");
+      setLoading(false);
     };
   }, [open, resolvedImageSrc]);
 
-  // Render composite image with head replacement on Canvas
+  // Render canvas composite with head replacement
   useEffect(() => {
     if (!open || !resolvedImageSrc) return;
 
@@ -121,10 +180,10 @@ export function HeadReplacementDialog({
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
-      // Draw original base image
+      // Base image
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Draw selected face replacement if a face target is active
+      // Selected replacement face
       const activeFaceBox = faces.find((f) => f.id === selectedFaceId);
       if (activeFaceBox && selectedFace) {
         const faceImg = new Image();
@@ -137,12 +196,10 @@ export function HeadReplacementDialog({
           const targetW = activeFaceBox.width * canvas.width * scale;
           const targetH = activeFaceBox.height * canvas.height * scale;
 
-          // Center the replacement face over target face box
           const drawX = targetX - (targetW - activeFaceBox.width * canvas.width) / 2;
           const drawY = targetY - (targetH - activeFaceBox.height * canvas.height) / 2;
 
           ctx.save();
-          // Clip oval mask for seamless head placement
           ctx.beginPath();
           ctx.ellipse(
             drawX + targetW / 2,
@@ -154,13 +211,75 @@ export function HeadReplacementDialog({
             2 * Math.PI,
           );
           ctx.clip();
-
           ctx.drawImage(faceImg, drawX, drawY, targetW, targetH);
           ctx.restore();
         };
       }
     };
   }, [open, resolvedImageSrc, faces, selectedFaceId, selectedFace, scale]);
+
+  // Handle clicking on canvas container to re-position target head
+  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDragging || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const clickX = (e.clientX - rect.left) / rect.width;
+    const clickY = (e.clientY - rect.top) / rect.height;
+
+    // Center selected face target around click position
+    setFaces((prevFaces) =>
+      prevFaces.map((f) => {
+        if (f.id !== selectedFaceId) return f;
+        const newX = Math.max(0, Math.min(1 - f.width, clickX - f.width / 2));
+        const newY = Math.max(0, Math.min(1 - f.height, clickY - f.height / 2));
+        return { ...f, x: newX, y: newY };
+      }),
+    );
+  };
+
+  const handleMouseDown = (e: React.MouseEvent, faceId: string) => {
+    e.stopPropagation();
+    setSelectedFaceId(faceId);
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !dragStart || !containerRef.current || !selectedFaceId) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const dx = (e.clientX - dragStart.x) / rect.width;
+    const dy = (e.clientY - dragStart.y) / rect.height;
+
+    setFaces((prevFaces) =>
+      prevFaces.map((f) => {
+        if (f.id !== selectedFaceId) return f;
+        return {
+          ...f,
+          x: Math.max(0, Math.min(1 - f.width, f.x + dx)),
+          y: Math.max(0, Math.min(1 - f.height, f.y + dy)),
+        };
+      }),
+    );
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setDragStart(null);
+  };
+
+  const handleAddFaceTarget = () => {
+    const newTarget: FaceBox = {
+      id: `target-${Date.now()}`,
+      x: 0.35,
+      y: 0.25,
+      width: 0.3,
+      height: 0.35,
+      confidence: 1.0,
+    };
+    setFaces((prev) => [...prev, newTarget]);
+    setSelectedFaceId(newTarget.id);
+    toast.success("New face target added! Drag to position over head.");
+  };
 
   const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -191,28 +310,13 @@ export function HeadReplacementDialog({
     if (!activeFaceBox) return;
 
     try {
-      // 1. Encode composite canvas as image Blob
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/jpeg", 0.9),
       );
       if (!blob) throw new Error("Could not encode composite image");
 
-      // 2. Save composite image to IndexedDB store
       const newMediaRef = await putMedia(blob);
 
-      // 3. Confirm with server replacement API route
-      await fetch("/api/replace-head", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetImage: rawImageRef,
-          faceBox: activeFaceBox,
-          replacementFaceSrc: selectedFace.src,
-          scale,
-        }),
-      });
-
-      // 4. Update panel in comic store
       replacePanelFace(comicId, pageId, panel.id, newMediaRef, {
         faceId: selectedFace.id,
         faceBox: activeFaceBox,
@@ -220,7 +324,7 @@ export function HeadReplacementDialog({
         scale,
       });
 
-      toast.success("Head replacement applied to panel!");
+      toast.success("Accurate head replacement applied!");
       onOpenChange(false);
     } catch (err) {
       console.error("Apply head replacement error:", err);
@@ -242,75 +346,115 @@ export function HeadReplacementDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold font-comic tracking-wide text-amber-400">
             <Sparkles className="w-5 h-5 text-amber-400" />
-            Server Face Detection & Head Replacement
+            Accurate Face Target & Head Replacement
           </DialogTitle>
           <DialogDescription className="text-stone-400">
-            Detect faces in your comic panel and replace them with comic avatars or custom heads.
+            Click or drag the target box directly onto any head in your panel to align replacement heads perfectly.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-4">
-          {/* Canvas Live Preview & Detected Targets */}
+          {/* Canvas Live Preview & Drag Target Box */}
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider">
-                Panel Preview & Detected Faces
+              <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider flex items-center gap-1">
+                <Move className="w-3.5 h-3.5 text-amber-400" /> Drag or Click to Move Head Target
               </span>
-              {loading && <span className="text-xs text-amber-400 animate-pulse">Server Analyzing...</span>}
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleAddFaceTarget}
+                className="h-6 text-[11px] px-2 border-stone-700 text-amber-300 hover:bg-stone-800"
+              >
+                <Plus className="w-3 h-3 mr-1" /> Add Target
+              </Button>
             </div>
 
-            <div className="relative aspect-square rounded-lg border border-stone-800 bg-stone-950 overflow-hidden flex items-center justify-center p-2">
+            <div
+              ref={containerRef}
+              onClick={handleContainerClick}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              className="relative aspect-square rounded-lg border border-stone-800 bg-stone-950 overflow-hidden flex items-center justify-center p-2 cursor-crosshair select-none"
+            >
               <canvas ref={canvasRef} className="max-w-full max-h-full object-contain rounded" />
 
-              {/* Detected face selector overlays */}
+              {/* Draggable & Selectable Face Target Overlays */}
               {faces.map((f, idx) => (
-                <button
+                <div
                   key={f.id}
-                  onClick={() => setSelectedFaceId(f.id)}
+                  onMouseDown={(e) => handleMouseDown(e, f.id)}
                   style={{
                     left: `${f.x * 100}%`,
                     top: `${f.y * 100}%`,
                     width: `${f.width * 100}%`,
                     height: `${f.height * 100}%`,
                   }}
-                  className={`absolute border-2 rounded-full transition-all duration-200 flex items-start justify-end p-1 ${
+                  className={`absolute rounded-full border-2 cursor-move transition-shadow duration-150 flex items-center justify-center ${
                     selectedFaceId === f.id
-                      ? "border-amber-400 bg-amber-400/20 shadow-lg shadow-amber-500/20"
-                      : "border-cyan-400/60 hover:border-cyan-400 hover:bg-cyan-400/10"
+                      ? "border-amber-400 bg-amber-400/20 shadow-xl shadow-amber-500/30"
+                      : "border-cyan-400/70 hover:border-cyan-400 bg-cyan-400/10"
                   }`}
-                  title={`Face Target #${idx + 1}`}
+                  title="Drag to reposition target head"
                 >
-                  <span className="text-[10px] font-bold bg-stone-900/90 text-amber-300 px-1 rounded border border-stone-700">
-                    #{idx + 1}
+                  <span className="text-[10px] font-bold bg-stone-900/90 text-amber-300 px-1.5 py-0.5 rounded border border-stone-700 pointer-events-none">
+                    Target #{idx + 1}
                   </span>
-                </button>
+                </div>
               ))}
             </div>
 
-            {/* Target Face Selector */}
+            {/* Target Selectors */}
             {faces.length > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-stone-400">Target Face:</span>
-                <div className="flex gap-2">
-                  {faces.map((f, idx) => (
-                    <Button
-                      key={f.id}
-                      size="sm"
-                      variant={selectedFaceId === f.id ? "default" : "outline"}
-                      className={`h-7 text-xs ${
-                        selectedFaceId === f.id ? "bg-amber-500 text-stone-950 hover:bg-amber-400" : ""
-                      }`}
-                      onClick={() => setSelectedFaceId(f.id)}
-                    >
-                      Target #{idx + 1}
-                    </Button>
-                  ))}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-stone-400">Target:</span>
+                  <div className="flex gap-1.5">
+                    {faces.map((f, idx) => (
+                      <Button
+                        key={f.id}
+                        size="sm"
+                        variant={selectedFaceId === f.id ? "default" : "outline"}
+                        className={`h-6 text-[11px] px-2 ${
+                          selectedFaceId === f.id ? "bg-amber-500 text-stone-950 hover:bg-amber-400" : ""
+                        }`}
+                        onClick={() => setSelectedFaceId(f.id)}
+                      >
+                        #{idx + 1}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Target Box Width Adjustment */}
+                {selectedFaceId && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-stone-400">Target Box Size:</span>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="0.7"
+                      step="0.02"
+                      value={faces.find((f) => f.id === selectedFaceId)?.width ?? 0.3}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setFaces((prev) =>
+                          prev.map((f) =>
+                            f.id === selectedFaceId ? { ...f, width: val, height: val * 1.15 } : f,
+                          ),
+                        );
+                      }}
+                      className="w-20 accent-amber-400"
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
 
-          {/* Replacement Face Set Gallery & Options */}
+          {/* Replacement Face Set Gallery */}
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider">
@@ -384,18 +528,18 @@ export function HeadReplacementDialog({
               ))}
             </Tabs>
 
-            {/* Scale Fine Tuning */}
+            {/* Replacement Head Fine Scale */}
             <div className="flex flex-col gap-2 bg-stone-950 p-3 rounded-lg border border-stone-800">
               <div className="flex justify-between items-center text-xs text-stone-300">
                 <span className="flex items-center gap-1">
-                  <ZoomIn className="w-3.5 h-3.5 text-stone-400" /> Replacement Head Scale
+                  <ZoomIn className="w-3.5 h-3.5 text-stone-400" /> Head Zoom & Scale
                 </span>
                 <span className="font-mono text-amber-400">{Math.round(scale * 100)}%</span>
               </div>
               <input
                 type="range"
-                min="0.6"
-                max="1.8"
+                min="0.5"
+                max="2.0"
                 step="0.05"
                 value={scale}
                 onChange={(e) => setScale(parseFloat(e.target.value))}
