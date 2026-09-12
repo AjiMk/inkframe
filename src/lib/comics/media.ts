@@ -66,6 +66,14 @@ export async function deleteMediaRef(ref: string | null): Promise<void> {
   await deleteMedia(ref.slice(4));
 }
 
+export async function resolveMediaUrl(ref: string): Promise<string> {
+  if (isUrlRef(ref)) return publicSrc(ref);
+  if (!ref.startsWith("idb:")) return ref;
+  const blob = await getMedia(ref.slice(4));
+  if (!blob) throw new Error("Missing media");
+  return URL.createObjectURL(blob);
+}
+
 export async function compressImage(
   source: Blob | HTMLVideoElement,
   maxSide = 1600,

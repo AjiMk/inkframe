@@ -139,6 +139,12 @@
   .page-stage {
     perspective: 1800px;
   }
+
+  .ink-stage {
+    background-color: var(--color-ink);
+    background-image: radial-gradient(rgb(255 248 238 / 0.07) 0.7px, transparent 0.7px);
+    background-size: 3px 3px;
+  }
 }
 
 /* Reader + studio motion */

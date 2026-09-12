@@ -32,8 +32,9 @@ export interface FaceReplacement {
   };
   replacementFaceSrc: string;
   scale?: number;
-  offsetX?: number;
-  offsetY?: number;
+  feather?: number;
+  opacity?: number;
+  matchTone?: boolean;
 }
 
 export interface Panel {
@@ -65,4 +66,25 @@ export interface Selection {
   pageId: string | null;
   panelId: string | null;
   bubbleId: string | null;
+}
+
+export interface FaceSetFace {
+  id: string;
+  name: string;
+  src: string;
+}
+
+export interface FaceSet {
+  id: string;
+  name: string;
+  sourcePhoto: string | null;
+  faces: FaceSetFace[];
+  createdAt: number;
+}
+
+export interface NormBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 }

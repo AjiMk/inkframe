@@ -15,7 +15,7 @@ import {
   Captions,
   Plus,
   RotateCcw,
-  Sparkles,
+  ScanFace,
   Trash2,
   Video,
 } from "lucide-react";
@@ -66,6 +66,8 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [draggedPageIndex, setDraggedPageIndex] = useState<number | null>(null);
   const [dragOverPageIndex, setDragOverPageIndex] = useState<number | null>(null);
+  const [headReplaceOpen, setHeadReplaceOpen] = useState(false);
+  const [mediaTab, setMediaTab] = useState<"video" | "library">("video");
   const photoRef = useRef<HTMLInputElement>(null);
 
   const page = useMemo(
@@ -170,8 +172,6 @@ export function StudioEditor({ comicId }: { comicId: string }) {
     );
   }
 
-  const [headReplaceOpen, setHeadReplaceOpen] = useState(false);
-  const [mediaTab, setMediaTab] = useState<"video" | "library">("video");
   const inspector = (
     <Inspector
       comicTitle={comic.title}
@@ -689,8 +689,8 @@ function Inspector({
               className="w-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30"
               onClick={onReplaceHead}
             >
-              <Sparkles className="size-3.5 mr-1 text-primary" />
-              {hasFaceReplacement ? "Edit / Resize Head" : "Replace Head / Target Box"}
+              <ScanFace className="size-3.5 text-primary" />
+              {hasFaceReplacement ? "Edit head" : "Replace head"}
             </Button>
 
             {/* Selectable Side Element Card for Head Replacement */}
@@ -705,10 +705,10 @@ function Inspector({
               >
                 <div className="flex items-center gap-2">
                   <div className="flex size-7 items-center justify-center rounded-full bg-primary/15 text-primary">
-                    <Sparkles className="size-3.5" />
+                    <ScanFace className="size-3.5" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-semibold text-foreground">Replacement Head</span>
+                    <span className="text-xs font-semibold text-foreground">Replacement head</span>
                     <span className="text-[10px] text-muted-foreground">Selectable • Press Backspace to remove</span>
                   </div>
                 </div>

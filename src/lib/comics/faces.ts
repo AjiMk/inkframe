@@ -1,39 +1,248 @@
-export interface ReplacementFace {
-  id: string;
-  name: string;
-  category: "comic" | "cartoon" | "mascot" | "custom";
-  src: string;
+import type { NormBox } from "./types";
+
+export function clampNormBox(box: NormBox, min = 0.04): NormBox {
+  let { x, y, width, height } = box;
+  if (width < 0) {
+    x += width;
+    width = -width;
+  }
+  if (height < 0) {
+    y += height;
+    height = -height;
+  }
+  width = Math.max(min, Math.min(1, width));
+  height = Math.max(min, Math.min(1, height));
+  x = Math.max(0, Math.min(1 - width, x));
+  y = Math.max(0, Math.min(1 - height, y));
+  return { x, y, width, height };
 }
 
-export const DEFAULT_FACE_SET: ReplacementFace[] = [
-  {
-    id: "hero-mask",
-    name: "Superhero Mask",
-    category: "comic",
-    src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%23c23b22'/><ellipse cx='32' cy='42' rx='12' ry='8' fill='%23161310'/><ellipse cx='68' cy='42' rx='12' ry='8' fill='%23161310'/><circle cx='32' cy='42' r='4' fill='%23fff8ee'/><circle cx='68' cy='42' r='4' fill='%23fff8ee'/><path d='M30 70 Q50 85 70 70' stroke='%23fff8ee' stroke-width='6' fill='none' stroke-linecap='round'/></svg>",
+export function boxFromPoints(
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+  min = 0.02,
+): NormBox {
+  return clampNormBox(
+    {
+      x: Math.min(a.x, b.x),
+      y: Math.min(a.y, b.y),
+      width: Math.abs(b.x - a.x),
+      height: Math.abs(b.y - a.y),
+    },
+    min,
+  );
+}
+
+export function loadImageElement(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Could not load that image."));
+    img.src = src;
+  });
+}
+
+function coverDraw(
+  ctx: CanvasRenderingContext2D,
+  img: CanvasImageSource,
+  w: number,
+  h: number,
+  natW: number,
+  natH: number,
+) {
+  const imageAspect = natW / natH;
+  const boxAspect = w / h;
+  let dw = w;
+  let dh = h;
+  let dx = 0;
+  let dy = 0;
+  if (imageAspect > boxAspect) {
+    dw = h * imageAspect;
+    dx = (w - dw) / 2;
+  } else {
+    dh = w / imageAspect;
+    dy = (h - dh) / 2;
+  }
+  ctx.drawImage(img, dx, dy, dw, dh);
+}
+
+function applyEllipseFeather(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  feather: number,
+) {
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.translate(w / 2, h / 2);
+  ctx.scale(Math.max(1, w / 2), Math.max(1, h / 2));
+  const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+  const inner = Math.max(0, Math.min(0.97, 1 - Math.max(0.04, feather)));
+  gradient.addColorStop(0, "rgba(0,0,0,1)");
+  gradient.addColorStop(inner, "rgba(0,0,0,1)");
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(0, 0, 1, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+export async function cropFaceBlob(img: HTMLImageElement, box: NormBox): Promise<Blob> {
+  const nw = img.naturalWidth;
+  const nh = img.naturalHeight;
+  const pad = 0.1;
+  let sx = (box.x - box.width * pad) * nw;
+  let sy = (box.y - box.height * pad) * nh;
+  let sw = box.width * (1 + pad * 2) * nw;
+  let sh = box.height * (1 + pad * 2) * nh;
+  if (sx < 0) {
+    sw += sx;
+    sx = 0;
+  }
+  if (sy < 0) {
+    sh += sy;
+    sy = 0;
+  }
+  if (sx + sw > nw) sw = nw - sx;
+  if (sy + sh > nh) sh = nh - sy;
+  sw = Math.max(1, sw);
+  sh = Math.max(1, sh);
+
+  const maxSide = 640;
+  const scale = Math.min(1, maxSide / Math.max(sw, sh));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(sw * scale));
+  canvas.height = Math.max(1, Math.round(sh * scale));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas is unavailable");
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/jpeg", 0.92),
+  );
+  if (!blob) throw new Error("Could not crop that face");
+  return blob;
+}
+
+export function sampleRingColor(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  rx: number,
+  ry: number,
+): { r: number; g: number; b: number } | null {
+  try {
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let n = 0;
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      const x = Math.round(cx + Math.cos(a) * rx * 1.14);
+      const y = Math.round(cy + Math.sin(a) * ry * 1.14);
+      if (x < 0 || y < 0 || x >= ctx.canvas.width || y >= ctx.canvas.height) continue;
+      const data = ctx.getImageData(x, y, 1, 1).data;
+      r += data[0];
+      g += data[1];
+      b += data[2];
+      n += 1;
+    }
+    if (!n) return null;
+    return { r: r / n, g: g / n, b: b / n };
+  } catch {
+    return null;
+  }
+}
+
+const scratch = typeof document === "undefined" ? null : document.createElement("canvas");
+
+export function drawSoftFace(
+  ctx: CanvasRenderingContext2D,
+  face: HTMLImageElement,
+  box: { x: number; y: number; w: number; h: number },
+  opts: {
+    scale: number;
+    feather: number;
+    opacity: number;
+    tint?: { r: number; g: number; b: number } | null;
   },
-  {
-    id: "retro-noir",
-    name: "Noir Detective",
-    category: "comic",
-    src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='52' r='45' fill='%23fff8ee'/><path d='M10 35 Q50 15 90 35 L80 22 Q50 10 20 22 Z' fill='%23161310'/><rect x='25' y='26' width='50' height='8' fill='%23c23b22'/><circle cx='35' cy='50' r='6' fill='%23161310'/><circle cx='65' cy='50' r='6' fill='%23161310'/><path d='M35 72 Q50 80 65 72' stroke='%23161310' stroke-width='5' fill='none' stroke-linecap='round'/></svg>",
-  },
-  {
-    id: "sci-fi-bot",
-    name: "Cyborg Head",
-    category: "mascot",
-    src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='10' y='10' width='80' height='80' rx='20' fill='%23457b9d'/><rect x='20' y='30' width='60' height='24' rx='8' fill='%23161310'/><circle cx='36' cy='42' r='8' fill='%23a8dadc'/><circle cx='64' cy='42' r='8' fill='%23c23b22'/><line x1='30' y1='70' x2='70' y2='70' stroke='%23fff8ee' stroke-width='6' stroke-linecap='round'/></svg>",
-  },
-  {
-    id: "cartoon-cat",
-    name: "Comic Cat",
-    category: "cartoon",
-    src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><path d='M15 15 L35 40 L10 50 Z' fill='%23e8dcc6'/><path d='M85 15 L65 40 L90 50 Z' fill='%23e8dcc6'/><circle cx='50' cy='55' r='40' fill='%23c23b22'/><ellipse cx='35' cy='48' rx='8' ry='12' fill='%23161310'/><ellipse cx='65' cy='48' rx='8' ry='12' fill='%23161310'/><polygon points='50,60 44,68 56,68' fill='%23161310'/><path d='M35 74 Q50 84 65 74' stroke='%23161310' stroke-width='4' fill='none'/></svg>",
-  },
-  {
-    id: "alien-head",
-    name: "Cosmic Alien",
-    category: "mascot",
-    src: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><ellipse cx='50' cy='50' rx='42' ry='48' fill='%232a9d8f'/><ellipse cx='32' cy='44' rx='14' ry='20' fill='%23161310' transform='rotate(-15 32 44)'/><ellipse cx='68' cy='44' rx='14' ry='20' fill='%23161310' transform='rotate(15 68 44)'/><circle cx='34' cy='40' r='4' fill='%23fff8ee'/><circle cx='66' cy='40' r='4' fill='%23fff8ee'/><line x1='40' y1='78' x2='60' y2='78' stroke='%23161310' stroke-width='4' stroke-linecap='round'/></svg>",
-  },
-];
+) {
+  const w = Math.max(2, box.w * opts.scale);
+  const h = Math.max(2, box.h * opts.scale);
+  const x = box.x - (w - box.w) / 2;
+  const y = box.y - (h - box.h) / 2;
+
+  const off = scratch ?? document.createElement("canvas");
+  off.width = Math.max(2, Math.round(w));
+  off.height = Math.max(2, Math.round(h));
+  const octx = off.getContext("2d");
+  if (!octx) return;
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  octx.globalCompositeOperation = "source-over";
+  octx.globalAlpha = 1;
+  octx.clearRect(0, 0, off.width, off.height);
+
+  coverDraw(octx, face, off.width, off.height, face.naturalWidth, face.naturalHeight);
+
+  if (opts.tint) {
+    octx.globalCompositeOperation = "source-atop";
+    octx.globalAlpha = 0.26;
+    octx.fillStyle = `rgb(${Math.round(opts.tint.r)} ${Math.round(opts.tint.g)} ${Math.round(opts.tint.b)})`;
+    octx.fillRect(0, 0, off.width, off.height);
+    octx.globalAlpha = 1;
+    octx.globalCompositeOperation = "source-over";
+  }
+
+  applyEllipseFeather(octx, off.width, off.height, opts.feather);
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, opts.opacity));
+  ctx.drawImage(off, x, y, w, h);
+  ctx.restore();
+}
+
+export function paintPanelWithFaces(
+  canvas: HTMLCanvasElement,
+  panel: HTMLImageElement,
+  slots: Array<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    scale: number;
+    feather: number;
+    opacity: number;
+    matchTone: boolean;
+    face: HTMLImageElement | null;
+  }>,
+) {
+  canvas.width = panel.naturalWidth;
+  canvas.height = panel.naturalHeight;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(panel, 0, 0, canvas.width, canvas.height);
+
+  for (const slot of slots) {
+    if (!slot.face) continue;
+    const box = {
+      x: slot.x * canvas.width,
+      y: slot.y * canvas.height,
+      w: slot.width * canvas.width,
+      h: slot.height * canvas.height,
+    };
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    const tint = slot.matchTone
+      ? sampleRingColor(ctx, cx, cy, (box.w * slot.scale) / 2, (box.h * slot.scale) / 2)
+      : null;
+    drawSoftFace(ctx, slot.face, box, {
+      scale: slot.scale,
+      feather: slot.feather,
+      opacity: slot.opacity,
+      tint,
+    });
+  }
+}

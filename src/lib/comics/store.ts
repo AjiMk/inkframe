@@ -62,7 +62,7 @@ interface ComicState {
     pageId: string,
     panelId: string,
     replacementImage: string,
-    faceReplacement: FaceReplacement,
+    faceReplacements: FaceReplacement[],
   ) => void;
   resetPanelFace: (comicId: string, pageId: string, panelId: string) => void;
   setPanelFilter: (comicId: string, pageId: string, panelId: string, filter: PanelFilter) => void;
@@ -243,7 +243,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
     set({ comics });
   },
 
-  replacePanelFace: (comicId, pageId, panelId, replacementImage, faceReplacement) => {
+  replacePanelFace: (comicId, pageId, panelId, replacementImage, faceReplacements) => {
     const comics = mapComic(get().comics, comicId, (c) => ({
       ...c,
       pages: c.pages.map((p) => {
@@ -253,12 +253,11 @@ export const useComicStore = create<ComicState>((set, get) => ({
           panels: p.panels.map((panel) => {
             if (panel.id !== panelId) return panel;
             const originalImage = panel.originalImage || panel.image || replacementImage;
-            const existingReplacements = panel.faceReplacements || [];
             return {
               ...panel,
               image: replacementImage,
               originalImage,
-              faceReplacements: [...existingReplacements, faceReplacement],
+              faceReplacements,
             };
           }),
         };

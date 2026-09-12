@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ScanFace, SunMedium, Trash2, UserRound } from "lucide-react";
+import { toast } from "sonner";
+import { FaceSetBuilder } from "@/components/comic/face-set-builder";
+import { FaceThumb } from "@/components/comic/face-thumb";
+import { ImageStage, OvalMarks } from "@/components/comic/image-stage";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,23 +13,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DEFAULT_FACE_SET, type ReplacementFace } from "@/lib/comics/faces";
-import { putMedia, useMediaUrl } from "@/lib/comics/media";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useFaceSetStore } from "@/lib/comics/face-sets";
+import { loadImageElement, paintPanelWithFaces } from "@/lib/comics/faces";
+import { putMedia, resolveMediaUrl, useMediaUrl } from "@/lib/comics/media";
 import { useComicStore } from "@/lib/comics/store";
-import type { Panel } from "@/lib/comics/types";
-import {
-  Maximize2,
-  Move,
-  Plus,
-  RotateCcw,
-  Sparkles,
-  Trash2,
-  Upload,
-  UserCheck,
-  ZoomIn,
-} from "lucide-react";
-import { toast } from "sonner";
+import type { FaceSetFace, NormBox, Panel } from "@/lib/comics/types";
+import { nid } from "@/lib/utils";
 
 interface HeadReplacementDialogProps {
   open: boolean;
@@ -34,19 +31,28 @@ interface HeadReplacementDialogProps {
   panel: Panel;
 }
 
-interface FaceTarget {
+interface HeadSlot extends NormBox {
   id: string;
-  x: number;      // 0..1 relative to image width
-  y: number;      // 0..1 relative to image height
-  width: number;  // 0..1 relative to image width
-  height: number; // 0..1 relative to image height
+  faceId: string | null;
+  faceSrc: string | null;
+  scale: number;
+  feather: number;
+  opacity: number;
 }
 
-interface ImageDisplayRect {
-  offsetX: number;
-  offsetY: number;
-  drawW: number;
-  drawH: number;
+function defaultSlot(): HeadSlot {
+  return {
+    id: nid(),
+    x: 0.32,
+    y: 0.14,
+    width: 0.36,
+    height: 0.42,
+    faceId: null,
+    faceSrc: null,
+    scale: 1,
+    feather: 0.34,
+    opacity: 1,
+  };
 }
 
 export function HeadReplacementDialog({
@@ -58,28 +64,21 @@ export function HeadReplacementDialog({
 }: HeadReplacementDialogProps) {
   const replacePanelFace = useComicStore((s) => s.replacePanelFace);
   const resetPanelFace = useComicStore((s) => s.resetPanelFace);
+  const sets = useFaceSetStore((s) => s.sets);
+  const hydrateSets = useFaceSetStore((s) => s.hydrate);
 
-  const [targets, setTargets] = useState<FaceTarget[]>([
-    { id: "head-target-1", x: 0.3, y: 0.18, width: 0.4, height: 0.45 },
-  ]);
-  const [selectedTargetId, setSelectedTargetId] = useState<string>("head-target-1");
-  const [selectedFace, setSelectedFace] = useState<ReplacementFace>(DEFAULT_FACE_SET[0]);
-  const [customFaces, setCustomFaces] = useState<ReplacementFace[]>([]);
-  const [scale, setScale] = useState(1.0);
-  const [imgSize, setImgSize] = useState<{ w: number; h: number }>({ w: 800, h: 600 });
-  const [displayRect, setDisplayRect] = useState<ImageDisplayRect>({
-    offsetX: 0,
-    offsetY: 0,
-    drawW: 400,
-    drawH: 400,
-  });
-
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragMode, setDragMode] = useState<"move" | "resize-se" | null>(null);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [view, setView] = useState<"replace" | "sets">("replace");
+  const [slots, setSlots] = useState<HeadSlot[]>([defaultSlot()]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [matchTone, setMatchTone] = useState(true);
+  const [imgSize, setImgSize] = useState({ w: 800, h: 600 });
+  const [busy, setBusy] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
+  const panelImgRef = useRef<HTMLImageElement | null>(null);
+  const faceImgsRef = useRef(new Map<string, HTMLImageElement>());
+  const ownedUrlsRef = useRef<string[]>([]);
+  const rafRef = useRef(0);
 
   const rawImageRef = panel.originalImage || panel.image;
   const resolvedImageSrc = useMediaUrl(rawImageRef);
@@ -88,555 +87,396 @@ export function HeadReplacementDialog({
       (panel.originalImage && panel.originalImage !== panel.image),
   );
 
-  // Compute exact image display rect to prevent letterbox offset errors
-  const updateDisplayRect = (imgW: number, imgH: number) => {
-    if (!containerRef.current) return;
-    const containerW = containerRef.current.clientWidth;
-    const containerH = containerRef.current.clientHeight;
+  const selected = slots.find((slot) => slot.id === selectedId) ?? slots[0] ?? null;
+  const faceCount = sets.reduce((sum, set) => sum + set.faces.length, 0);
 
-    const imgAspect = imgW / imgH;
-    const containerAspect = containerW / containerH;
-
-    let drawW = containerW;
-    let drawH = containerH;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    if (imgAspect > containerAspect) {
-      drawH = containerW / imgAspect;
-      offsetY = (containerH - drawH) / 2;
-    } else {
-      drawW = containerH * imgAspect;
-      offsetX = (containerW - drawW) / 2;
-    }
-
-    setDisplayRect({ offsetX, offsetY, drawW, drawH });
-  };
-
-  // Load image & pre-populate existing replacement if present
-  useEffect(() => {
-    if (!open || !resolvedImageSrc) return;
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = resolvedImageSrc;
-
-    img.onload = () => {
-      const w = img.naturalWidth || 800;
-      const h = img.naturalHeight || 600;
-      setImgSize({ w, h });
-      updateDisplayRect(w, h);
-
-      // Pre-populate applied replacement parameters if editing
-      const existing = panel.faceReplacements || [];
-      if (existing.length > 0) {
-        const last = existing[existing.length - 1];
-        setTargets([
-          {
-            id: last.faceId || "head-target-1",
-            x: last.faceBox.x,
-            y: last.faceBox.y,
-            width: last.faceBox.width,
-            height: last.faceBox.height,
-          },
-        ]);
-        setSelectedTargetId(last.faceId || "head-target-1");
-        setScale(last.scale ?? 1.0);
-
-        const foundFace = DEFAULT_FACE_SET.find(
-          (f) => f.id === last.faceId || f.src === last.replacementFaceSrc,
-        );
-        if (foundFace) setSelectedFace(foundFace);
-      } else {
-        setTargets([
-          {
-            id: "head-target-1",
-            x: 0.3,
-            y: 0.18,
-            width: 0.4,
-            height: 0.44,
-          },
-        ]);
-        setSelectedTargetId("head-target-1");
-        setScale(1.0);
-      }
-    };
-  }, [open, resolvedImageSrc, panel.faceReplacements]);
-
-  // Handle window resize for exact coordinate alignment
-  useEffect(() => {
-    const handleResize = () => {
-      if (imgSize.w && imgSize.h) {
-        updateDisplayRect(imgSize.w, imgSize.h);
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [imgSize]);
-
-  // Render composite image & replacement head on canvas
-  useEffect(() => {
-    if (!open || !resolvedImageSrc) return;
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = resolvedImageSrc;
-
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      canvas.width = imgSize.w;
-      canvas.height = imgSize.h;
-
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      const activeTarget = targets.find((t) => t.id === selectedTargetId);
-      if (activeTarget && selectedFace) {
-        const faceImg = new Image();
-        faceImg.crossOrigin = "anonymous";
-        faceImg.src = selectedFace.src;
-
-        faceImg.onload = () => {
-          const targetX = activeTarget.x * canvas.width;
-          const targetY = activeTarget.y * canvas.height;
-          const targetW = activeTarget.width * canvas.width * scale;
-          const targetH = activeTarget.height * canvas.height * scale;
-
-          const drawX = targetX - (targetW - activeTarget.width * canvas.width) / 2;
-          const drawY = targetY - (targetH - activeTarget.height * canvas.height) / 2;
-
-          ctx.save();
-          ctx.beginPath();
-          ctx.ellipse(
-            drawX + targetW / 2,
-            drawY + targetH / 2,
-            targetW / 2,
-            targetH / 2,
-            0,
-            0,
-            2 * Math.PI,
-          );
-          ctx.clip();
-          ctx.drawImage(faceImg, drawX, drawY, targetW, targetH);
-          ctx.restore();
-        };
-      }
-    };
-  }, [open, resolvedImageSrc, imgSize, targets, selectedTargetId, selectedFace, scale]);
-
-  // Drag to reposition or resize target box
-  const handleMouseDown = (e: React.MouseEvent, targetId: string, mode: "move" | "resize-se") => {
-    e.stopPropagation();
-    setSelectedTargetId(targetId);
-    setIsDragging(true);
-    setDragMode(mode);
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !dragStart || !selectedTargetId || displayRect.drawW === 0) return;
-
-    const dxRel = (e.clientX - dragStart.x) / displayRect.drawW;
-    const dyRel = (e.clientY - dragStart.y) / displayRect.drawH;
-
-    setTargets((prev) =>
-      prev.map((t) => {
-        if (t.id !== selectedTargetId) return t;
-        if (dragMode === "move") {
-          return {
-            ...t,
-            x: Math.max(0, Math.min(1 - t.width, t.x + dxRel)),
-            y: Math.max(0, Math.min(1 - t.height, t.y + dyRel)),
-          };
-        } else if (dragMode === "resize-se") {
-          return {
-            ...t,
-            width: Math.max(0.1, Math.min(1 - t.x, t.width + dxRel)),
-            height: Math.max(0.1, Math.min(1 - t.y, t.height + dyRel)),
-          };
-        }
-        return t;
-      }),
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    const panelImg = panelImgRef.current;
+    if (!canvas || !panelImg) return;
+    paintPanelWithFaces(
+      canvas,
+      panelImg,
+      slots.map((slot) => ({
+        x: slot.x,
+        y: slot.y,
+        width: slot.width,
+        height: slot.height,
+        scale: slot.scale,
+        feather: slot.feather,
+        opacity: slot.opacity,
+        matchTone,
+        face: slot.faceSrc ? faceImgsRef.current.get(slot.faceSrc) ?? null : null,
+      })),
     );
+  }, [slots, matchTone]);
 
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
+  const scheduleDraw = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = 0;
+      draw();
+    });
+  }, [draw]);
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    setDragMode(null);
-    setDragStart(null);
-  };
+  useEffect(() => {
+    if (!open) return;
+    hydrateSets();
+    const existing = panel.faceReplacements ?? [];
+    if (existing.length > 0) {
+      const restored = existing.map((item) => ({
+        id: nid(),
+        x: item.faceBox.x,
+        y: item.faceBox.y,
+        width: item.faceBox.width,
+        height: item.faceBox.height,
+        faceId: item.faceId,
+        faceSrc: item.replacementFaceSrc,
+        scale: item.scale ?? 1,
+        feather: item.feather ?? 0.34,
+        opacity: item.opacity ?? 1,
+      }));
+      setSlots(restored);
+      setSelectedId(restored[0]?.id ?? null);
+      setMatchTone(existing[existing.length - 1]?.matchTone ?? true);
+    } else {
+      const slot = defaultSlot();
+      setSlots([slot]);
+      setSelectedId(slot.id);
+      setMatchTone(true);
+    }
+    const hasSets = useFaceSetStore.getState().sets.some((set) => set.faces.length > 0);
+    setView(hasSets ? "replace" : "sets");
+  }, [open, panel.id, hydrateSets]);
 
-  // Click anywhere on container to move center of active face box
-  const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (isDragging || !containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
+  useEffect(() => {
+    if (!open || !resolvedImageSrc) return;
+    let cancelled = false;
+    loadImageElement(resolvedImageSrc)
+      .then((img) => {
+        if (cancelled) return;
+        panelImgRef.current = img;
+        setImgSize({ w: img.naturalWidth || 800, h: img.naturalHeight || 600 });
+        scheduleDraw();
+      })
+      .catch(() => {
+        if (!cancelled) toast.error("Could not load the panel image.");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, resolvedImageSrc, scheduleDraw]);
 
-    const mouseXInDraw = e.clientX - rect.left - displayRect.offsetX;
-    const mouseYInDraw = e.clientY - rect.top - displayRect.offsetY;
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const srcs = Array.from(new Set(slots.map((slot) => slot.faceSrc).filter(Boolean))) as string[];
+    for (const src of srcs) {
+      if (faceImgsRef.current.has(src)) continue;
+      resolveMediaUrl(src)
+        .then(async (url) => {
+          if (url.startsWith("blob:")) ownedUrlsRef.current.push(url);
+          const img = await loadImageElement(url);
+          if (cancelled) return;
+          faceImgsRef.current.set(src, img);
+          scheduleDraw();
+        })
+        .catch(() => {
+          /* missing crop; user can pick another */
+        });
+    }
+    scheduleDraw();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, slots, scheduleDraw]);
 
-    if (
-      mouseXInDraw < 0 ||
-      mouseXInDraw > displayRect.drawW ||
-      mouseYInDraw < 0 ||
-      mouseYInDraw > displayRect.drawH
-    ) {
+  useEffect(() => {
+    if (open) return;
+    ownedUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    ownedUrlsRef.current = [];
+    faceImgsRef.current.clear();
+    panelImgRef.current = null;
+  }, [open]);
+
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+  }, []);
+
+  function patchSlot(id: string, patch: Partial<HeadSlot>) {
+    setSlots((prev) => prev.map((slot) => (slot.id === id ? { ...slot, ...patch } : slot)));
+  }
+
+  function assignFace(face: FaceSetFace) {
+    if (!selected) return;
+    patchSlot(selected.id, { faceId: face.id, faceSrc: face.src });
+  }
+
+  async function handleApply() {
+    const canvas = canvasRef.current;
+    if (!canvas || !panelImgRef.current) return;
+    const ready = slots.filter((slot) => slot.faceSrc);
+    if (ready.length === 0) {
+      toast.error("Pick a marked face first.");
       return;
     }
-
-    const clickRelX = mouseXInDraw / displayRect.drawW;
-    const clickRelY = mouseYInDraw / displayRect.drawH;
-
-    setTargets((prev) =>
-      prev.map((t) => {
-        if (t.id !== selectedTargetId) return t;
-        return {
-          ...t,
-          x: Math.max(0, Math.min(1 - t.width, clickRelX - t.width / 2)),
-          y: Math.max(0, Math.min(1 - t.height, clickRelY - t.height / 2)),
-        };
-      }),
-    );
-  };
-
-  const handleAddTarget = () => {
-    const newTarget: FaceTarget = {
-      id: `target-${Date.now()}`,
-      x: 0.3,
-      y: 0.2,
-      width: 0.35,
-      height: 0.4,
-    };
-    setTargets((prev) => [...prev, newTarget]);
-    setSelectedTargetId(newTarget.id);
-    toast.success("New head target box created.");
-  };
-
-  const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const src = event.target?.result as string;
-      if (!src) return;
-      const customItem: ReplacementFace = {
-        id: `custom-${Date.now()}`,
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        category: "custom",
-        src,
-      };
-      setCustomFaces((prev) => [customItem, ...prev]);
-      setSelectedFace(customItem);
-      toast.success("Custom replacement head uploaded!");
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleApply = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas || !selectedTargetId) return;
-
-    const activeTarget = targets.find((t) => t.id === selectedTargetId);
-    if (!activeTarget) return;
-
+    setBusy(true);
     try {
+      draw();
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/jpeg", 0.92),
       );
-      if (!blob) throw new Error("Could not encode composite image");
-
-      const newMediaRef = await putMedia(blob);
-
-      replacePanelFace(comicId, pageId, panel.id, newMediaRef, {
-        faceId: selectedFace.id,
-        faceBox: activeTarget,
-        replacementFaceSrc: selectedFace.src,
-        scale,
-      });
-
-      toast.success("Head replacement updated!");
+      if (!blob) throw new Error("Could not encode the panel");
+      const mediaRef = await putMedia(blob);
+      replacePanelFace(
+        comicId,
+        pageId,
+        panel.id,
+        mediaRef,
+        ready.map((slot) => ({
+          faceId: slot.faceId || slot.id,
+          faceBox: { x: slot.x, y: slot.y, width: slot.width, height: slot.height },
+          replacementFaceSrc: slot.faceSrc!,
+          scale: slot.scale,
+          feather: slot.feather,
+          opacity: slot.opacity,
+          matchTone,
+        })),
+      );
+      toast.success("Head replacement saved.");
       onOpenChange(false);
     } catch (err) {
-      console.error("Apply head replacement error:", err);
-      toast.error("Failed to apply face replacement");
+      toast.error(err instanceof Error ? err.message : "Could not apply that head.");
+    } finally {
+      setBusy(false);
     }
-  };
+  }
 
-  const handleReset = () => {
+  function handleReset() {
     resetPanelFace(comicId, pageId, panel.id);
-    toast.success("Removed replacement head & restored original image.");
+    toast.success("Original panel restored.");
     onOpenChange(false);
-  };
-
-  const allFaces = [...customFaces, ...DEFAULT_FACE_SET];
-  const activeTarget = targets.find((t) => t.id === selectedTargetId);
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card border-border text-foreground shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold font-display tracking-wide text-primary">
-            <Sparkles className="w-5 h-5 text-primary" />
-            Head Target & Replacement Editor
-          </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Reposition, scale, or edit the replacement head on your panel image.
-          </DialogDescription>
+      <DialogContent className="flex max-h-[92dvh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="gap-3 border-b border-border px-5 py-4 pr-12">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <DialogTitle className="font-display text-xl tracking-wide text-primary">
+                {view === "sets" ? "Face sets" : "Replace head"}
+              </DialogTitle>
+              <DialogDescription>
+                {view === "sets"
+                  ? "Upload a photo and mark each head. Those crops are the only faces available to drop onto a panel."
+                  : "Place the ring over a head, then pick a face you marked from a photo."}
+              </DialogDescription>
+            </div>
+            <Tabs value={view} onValueChange={(value) => setView(value as "replace" | "sets")}>
+              <TabsList>
+                <TabsTrigger value="replace">Replace</TabsTrigger>
+                <TabsTrigger value="sets">Face sets</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-4">
-          {/* Canvas Live Preview & Pixel-Aligned Drag Handles */}
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground flex items-center gap-1">
-                <Move className="w-3.5 h-3.5 text-primary" /> Drag Box or Corner to Resize
-              </span>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={handleAddTarget}
-                className="h-6 text-[11px] px-2 border-border text-foreground hover:bg-secondary"
-              >
-                <Plus className="w-3 h-3 mr-1" /> Add Target Box
-              </Button>
-            </div>
-
-            <div
-              ref={containerRef}
-              onClick={handleContainerClick}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              className="relative aspect-square rounded-lg border border-border bg-background overflow-hidden flex items-center justify-center p-2 cursor-crosshair select-none paper-shadow"
-            >
-              <canvas ref={canvasRef} className="max-w-full max-h-full object-contain rounded" />
-
-              {/* Exact Aspect-Ratio Aligned Target Boxes */}
-              {targets.map((t, idx) => {
-                const isSelected = selectedTargetId === t.id;
-                const boxLeft = displayRect.offsetX + t.x * displayRect.drawW;
-                const boxTop = displayRect.offsetY + t.y * displayRect.drawH;
-                const boxWidth = t.width * displayRect.drawW;
-                const boxHeight = t.height * displayRect.drawH;
-
-                return (
-                  <div
-                    key={t.id}
-                    onMouseDown={(e) => handleMouseDown(e, t.id, "move")}
-                    style={{
-                      left: `${boxLeft}px`,
-                      top: `${boxTop}px`,
-                      width: `${boxWidth}px`,
-                      height: `${boxHeight}px`,
-                    }}
-                    className={`absolute rounded-full border-2 cursor-move transition-shadow duration-100 flex items-center justify-center ${
-                      isSelected
-                        ? "border-primary bg-primary/20 shadow-lg shadow-primary/20 ring-2 ring-primary/40 ring-offset-1"
-                        : "border-muted-foreground/60 hover:border-primary bg-background/30"
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold bg-card text-foreground px-1.5 py-0.5 rounded border border-border shadow-sm pointer-events-none">
-                      Head #{idx + 1}
-                    </span>
-
-                    {/* Corner Resize Handle */}
-                    {isSelected && (
-                      <div
-                        onMouseDown={(e) => handleMouseDown(e, t.id, "resize-se")}
-                        className="absolute bottom-0 right-0 w-4 h-4 bg-primary rounded-full border-2 border-card cursor-se-resize flex items-center justify-center transform translate-x-1 translate-y-1 shadow-md hover:scale-125 transition-transform"
-                        title="Drag to resize target box"
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-4">
+          {view === "sets" ? (
+            <FaceSetBuilder
+              panelImageUrl={resolvedImageSrc}
+              onCreated={(faces) => {
+                if (faces[0] && selected) assignFace(faces[0]);
+                setView("replace");
+              }}
+            />
+          ) : (
+            <div className="grid min-h-0 gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+              <div className="flex min-h-0 flex-col gap-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Panel · drag the ring, corners resize
+                  </p>
+                  <div className="flex gap-1.5">
+                    {slots.length > 1 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          if (!selected || slots.length < 2) return;
+                          const next = slots.filter((slot) => slot.id !== selected.id);
+                          setSlots(next);
+                          setSelectedId(next[0]?.id ?? null);
+                        }}
                       >
-                        <Maximize2 className="w-2.5 h-2.5 text-primary-foreground" />
-                      </div>
+                        Remove
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const slot = defaultSlot();
+                        setSlots((prev) => [...prev, slot]);
+                        setSelectedId(slot.id);
+                      }}
+                    >
+                      Add target
+                    </Button>
+                  </div>
+                </div>
+                <ImageStage imgW={imgSize.w} imgH={imgSize.h} className="aspect-square rounded-lg">
+                  <canvas
+                    ref={canvasRef}
+                    className="absolute inset-0 h-full w-full object-fill pointer-events-none"
+                  />
+                  <OvalMarks
+                    boxes={slots.map((slot, index) => ({
+                      ...slot,
+                      label: `Head ${index + 1}`,
+                    }))}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    onChange={(id, next) => patchSlot(id, next)}
+                  />
+                </ImageStage>
+              </div>
+
+              <div className="flex min-h-0 flex-col gap-4">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Your faces
+                  </p>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setView("sets")}>
+                    <ScanFace className="size-4" />
+                    Manage sets
+                  </Button>
+                </div>
+
+                {faceCount === 0 ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-secondary/40 px-4 py-10 text-center">
+                    <UserRound className="size-8 text-primary" />
+                    <div className="space-y-1">
+                      <p className="font-medium">No faces yet</p>
+                      <p className="text-sm text-muted-foreground">
+                        Mark heads on a photo to build a set you can drop onto this panel.
+                      </p>
+                    </div>
+                    <Button type="button" onClick={() => setView("sets")}>
+                      Mark faces from a photo
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+                    {sets.map((set) =>
+                      set.faces.length === 0 ? null : (
+                        <section key={set.id} className="space-y-2">
+                          <p className="text-sm font-medium text-foreground">{set.name}</p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {set.faces.map((face) => {
+                              const active = selected?.faceId === face.id || selected?.faceSrc === face.src;
+                              return (
+                                <button
+                                  key={face.id}
+                                  type="button"
+                                  data-face-pick
+                                  onClick={() => assignFace(face)}
+                                  className={`flex flex-col items-center gap-1.5 rounded-lg border p-2 transition-colors ${
+                                    active
+                                      ? "border-primary bg-primary/10 ring-2 ring-primary/25"
+                                      : "border-border bg-card hover:border-primary/50"
+                                  }`}
+                                >
+                                  <FaceThumb
+                                    src={face.src}
+                                    alt={face.name}
+                                    className="size-16 rounded-full border border-border"
+                                  />
+                                  <span className="w-full truncate text-center text-xs font-medium">
+                                    {face.name}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </section>
+                      ),
                     )}
                   </div>
-                );
-              })}
-            </div>
+                )}
 
-            {/* Target Controls */}
-            {activeTarget && (
-              <div className="flex items-center justify-between text-xs bg-secondary/60 p-2 rounded-lg border border-border">
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Target:</span>
-                  <div className="flex gap-1">
-                    {targets.map((t, idx) => (
-                      <Button
-                        key={t.id}
-                        size="sm"
-                        variant={selectedTargetId === t.id ? "default" : "outline"}
-                        className={`h-6 text-[11px] px-2 ${
-                          selectedTargetId === t.id ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-card"
-                        }`}
-                        onClick={() => setSelectedTargetId(t.id)}
-                      >
-                        #{idx + 1}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span className="text-muted-foreground">Box Size:</span>
-                  <input
-                    type="range"
-                    min="0.1"
-                    max="0.8"
-                    step="0.02"
-                    value={activeTarget.width}
-                    onChange={(e) => {
-                      const val = parseFloat(e.target.value);
-                      setTargets((prev) =>
-                        prev.map((t) =>
-                          t.id === selectedTargetId ? { ...t, width: val, height: val * 1.1 } : t,
-                        ),
-                      );
-                    }}
-                    className="w-20 accent-primary"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Replacement Face Set Gallery */}
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-foreground uppercase tracking-wider">
-                Available Face Set
-              </span>
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleCustomUpload}
-                  className="hidden"
-                />
-                <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline font-medium">
-                  <Upload className="w-3.5 h-3.5" /> Upload Custom Head
-                </span>
-              </label>
-            </div>
-
-            <Tabs defaultValue="all" className="w-full">
-              <TabsList className="bg-secondary border border-border w-full justify-start">
-                <TabsTrigger value="all" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">All</TabsTrigger>
-                <TabsTrigger value="comic" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Comic</TabsTrigger>
-                <TabsTrigger value="cartoon" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Cartoon</TabsTrigger>
-                <TabsTrigger value="mascot" className="text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Mascot</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="all" className="mt-3">
-                <div className="grid grid-cols-3 gap-3 max-h-56 overflow-y-auto p-1">
-                  {allFaces.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setSelectedFace(item)}
-                      className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
-                        selectedFace?.id === item.id
-                          ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                          : "border-border bg-card hover:border-primary/50"
-                      }`}
-                    >
-                      <img src={item.src} alt={item.name} className="w-12 h-12 object-contain" />
-                      <span className="text-[11px] font-medium text-foreground truncate w-full text-center mt-1">
-                        {item.name}
+                {selected ? (
+                  <div className="space-y-3 rounded-lg border border-border bg-secondary/50 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Scale
+                      </Label>
+                      <span className="font-mono text-xs text-primary">
+                        {Math.round(selected.scale * 100)}%
                       </span>
-                    </button>
-                  ))}
-                </div>
-              </TabsContent>
-
-              {["comic", "cartoon", "mascot"].map((cat) => (
-                <TabsContent key={cat} value={cat} className="mt-3">
-                  <div className="grid grid-cols-3 gap-3 max-h-56 overflow-y-auto p-1">
-                    {allFaces
-                      .filter((f) => f.category === cat)
-                      .map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => setSelectedFace(item)}
-                          className={`flex flex-col items-center p-2 rounded-lg border transition-all ${
-                            selectedFace?.id === item.id
-                              ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                              : "border-border bg-card hover:border-primary/50"
-                          }`}
-                        >
-                          <img src={item.src} alt={item.name} className="w-12 h-12 object-contain" />
-                          <span className="text-[11px] font-medium text-foreground truncate w-full text-center mt-1">
-                            {item.name}
-                          </span>
-                        </button>
-                      ))}
+                    </div>
+                    <Slider
+                      min={0.55}
+                      max={1.8}
+                      step={0.02}
+                      value={[selected.scale]}
+                      onValueChange={([value]) => patchSlot(selected.id, { scale: value })}
+                    />
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Edge blend
+                      </Label>
+                      <span className="font-mono text-xs text-primary">
+                        {Math.round(selected.feather * 100)}%
+                      </span>
+                    </div>
+                    <Slider
+                      min={0.08}
+                      max={0.6}
+                      step={0.02}
+                      value={[selected.feather]}
+                      onValueChange={([value]) => patchSlot(selected.id, { feather: value })}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={matchTone ? "default" : "outline"}
+                      className="w-full"
+                      onClick={() => setMatchTone((value) => !value)}
+                    >
+                      <SunMedium className="size-4" />
+                      {matchTone ? "Matching panel light" : "Match panel light"}
+                    </Button>
                   </div>
-                </TabsContent>
-              ))}
-            </Tabs>
-
-            {/* Replacement Head Fine Scale */}
-            <div className="flex flex-col gap-2 bg-secondary/60 p-3 rounded-lg border border-border">
-              <div className="flex justify-between items-center text-xs text-foreground">
-                <span className="flex items-center gap-1 font-medium">
-                  <ZoomIn className="w-3.5 h-3.5 text-muted-foreground" /> Replacement Head Zoom & Scale
-                </span>
-                <span className="font-mono font-bold text-primary">{Math.round(scale * 100)}%</span>
+                ) : null}
               </div>
-              <input
-                type="range"
-                min="0.5"
-                max="2.2"
-                step="0.05"
-                value={scale}
-                onChange={(e) => setScale(parseFloat(e.target.value))}
-                className="w-full accent-primary"
-              />
             </div>
-          </div>
+          )}
         </div>
 
-        <DialogFooter className="flex items-center justify-between gap-2 border-t border-border pt-4">
-          <div>
-            {hasAppliedReplacement && (
-              <Button
-                type="button"
-                variant="destructive"
-                size="sm"
-                onClick={handleReset}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
-                Remove Replacement Head
+        {view === "replace" ? (
+          <DialogFooter className="border-t border-border px-5 py-4 sm:justify-between">
+            <div>
+              {hasAppliedReplacement ? (
+                <Button type="button" variant="destructive" size="sm" onClick={handleReset}>
+                  <Trash2 className="size-4" />
+                  Remove replacement
+                </Button>
+              ) : null}
+            </div>
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
               </Button>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="border-border text-foreground hover:bg-secondary"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleApply}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-            >
-              <UserCheck className="w-4 h-4 mr-1.5" />
-              Save Changes
-            </Button>
-          </div>
-        </DialogFooter>
+              <Button type="button" onClick={() => void handleApply()} disabled={busy || faceCount === 0}>
+                Save to panel
+              </Button>
+            </div>
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
