@@ -23,6 +23,7 @@ interface PageCanvasProps {
   onResizeBubble?: (panelId: string, bubbleId: string, w: number) => void;
   onDropFile?: (panelId: string, file: File) => void;
   anim?: "none" | "next" | "prev";
+  className?: string;
 }
 
 export function PageCanvas({
@@ -37,6 +38,7 @@ export function PageCanvas({
   onResizeBubble,
   onDropFile,
   anim = "none",
+  className,
 }: PageCanvasProps) {
   const layout = LAYOUTS[page.layout];
 
@@ -47,6 +49,7 @@ export function PageCanvas({
         mode === "thumb" && "pointer-events-none p-1",
         anim === "next" && "anim-page-next",
         anim === "prev" && "anim-page-prev",
+        className,
       )}
     >
       <div

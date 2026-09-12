@@ -17,14 +17,14 @@ export function LayoutPicker({
           type="button"
           onClick={() => onChange(layout.id)}
           className={cn(
-            "flex h-16 flex-col items-center justify-center gap-1 rounded-lg border bg-card p-1.5 transition-[border-color,box-shadow] duration-150 ease-out",
+            "flex h-12 flex-col items-center justify-center gap-0.5 rounded-lg border bg-card p-1 transition-[border-color,box-shadow] duration-150 ease-out",
             value === layout.id
               ? "border-primary paper-shadow-hover"
               : "border-border hover:border-foreground/30",
           )}
         >
           <span
-            className="grid h-8 w-full gap-0.5 bg-ink p-0.5"
+            className="grid h-6 w-full gap-0.5 bg-ink p-0.5"
             style={{
               gridTemplateColumns: layout.columns,
               gridTemplateRows: layout.rows,

@@ -85,6 +85,12 @@ export function StudioEditor({ comicId }: { comicId: string }) {
     if (panel && !panelId) setPanelId(panel.id);
   }, [panel, panelId]);
 
+  useEffect(() => {
+    if (!pageId) return;
+    const el = document.querySelector(`[data-page-id="${CSS.escape(pageId)}"]`);
+    if (el instanceof HTMLElement) el.scrollIntoView({ block: "nearest" });
+  }, [pageId]);
+
   // Backspace / Delete shortcut handler to remove selected element or replacement head
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -258,8 +264,8 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-      <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-border bg-background/90 px-3 py-2 backdrop-blur-sm sm:px-4">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background">
+      <header className="z-30 flex shrink-0 items-center gap-2 border-b border-border bg-background/90 px-3 py-2 backdrop-blur-sm sm:px-4">
         <Button asChild variant="ghost" size="icon" aria-label="Back to shelf">
           <Link to="/">
             <ArrowLeft />
@@ -296,8 +302,8 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         </Button>
       </header>
 
-      <div className="mx-auto flex w-full max-w-[1440px] flex-1 gap-0 lg:gap-4 lg:p-4">
-        <aside className="hidden w-52 shrink-0 flex-col gap-3 lg:flex">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1440px] flex-1 overflow-hidden lg:gap-4 lg:px-4 lg:py-3">
+        <aside className="hidden h-full w-52 shrink-0 flex-col gap-3 overflow-hidden lg:flex">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Pages
@@ -335,10 +341,12 @@ export function StudioEditor({ comicId }: { comicId: string }) {
               </Button>
             </div>
           </div>
-          <div className="flex flex-col gap-2 overflow-y-auto pb-6">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+            <div className="flex flex-col gap-2 pb-2">
             {comic.pages.map((p, i) => (
               <div
                 key={p.id}
+                data-page-id={p.id}
                 draggable
                 onDragStart={(e) => {
                   setDraggedPageIndex(i);
@@ -366,7 +374,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
                   setDraggedPageIndex(null);
                   setDragOverPageIndex(null);
                 }}
-                className={`group relative overflow-hidden rounded-lg border p-1 text-left transition-all duration-150 cursor-grab active:cursor-grabbing ${
+                className={`group relative shrink-0 overflow-hidden rounded-lg border p-1 text-left transition-all duration-150 cursor-grab active:cursor-grabbing ${
                   p.id === page.id
                     ? "border-primary ring-2 ring-primary/20"
                     : "border-border hover:border-foreground/30"
@@ -399,38 +407,53 @@ export function StudioEditor({ comicId }: { comicId: string }) {
                 </button>
               </div>
             ))}
+            </div>
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col gap-3 p-3 lg:p-0">
-          <div className="mx-auto w-full max-w-[560px]">
-            <PageCanvas
-              page={page}
-              mode="edit"
-              selectedPanelId={panel.id}
-              selectedBubbleId={bubbleId}
-              onSelectPanel={(id) => {
-                setPanelId(id);
-                setBubbleId(null);
-              }}
-              onSelectBubble={(pid, bid) => {
-                setPanelId(pid);
-                setBubbleId(bid);
-              }}
-              onMoveBubble={(pid, bid, x, y) =>
-                store.updateBubble(comicId, page.id, pid, bid, { x, y })
-              }
-              onResizeBubble={(pid, bid, w) =>
-                store.updateBubble(comicId, page.id, pid, bid, { w })
-              }
-              onDropFile={(pid, file) => {
-                const target = page.panels.find((p) => p.id === pid);
-                if (target) void assignImage(target, file);
-              }}
-            />
+        <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden p-3 lg:p-0">
+          <div className="relative min-h-0 flex-1 overflow-hidden">
+            <div
+              className="absolute inset-0 flex items-center justify-center p-1"
+              style={{ containerType: "size" }}
+            >
+              <div
+                className="max-h-full max-w-full"
+                style={{
+                  width: "min(100cqw, calc(100cqh * 2 / 3))",
+                  height: "min(100cqh, calc(100cqw * 3 / 2))",
+                }}
+              >
+                <PageCanvas
+                  page={page}
+                  mode="edit"
+                  className="h-full w-full aspect-auto"
+                  selectedPanelId={panel.id}
+                  selectedBubbleId={bubbleId}
+                  onSelectPanel={(id) => {
+                    setPanelId(id);
+                    setBubbleId(null);
+                  }}
+                  onSelectBubble={(pid, bid) => {
+                    setPanelId(pid);
+                    setBubbleId(bid);
+                  }}
+                  onMoveBubble={(pid, bid, x, y) =>
+                    store.updateBubble(comicId, page.id, pid, bid, { x, y })
+                  }
+                  onResizeBubble={(pid, bid, w) =>
+                    store.updateBubble(comicId, page.id, pid, bid, { w })
+                  }
+                  onDropFile={(pid, file) => {
+                    const target = page.panels.find((p) => p.id === pid);
+                    if (target) void assignImage(target, file);
+                  }}
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-2 lg:hidden">
+          <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 pt-2 lg:hidden">
             {comic.pages.map((p, i) => (
               <button
                 key={p.id}
@@ -464,7 +487,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
             </Button>
           </div>
 
-          <div className="hidden items-center justify-center gap-2 lg:flex">
+          <div className="hidden shrink-0 items-center justify-center gap-2 pt-2 lg:flex">
             <Button
               type="button"
               variant="outline"
@@ -512,7 +535,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
           </div>
         </main>
 
-        <aside className="hidden w-80 shrink-0 overflow-y-auto rounded-xl border border-border bg-card p-4 lg:block">
+        <aside className="hidden h-full w-80 shrink-0 overflow-hidden rounded-xl border border-border bg-card p-3 lg:flex lg:flex-col">
           {inspector}
         </aside>
       </div>
@@ -635,34 +658,40 @@ function Inspector({
   );
 
   return (
-    <div className="space-y-5">
-      <section className="space-y-2">
-        <Label htmlFor="comic-title">Title</Label>
-        <Input
-          id="comic-title"
-          defaultValue={comicTitle}
-          onBlur={(e) => onRename(e.target.value, comicAuthor)}
-        />
-        <Label htmlFor="comic-author">Byline</Label>
-        <Input
-          id="comic-author"
-          defaultValue={comicAuthor}
-          onBlur={(e) => onRename(comicTitle, e.target.value)}
-        />
+    <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden max-lg:h-auto max-lg:overflow-visible">
+      <section className="grid shrink-0 grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <Label htmlFor="comic-title">Title</Label>
+          <Input
+            id="comic-title"
+            className="h-8"
+            defaultValue={comicTitle}
+            onBlur={(e) => onRename(e.target.value, comicAuthor)}
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="comic-author">Byline</Label>
+          <Input
+            id="comic-author"
+            className="h-8"
+            defaultValue={comicAuthor}
+            onBlur={(e) => onRename(comicTitle, e.target.value)}
+          />
+        </div>
       </section>
 
-      <Separator />
+      <Separator className="shrink-0" />
 
-      <section className="space-y-2">
+      <section className="shrink-0 space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Layout
         </p>
         <LayoutPicker value={layout} onChange={onLayout} />
       </section>
 
-      <Separator />
+      <Separator className="shrink-0" />
 
-      <section className="space-y-2">
+      <section className="shrink-0 space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Selected panel
         </p>
@@ -681,7 +710,7 @@ function Inspector({
           </Button>
         </div>
         {panel.image ? (
-          <div className="flex flex-col gap-1.5 pt-1">
+          <div className="flex flex-col gap-1.5">
             <Button
               type="button"
               variant="secondary"
@@ -693,7 +722,6 @@ function Inspector({
               {hasFaceReplacement ? "Edit head" : "Replace head"}
             </Button>
 
-            {/* Selectable Side Element Card for Head Replacement */}
             {hasFaceReplacement && (
               <div
                 onClick={() => onSelectHead(!selectedHead)}
@@ -732,13 +760,13 @@ function Inspector({
             </Button>
           </div>
         ) : null}
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-3 gap-1">
           {FILTERS.map((f) => (
             <button
               key={f.id}
               type="button"
               onClick={() => onFilter(f.id)}
-              className={`h-9 rounded-md border text-xs font-medium ${
+              className={`h-7 rounded-md border text-xs font-medium ${
                 panel.filter === f.id
                   ? "border-primary bg-secondary"
                   : "border-border bg-card"
@@ -750,82 +778,96 @@ function Inspector({
         </div>
       </section>
 
-      <Separator />
+      <Separator className="shrink-0" />
 
-      <section className="space-y-2">
+      <section className="shrink-0 space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Dialogue
         </p>
-        <div className="grid grid-cols-2 gap-2">
-          {(
-            [
-              ["speech", "Speech", MessageCircle],
-              ["thought", "Thought", Cloud],
-              ["shout", "Shout", Megaphone],
-              ["caption", "Caption", Captions],
-            ] as const
-          ).map(([kind, label, Icon]) => (
-            <Button
-              key={kind}
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => onAddDialogue(kind)}
-            >
-              <Icon />
-              {label}
-            </Button>
-          ))}
+        <div className={bubble ? "grid grid-cols-[6.75rem_1fr] items-start gap-2" : "space-y-2"}>
+          <div className={bubble ? "grid grid-cols-1 content-start gap-1.5" : "grid grid-cols-2 gap-2"}>
+            {(
+              [
+                ["speech", "Speech", MessageCircle],
+                ["thought", "Thought", Cloud],
+                ["shout", "Shout", Megaphone],
+                ["caption", "Caption", Captions],
+              ] as const
+            ).map(([kind, label, Icon]) => {
+              const selected = bubble?.kind === kind;
+              return (
+                <Button
+                  key={kind}
+                  type="button"
+                  variant={selected ? "default" : "secondary"}
+                  size="sm"
+                  className={bubble ? "h-8 justify-start px-2 text-xs" : undefined}
+                  onClick={() => onAddDialogue(kind)}
+                >
+                  <Icon className="size-3.5" />
+                  {label}
+                </Button>
+              );
+            })}
+          </div>
+          {bubble ? (
+            <div className="space-y-2 rounded-lg border border-primary/25 bg-secondary/40 p-2.5">
+              <Label htmlFor="bubble-text" className="sr-only">
+                Balloon text
+              </Label>
+              <Textarea
+                id="bubble-text"
+                value={bubble.text}
+                onChange={(e) => onBubblePatch({ text: e.target.value })}
+                className="min-h-16 resize-none"
+              />
+              <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-1.5">
+                <label className="text-xs text-muted-foreground">
+                  Style
+                  <select
+                    className="mt-1 h-8 w-full rounded-md border border-input bg-card px-2 text-xs text-foreground"
+                    value={bubble.kind}
+                    onChange={(e) => onBubblePatch({ kind: e.target.value as BubbleKind })}
+                  >
+                    <option value="speech">Speech</option>
+                    <option value="thought">Thought</option>
+                    <option value="shout">Shout</option>
+                    <option value="caption">Caption</option>
+                  </select>
+                </label>
+                <label className="text-xs text-muted-foreground">
+                  Tail
+                  <select
+                    className="mt-1 h-8 w-full rounded-md border border-input bg-card px-2 text-xs text-foreground"
+                    value={bubble.tail}
+                    onChange={(e) => onBubblePatch({ tail: e.target.value as TailDir })}
+                  >
+                    <option value="bl">Bottom left</option>
+                    <option value="br">Bottom right</option>
+                    <option value="tl">Top left</option>
+                    <option value="tr">Top right</option>
+                    <option value="none">None</option>
+                  </select>
+                </label>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="size-8"
+                  onClick={onDeleteBubble}
+                  aria-label="Remove balloon"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Pick a style to add a balloon, or select one on the page.
+            </p>
+          )}
         </div>
       </section>
-
-      {bubble ? (
-        <section className="space-y-2 rounded-lg border border-border bg-secondary/40 p-3">
-          <Label htmlFor="bubble-text">Selected balloon</Label>
-          <Textarea
-            id="bubble-text"
-            value={bubble.text}
-            onChange={(e) => onBubblePatch({ text: e.target.value })}
-          />
-          <div className="grid grid-cols-2 gap-2">
-            <label className="text-xs text-muted-foreground">
-              Style
-              <select
-                className="mt-1 h-10 w-full rounded-md border border-input bg-card px-2 text-sm text-foreground"
-                value={bubble.kind}
-                onChange={(e) => onBubblePatch({ kind: e.target.value as BubbleKind })}
-              >
-                <option value="speech">Speech</option>
-                <option value="thought">Thought</option>
-                <option value="shout">Shout</option>
-                <option value="caption">Caption</option>
-              </select>
-            </label>
-            <label className="text-xs text-muted-foreground">
-              Tail
-              <select
-                className="mt-1 h-10 w-full rounded-md border border-input bg-card px-2 text-sm text-foreground"
-                value={bubble.tail}
-                onChange={(e) => onBubblePatch({ tail: e.target.value as TailDir })}
-              >
-                <option value="bl">Bottom left</option>
-                <option value="br">Bottom right</option>
-                <option value="tl">Top left</option>
-                <option value="tr">Top right</option>
-                <option value="none">None</option>
-              </select>
-            </label>
-          </div>
-          <Button type="button" variant="ghost" className="w-full" onClick={onDeleteBubble}>
-            <Trash2 />
-            Remove balloon
-          </Button>
-        </section>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          Select a balloon on the page to edit its line, or add a new one.
-        </p>
-      )}
     </div>
   );
 }
