@@ -19,6 +19,7 @@ import {
   Plus,
   RotateCcw,
   Sparkles,
+  Trash2,
   Upload,
   UserCheck,
   ZoomIn,
@@ -82,6 +83,10 @@ export function HeadReplacementDialog({
 
   const rawImageRef = panel.originalImage || panel.image;
   const resolvedImageSrc = useMediaUrl(rawImageRef);
+  const hasAppliedReplacement = Boolean(
+    (panel.faceReplacements && panel.faceReplacements.length > 0) ||
+      (panel.originalImage && panel.originalImage !== panel.image),
+  );
 
   // Compute exact image display rect to prevent letterbox offset errors
   const updateDisplayRect = (imgW: number, imgH: number) => {
@@ -108,7 +113,7 @@ export function HeadReplacementDialog({
     setDisplayRect({ offsetX, offsetY, drawW, drawH });
   };
 
-  // Load image & calculate dimensions
+  // Load image & pre-populate existing replacement if present
   useEffect(() => {
     if (!open || !resolvedImageSrc) return;
 
@@ -122,19 +127,41 @@ export function HeadReplacementDialog({
       setImgSize({ w, h });
       updateDisplayRect(w, h);
 
-      // Auto center initial target box
-      setTargets([
-        {
-          id: "head-target-1",
-          x: 0.3,
-          y: 0.18,
-          width: 0.4,
-          height: 0.44,
-        },
-      ]);
-      setSelectedTargetId("head-target-1");
+      // Pre-populate applied replacement parameters if editing
+      const existing = panel.faceReplacements || [];
+      if (existing.length > 0) {
+        const last = existing[existing.length - 1];
+        setTargets([
+          {
+            id: last.faceId || "head-target-1",
+            x: last.faceBox.x,
+            y: last.faceBox.y,
+            width: last.faceBox.width,
+            height: last.faceBox.height,
+          },
+        ]);
+        setSelectedTargetId(last.faceId || "head-target-1");
+        setScale(last.scale ?? 1.0);
+
+        const foundFace = DEFAULT_FACE_SET.find(
+          (f) => f.id === last.faceId || f.src === last.replacementFaceSrc,
+        );
+        if (foundFace) setSelectedFace(foundFace);
+      } else {
+        setTargets([
+          {
+            id: "head-target-1",
+            x: 0.3,
+            y: 0.18,
+            width: 0.4,
+            height: 0.44,
+          },
+        ]);
+        setSelectedTargetId("head-target-1");
+        setScale(1.0);
+      }
     };
-  }, [open, resolvedImageSrc]);
+  }, [open, resolvedImageSrc, panel.faceReplacements]);
 
   // Handle window resize for exact coordinate alignment
   useEffect(() => {
@@ -332,7 +359,7 @@ export function HeadReplacementDialog({
         scale,
       });
 
-      toast.success("Pixel-accurate head replacement applied!");
+      toast.success("Head replacement updated!");
       onOpenChange(false);
     } catch (err) {
       console.error("Apply head replacement error:", err);
@@ -342,7 +369,7 @@ export function HeadReplacementDialog({
 
   const handleReset = () => {
     resetPanelFace(comicId, pageId, panel.id);
-    toast.success("Restored original panel face.");
+    toast.success("Removed replacement head & restored original image.");
     onOpenChange(false);
   };
 
@@ -355,10 +382,10 @@ export function HeadReplacementDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl font-bold font-comic tracking-wide text-amber-400">
             <Sparkles className="w-5 h-5 text-amber-400" />
-            Precision Head Target & Face Replacement
+            Head Target & Replacement Editor
           </DialogTitle>
           <DialogDescription className="text-stone-400">
-            Drag the target box or use the corner handle to align the head box 100% accurately over any character head.
+            Reposition, scale, or remove the replacement head on your comic panel image.
           </DialogDescription>
         </DialogHeader>
 
@@ -367,7 +394,7 @@ export function HeadReplacementDialog({
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-stone-300 uppercase tracking-wider flex items-center gap-1">
-                <Move className="w-3.5 h-3.5 text-amber-400" /> Drag Box or Corners to Align
+                <Move className="w-3.5 h-3.5 text-amber-400" /> Drag Box or Corner to Resize
               </span>
               <Button
                 type="button"
@@ -437,7 +464,7 @@ export function HeadReplacementDialog({
             {activeTarget && (
               <div className="flex items-center justify-between text-xs bg-stone-950 p-2 rounded-lg border border-stone-800">
                 <div className="flex items-center gap-2">
-                  <span className="text-stone-400">Target Box:</span>
+                  <span className="text-stone-400">Target:</span>
                   <div className="flex gap-1">
                     {targets.map((t, idx) => (
                       <Button
@@ -456,7 +483,7 @@ export function HeadReplacementDialog({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-stone-400">Box Width:</span>
+                  <span className="text-stone-400">Box Size:</span>
                   <input
                     type="range"
                     min="0.1"
@@ -574,16 +601,20 @@ export function HeadReplacementDialog({
         </div>
 
         <DialogFooter className="flex items-center justify-between gap-2 border-t border-stone-800 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleReset}
-            className="border-stone-700 text-stone-300 hover:bg-stone-800"
-          >
-            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-            Reset Original Face
-          </Button>
+          <div>
+            {hasAppliedReplacement && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                onClick={handleReset}
+                className="bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                Remove Replacement Head
+              </Button>
+            )}
+          </div>
 
           <div className="flex gap-2">
             <Button
@@ -602,7 +633,7 @@ export function HeadReplacementDialog({
               className="bg-amber-500 hover:bg-amber-400 text-stone-950 font-semibold"
             >
               <UserCheck className="w-4 h-4 mr-1.5" />
-              Apply Head Replacement
+              Save Changes
             </Button>
           </div>
         </DialogFooter>

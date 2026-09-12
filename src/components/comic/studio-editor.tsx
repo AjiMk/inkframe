@@ -14,6 +14,7 @@ import {
   Megaphone,
   Captions,
   Plus,
+  RotateCcw,
   Sparkles,
   Trash2,
   Video,
@@ -154,6 +155,10 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         setVideoOpen(true);
       }}
       onReplaceHead={() => setHeadReplaceOpen(true)}
+      onResetHead={() => {
+        store.resetPanelFace(comicId, page.id, panel.id);
+        toast.success("Removed head replacement.");
+      }}
       onClearImage={() => store.setPanelImage(comicId, page.id, panel.id, null)}
       onFilter={(filter) => store.setPanelFilter(comicId, page.id, panel.id, filter)}
       onBubblePatch={(patch) => {
@@ -550,6 +555,7 @@ function Inspector({
   onPickVideo,
   onPickLibrary,
   onReplaceHead,
+  onResetHead,
   onClearImage,
   onFilter,
   onBubblePatch,
@@ -567,6 +573,7 @@ function Inspector({
   onPickVideo: () => void;
   onPickLibrary: () => void;
   onReplaceHead: () => void;
+  onResetHead: () => void;
   onClearImage: () => void;
   onFilter: (filter: Panel["filter"]) => void;
   onBubblePatch: (patch: {
@@ -576,6 +583,11 @@ function Inspector({
   }) => void;
   onDeleteBubble: () => void;
 }) {
+  const hasFaceReplacement = Boolean(
+    (panel.faceReplacements && panel.faceReplacements.length > 0) ||
+      (panel.originalImage && panel.originalImage !== panel.image),
+  );
+
   return (
     <div className="space-y-5">
       <section className="space-y-2">
@@ -632,9 +644,21 @@ function Inspector({
               onClick={onReplaceHead}
             >
               <Sparkles className="size-3.5 mr-1 text-amber-500" />
-              Replace Head / Detect Faces
+              {hasFaceReplacement ? "Edit / Resize Head" : "Replace Head / Detect Faces"}
             </Button>
-            <Button type="button" variant="ghost" className="w-full text-xs h-7" onClick={onClearImage}>
+            {hasFaceReplacement && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full text-xs h-7 text-amber-600 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/10"
+                onClick={onResetHead}
+              >
+                <RotateCcw className="size-3 mr-1" />
+                Remove Head Replacement
+              </Button>
+            )}
+            <Button type="button" variant="ghost" className="w-full text-xs h-7 text-muted-foreground" onClick={onClearImage}>
               Remove image
             </Button>
           </div>
