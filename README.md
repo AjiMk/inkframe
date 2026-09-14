@@ -96,6 +96,12 @@ inkframe/
 
 ---
 
+## Contributing & Branching Strategy
+
+InkFrame follows a Trunk-Based / GitHub-Flow branching strategy with Conventional Commits. For detailed branch naming rules, PR workflows, and GitHub protection guidelines, see [CONTRIBUTING.md](file:///home/aji/Projects/inkframe/CONTRIBUTING.md).
+
+---
+
 ## License
 
 Private repository. All rights reserved.
