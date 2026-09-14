@@ -59,6 +59,11 @@ export function createComic(title: string, author: string): Comic {
     author: author.trim() || "Anonymous",
     cover: null,
     coverConfig: defaultCoverConfig(),
+    assetContext: {
+      styleGuide: "Clean line art, authentic comic book aesthetic",
+      backgrounds: {},
+      characters: {},
+    },
     pages: [createPage("splash")],
     createdAt: now,
     updatedAt: now,
