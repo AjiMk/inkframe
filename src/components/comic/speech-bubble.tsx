@@ -145,7 +145,7 @@ export function SpeechBubble({
         )}
       >
         {bubble.kind === "shout" ? (
-          <span className="font-display text-base leading-none sm:text-lg">
+          <span className="font-display text-base leading-snug sm:text-lg normal-case">
             {bubble.text}
           </span>
         ) : bubble.kind === "sfx" ? (

@@ -4,6 +4,7 @@ import {
   ArrowDownUp,
   ArrowLeft,
   BookOpen,
+  Check,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -14,10 +15,13 @@ import {
   Megaphone,
   Captions,
   Plus,
+  Redo2,
   RotateCcw,
+  Save,
   ScanFace,
   Sparkles,
   Trash2,
+  Undo2,
   Video,
   Zap,
   Award,
@@ -101,7 +105,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
     if (el instanceof HTMLElement) el.scrollIntoView({ block: "nearest" });
   }, [pageId]);
 
-  // Backspace / Delete shortcut handler to remove selected element or replacement head
+  // Shortcuts handler for Backspace, Delete, Undo (Ctrl+Z), Redo (Ctrl+Y/Ctrl+Shift+Z), Save (Ctrl+S)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
@@ -111,6 +115,41 @@ export function StudioEditor({ comicId }: { comicId: string }) {
           target.tagName === "TEXTAREA" ||
           target.isContentEditable)
       ) {
+        return;
+      }
+
+      // Undo / Redo Shortcuts
+      if ((e.ctrlKey || e.metaKey) && (e.key === "z" || e.key === "Z")) {
+        if (e.shiftKey) {
+          e.preventDefault();
+          if (store.canRedo) {
+            store.redo();
+            toast.success("Redone action.");
+          }
+        } else {
+          e.preventDefault();
+          if (store.canUndo) {
+            store.undo();
+            toast.success("Undone last action.");
+          }
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || e.key === "Y")) {
+        e.preventDefault();
+        if (store.canRedo) {
+          store.redo();
+          toast.success("Redone action.");
+        }
+        return;
+      }
+
+      // Save Shortcut
+      if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
+        e.preventDefault();
+        store.saveNow(comicId);
+        toast.success("Saved changes to local storage & disk!");
         return;
       }
 
@@ -287,6 +326,52 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold leading-tight">{comic.title}</p>
           <p className="truncate text-xs text-muted-foreground">{comic.author}</p>
+        </div>
+        <div className="flex items-center gap-1 border-l border-r border-border px-1.5 sm:px-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 text-foreground"
+            disabled={!store.canUndo}
+            onClick={() => {
+              store.undo();
+              toast.success("Undone last action.");
+            }}
+            title="Undo (Ctrl+Z)"
+            aria-label="Undo"
+          >
+            <Undo2 className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 text-foreground"
+            disabled={!store.canRedo}
+            onClick={() => {
+              store.redo();
+              toast.success("Redone action.");
+            }}
+            title="Redo (Ctrl+Y)"
+            aria-label="Redo"
+          >
+            <Redo2 className="size-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              store.saveNow(comicId);
+              toast.success("Saved changes to local storage & disk!");
+            }}
+            className="h-8 gap-1.5 text-xs font-semibold text-foreground border-primary/30 hover:bg-primary/10"
+            title="Save (Ctrl+S)"
+          >
+            <Save className="size-3.5 text-primary" />
+            <span>Save</span>
+          </Button>
         </div>
         <Button
           type="button"

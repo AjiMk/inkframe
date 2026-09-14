@@ -31,8 +31,8 @@
   --radius-xl: 24px;
   --radius: 12px;
 
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Bangers", "Impact", "Arial Black", sans-serif;
+  --font-sans: "Figtree", "Noto Sans Malayalam", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bangers", "Noto Sans Malayalam", "Impact", "Arial Black", sans-serif;
 
   --shadow-border:
     0 0 0 1px rgb(22 19 16 / 0.08),
