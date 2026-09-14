@@ -32,6 +32,83 @@ export async function exportComicToPdf(
 
     const totalSteps = 1 + comic.pages.length;
 
+    const handleClone = (clonedDoc: Document) => {
+      const canvas = clonedDoc.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      const ctx = canvas.getContext("2d");
+
+      function fixString(val: string): string {
+        if (!val || typeof val !== "string") return val;
+        if (
+          !val.includes("oklab") &&
+          !val.includes("oklch") &&
+          !val.includes("color(") &&
+          !val.includes("light-dark")
+        ) {
+          return val;
+        }
+        return val.replace(/(?:oklab|oklch|color|light-dark)\([^)]+\)/gi, (match) => {
+          if (!ctx) return match;
+          try {
+            ctx.fillStyle = "#000000";
+            ctx.fillStyle = match;
+            const res = ctx.fillStyle;
+            if (res && res !== "#000000") return res;
+            ctx.fillStyle = "#ffffff";
+            ctx.fillStyle = match;
+            return ctx.fillStyle || match;
+          } catch {
+            return match;
+          }
+        });
+      }
+
+      // 1. Sanitize all <style> elements in cloned document
+      const styleElements = clonedDoc.querySelectorAll("style");
+      styleElements.forEach((styleEl) => {
+        if (styleEl.textContent) {
+          styleEl.textContent = fixString(styleEl.textContent);
+        }
+      });
+
+      // 2. Sanitize all elements with inline style attributes
+      const styledElements = clonedDoc.querySelectorAll("[style]");
+      styledElements.forEach((el) => {
+        const attr = el.getAttribute("style");
+        if (attr) {
+          el.setAttribute("style", fixString(attr));
+        }
+      });
+
+      // 3. Patch clonedDoc.defaultView.getComputedStyle so html2canvas never receives oklab/oklch
+      const defaultView = clonedDoc.defaultView;
+      if (defaultView) {
+        const origGetComputedStyle = defaultView.getComputedStyle.bind(defaultView);
+        defaultView.getComputedStyle = function (elt: Element, pseudoElt?: string | null) {
+          const style = origGetComputedStyle(elt, pseudoElt);
+          return new Proxy(style, {
+            get(target, prop, receiver) {
+              if (prop === "getPropertyValue") {
+                return (propertyName: string) => {
+                  const raw = target.getPropertyValue(propertyName);
+                  return fixString(raw);
+                };
+              }
+              const val = Reflect.get(target, prop, receiver);
+              if (typeof val === "string") {
+                return fixString(val);
+              }
+              if (typeof val === "function") {
+                return val.bind(target);
+              }
+              return val;
+            },
+          });
+        } as typeof defaultView.getComputedStyle;
+      }
+    };
+
     // Step 1: Render Cover Page
     onStatus?.(`Rendering Cover Page (1 of ${totalSteps})...`);
     await new Promise<void>((resolve) => {
@@ -48,6 +125,7 @@ export async function exportComicToPdf(
       useCORS: true,
       allowTaint: true,
       backgroundColor: "#161310",
+      onclone: handleClone,
     });
     const coverData = coverCanvas.toDataURL("image/jpeg", 0.92);
     pdf.addImage(coverData, "JPEG", 0, 0, 170, 255);
@@ -72,6 +150,7 @@ export async function exportComicToPdf(
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#161310",
+        onclone: handleClone,
       });
       const pageData = pageCanvas.toDataURL("image/jpeg", 0.92);
 
