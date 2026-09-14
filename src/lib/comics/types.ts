@@ -20,7 +20,12 @@ export type PanelFilter =
   | "cyber-neon"
   | "graphic-novel"
   | "anime-cel"
-  | "pencil-sketch";
+  | "pencil-sketch"
+  | "manga-screentone"
+  | "anaglyph-3d"
+  | "golden-pulp"
+  | "dark-knight"
+  | "technicolor";
 
 export type CoverTemplateStyle =
   | "classic"

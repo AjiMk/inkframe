@@ -1,0 +1,1392 @@
+[
+  {
+    "id": "65c37317-0f2b-4a0c-9be1-13caa3cbc824",
+    "title": "Shadow Shinobi: Chapter 1",
+    "author": "Aji Mk",
+    "cover": null,
+    "coverConfig": {
+      "template": "classic",
+      "titleStyle": "classic-3d",
+      "issueNumber": "#1",
+      "issuePrice": "$3.99",
+      "issueDate": "VOL. 1",
+      "publisherName": "MANGA SHONEN COMICS",
+      "tagline": "ACTION-PACKED SHINOBI ADVENTURE!",
+      "subtitle": "CHAPTER 1: THE LOST SCROLL",
+      "showComicsCode": true,
+      "showBarcode": true,
+      "titleColor": "#facc15",
+      "accentColor": "#dc2626",
+      "positions": {
+        "issueBox": {
+          "x": 3,
+          "y": 3
+        },
+        "tagline": {
+          "x": 22,
+          "y": 3
+        },
+        "comicsCode": {
+          "x": 82,
+          "y": 3
+        },
+        "title": {
+          "x": 4,
+          "y": 15
+        },
+        "subtitle": {
+          "x": 12,
+          "y": 28
+        },
+        "authorBadge": {
+          "x": 3,
+          "y": 86
+        },
+        "barcode": {
+          "x": 74,
+          "y": 84
+        }
+      }
+    },
+    "pages": [
+      {
+        "id": "manga-p1",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "manga-p1-panel1",
+            "image": null,
+            "filter": "manga-screentone",
+            "bubbles": [
+              {
+                "id": "b-cap1",
+                "text": "NEO-TOKYO, 2099 — THE LEGEND BEGINS",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "b-shout1",
+                "text": "BEHOLD THE ANCIENT DRAGON SCROLL!",
+                "kind": "shout",
+                "x": 18,
+                "y": 18,
+                "w": 64,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "manga-p2",
+        "layout": "three-strip",
+        "panels": [
+          {
+            "id": "manga-p2-panel1",
+            "image": null,
+            "filter": "manga-screentone",
+            "bubbles": [
+              {
+                "id": "b-sp1",
+                "text": "Halt! You cannot escape with the clan relic!",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 50,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "manga-p2-panel2",
+            "image": null,
+            "filter": "dark-knight",
+            "bubbles": [
+              {
+                "id": "b-sfx1",
+                "text": "SCHWING!!",
+                "kind": "sfx",
+                "x": 25,
+                "y": 15,
+                "w": 50,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "manga-p2-panel3",
+            "image": null,
+            "filter": "pencil-sketch",
+            "bubbles": [
+              {
+                "id": "b-th1",
+                "text": "His speed is incredible... I must use the secret technique!",
+                "kind": "thought",
+                "x": 40,
+                "y": 8,
+                "w": 50,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "manga-p3",
+        "layout": "four-grid",
+        "panels": [
+          {
+            "id": "manga-p3-panel1",
+            "image": null,
+            "filter": "manga-screentone",
+            "bubbles": [
+              {
+                "id": "b-shout2",
+                "text": "SECRET ART: DRAGON SLASH!!",
+                "kind": "shout",
+                "x": 10,
+                "y": 10,
+                "w": 80,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "manga-p3-panel2",
+            "image": null,
+            "filter": "anaglyph-3d",
+            "bubbles": [
+              {
+                "id": "b-sfx2",
+                "text": "KABOOOOOM!!",
+                "kind": "sfx",
+                "x": 15,
+                "y": 15,
+                "w": 70,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "manga-p3-panel3",
+            "image": null,
+            "filter": "dark-knight",
+            "bubbles": [
+              {
+                "id": "b-cap2",
+                "text": "WITH A FLASH OF STEEL, SILENCE DESCENDED...",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "manga-p3-panel4",
+            "image": null,
+            "filter": "graphic-novel",
+            "bubbles": [
+              {
+                "id": "b-sp2",
+                "text": "The scroll is safe. Until next time... TO BE CONTINUED!",
+                "kind": "speech",
+                "x": 10,
+                "y": 10,
+                "w": 65,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "manga-shadow-shinobi-1",
+    "title": "Shadow Shinobi: Chapter 1",
+    "author": "Aji Mk",
+    "cover": null,
+    "coverConfig": {
+      "template": "classic",
+      "titleStyle": "classic-3d",
+      "issueNumber": "#1",
+      "issuePrice": "$3.99",
+      "issueDate": "VOL. 1",
+      "publisherName": "MANGA SHONEN COMICS",
+      "tagline": "ACTION-PACKED SHINOBI ADVENTURE!",
+      "subtitle": "CHAPTER 1: THE LOST SCROLL",
+      "showComicsCode": true,
+      "showBarcode": true,
+      "titleColor": "#facc15",
+      "accentColor": "#dc2626",
+      "positions": {
+        "issueBox": {
+          "x": 3,
+          "y": 3
+        },
+        "tagline": {
+          "x": 22,
+          "y": 3
+        },
+        "comicsCode": {
+          "x": 82,
+          "y": 3
+        },
+        "title": {
+          "x": 4,
+          "y": 15
+        },
+        "subtitle": {
+          "x": 12,
+          "y": 28
+        },
+        "authorBadge": {
+          "x": 3,
+          "y": 86
+        },
+        "barcode": {
+          "x": 74,
+          "y": 84
+        }
+      }
+    },
+    "pages": [
+      {
+        "id": "manga-p1",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "manga-p1-panel1",
+            "image": null,
+            "filter": "manga-screentone",
+            "bubbles": [
+              {
+                "id": "b-cap1",
+                "text": "NEO-TOKYO, 2099 — THE LEGEND BEGINS",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "b-shout1",
+                "text": "BEHOLD THE ANCIENT DRAGON SCROLL!",
+                "kind": "shout",
+                "x": 18,
+                "y": 18,
+                "w": 64,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "manga-p2",
+        "layout": "three-strip",
+        "panels": [
+          {
+            "id": "manga-p2-panel1",
+            "image": null,
+            "filter": "manga-screentone",
+            "bubbles": [
+              {
+                "id": "b-sp1",
+                "text": "Halt! You cannot escape with the clan relic!",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 50,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "manga-p2-panel2",
+            "image": null,
+            "filter": "dark-knight",
+            "bubbles": [
+              {
+                "id": "b-sfx1",
+                "text": "SCHWING!!",
+                "kind": "sfx",
+                "x": 25,
+                "y": 15,
+                "w": 50,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "manga-p2-panel3",
+            "image": null,
+            "filter": "pencil-sketch",
+            "bubbles": [
+              {
+                "id": "b-th1",
+                "text": "His speed is incredible... I must use the secret technique!",
+                "kind": "thought",
+                "x": 40,
+                "y": 8,
+                "w": 50,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "manga-p3",
+        "layout": "four-grid",
+        "panels": [
+          {
+            "id": "manga-p3-panel1",
+            "image": null,
+            "filter": "manga-screentone",
+            "bubbles": [
+              {
+                "id": "b-shout2",
+                "text": "SECRET ART: DRAGON SLASH!!",
+                "kind": "shout",
+                "x": 10,
+                "y": 10,
+                "w": 80,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "manga-p3-panel2",
+            "image": null,
+            "filter": "anaglyph-3d",
+            "bubbles": [
+              {
+                "id": "b-sfx2",
+                "text": "KABOOOOOM!!",
+                "kind": "sfx",
+                "x": 15,
+                "y": 15,
+                "w": 70,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "manga-p3-panel3",
+            "image": null,
+            "filter": "dark-knight",
+            "bubbles": [
+              {
+                "id": "b-cap2",
+                "text": "WITH A FLASH OF STEEL, SILENCE DESCENDED...",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "manga-p3-panel4",
+            "image": null,
+            "filter": "graphic-novel",
+            "bubbles": [
+              {
+                "id": "b-sp2",
+                "text": "The scroll is safe. Until next time... TO BE CONTINUED!",
+                "kind": "speech",
+                "x": 10,
+                "y": 10,
+                "w": 65,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "1e8b2010-09d5-49c2-a429-0b3342e39046",
+    "title": "The Maid's Revenge",
+    "author": "Surabhi",
+    "cover": null,
+    "coverConfig": {
+      "template": "classic",
+      "titleStyle": "classic-3d",
+      "issueNumber": "#1",
+      "issuePrice": "25¢",
+      "issueDate": "VOL. 1",
+      "publisherName": "INKFRAME COMICS",
+      "tagline": "SPECIAL COLLECTOR'S EDITION!",
+      "subtitle": "THE EXTRAORDINARY TALES BEGIN!",
+      "showComicsCode": true,
+      "showBarcode": true,
+      "titleColor": "#facc15",
+      "accentColor": "#dc2626",
+      "positions": {
+        "issueBox": {
+          "x": 3,
+          "y": 3
+        },
+        "tagline": {
+          "x": 22,
+          "y": 3
+        },
+        "comicsCode": {
+          "x": 82,
+          "y": 3
+        },
+        "title": {
+          "x": 4,
+          "y": 15
+        },
+        "subtitle": {
+          "x": 12,
+          "y": 28
+        },
+        "authorBadge": {
+          "x": 3,
+          "y": 86
+        },
+        "barcode": {
+          "x": 74,
+          "y": 84
+        }
+      }
+    },
+    "pages": [
+      {
+        "id": "138e568b-11e1-4532-818d-54005ccd3ce3",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "8b0ffbc0-48a1-48e9-83aa-75d5bc920307",
+            "image": null,
+            "filter": "none",
+            "bubbles": []
+          }
+        ]
+      }
+    ],
+    "createdAt": 1789401485658,
+    "updatedAt": 1789401485658
+  },
+  {
+    "id": "cf669622-ba18-42e9-8b99-5bae7fe99c22",
+    "title": "The Maid's Revenge",
+    "author": "Surabhi",
+    "cover": "url:/maids-revenge/cover.jpg",
+    "coverConfig": {
+      "template": "pulp",
+      "titleStyle": "distressed-pulp",
+      "issueNumber": "#1",
+      "issuePrice": "₹25",
+      "issueDate": "VOL. 1",
+      "publisherName": "INKFRAME COMICS",
+      "tagline": "A KOLKATA AFFAIR",
+      "subtitle": "SHE TOOK THE HOUSE",
+      "showComicsCode": true,
+      "showBarcode": true,
+      "titleColor": "#facc15",
+      "accentColor": "#dc2626",
+      "positions": {
+        "issueBox": {
+          "x": 3,
+          "y": 3
+        },
+        "tagline": {
+          "x": 22,
+          "y": 3
+        },
+        "comicsCode": {
+          "x": 82,
+          "y": 3
+        },
+        "title": {
+          "x": 4,
+          "y": 15
+        },
+        "subtitle": {
+          "x": 12,
+          "y": 28
+        },
+        "authorBadge": {
+          "x": 3,
+          "y": 86
+        },
+        "barcode": {
+          "x": 74,
+          "y": 84
+        }
+      }
+    },
+    "pages": [
+      {
+        "id": "a243dc6c-4c5e-4a4a-9bfc-c75a4b4804fc",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "33cb428a-0e8d-4032-b83d-8dac552a72e5",
+            "image": "url:/maids-revenge/p01-splash.jpg",
+            "filter": "vintage",
+            "bubbles": [
+              {
+                "id": "7a40bda3-5c44-4bb3-821e-7653cf0c9bae",
+                "text": "KOLKATA — PRESENT DAY",
+                "kind": "title-banner",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "d55dd504-9967-4a5c-a434-99716c5ff1a7",
+                "text": "Surabhi. 31. Maid. Mother of two. Abandoned by a husband who found a newer wife.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "d275cf28-b062-4570-946d-690628a70342",
+                "text": "Two kids. Rent due. No husband. Only these hands to keep us alive...",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "5dd01a1a-e069-4f9c-8192-bfd853ba394c",
+        "layout": "three-strip",
+        "panels": [
+          {
+            "id": "1ae505e7-d83e-465e-88e0-fb88f679e227",
+            "image": "url:/maids-revenge/p02-a.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "5ca56db9-df98-4676-a014-0d8abf2cf794",
+                "text": "Rohan's 3BHK. He freelances. She rules the house.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "c401b15f-2e4f-45d1-b9eb-1535d21b8b78",
+                "text": "Rohan, 34. Quiet money. Soft heart.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "1ead4762-9f22-4afc-beba-33b1024401cb",
+            "image": "url:/maids-revenge/p02-b.jpg",
+            "filter": "sepia",
+            "bubbles": [
+              {
+                "id": "b003ddf9-84d6-4a08-b444-056b97f9d5c4",
+                "text": "SURABHI! That floor is filthy! Are you blind?",
+                "kind": "shout",
+                "x": 18,
+                "y": 12,
+                "w": 56,
+                "tail": "none"
+              },
+              {
+                "id": "cf6f6bc4-0897-42ab-8155-7122484f5485",
+                "text": "And you, Rohan — stop staring into space and DO something!",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "0a2ab14e-1ccd-48fe-a344-59529b5c4bda",
+            "image": "url:/maids-revenge/p02-c.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "baf2b81b-609b-4e19-80c6-dabcc9ed4308",
+                "text": "I need this pay. Swallow it. Smile. Survive.",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              },
+              {
+                "id": "2c45d680-505c-4882-80a6-5e489a1a3e8d",
+                "text": "Jenny, 30. Chubby. Sharp tongue. Never soft.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "df4b3dd3-71dd-439e-8379-dc6d252f801c",
+        "layout": "four-grid",
+        "panels": [
+          {
+            "id": "8973f8db-28bd-475d-b51c-1e5b44723a95",
+            "image": "url:/maids-revenge/p03-a.jpg",
+            "filter": "noir",
+            "bubbles": [
+              {
+                "id": "13eca477-6af7-4c27-9b25-17509ed15c39",
+                "text": "Jenny — bedridden again. Door shut. House quiet.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "38819595-06fe-42e3-85f5-b42dc778837c",
+            "image": "url:/maids-revenge/p03-b.jpg",
+            "filter": "noir",
+            "bubbles": [
+              {
+                "id": "15506b1a-8881-415a-8493-5c7de1201bb3",
+                "text": "She treats me like dirt... while he pays my salary.",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "08d4d897-cf00-4732-b49e-87877de9d968",
+            "image": "url:/maids-revenge/p03-c.jpg",
+            "filter": "noir",
+            "bubbles": [
+              {
+                "id": "18843efa-2571-4f8e-8e53-c4ab731fe761",
+                "text": "Rich. Lonely. Soft for kindness. Easy bait.",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "803d19ef-73e9-4451-aa1f-19f069ab7af7",
+            "image": "url:/maids-revenge/p03-d.jpg",
+            "filter": "dark-knight",
+            "bubbles": [
+              {
+                "id": "6376392f-3aa1-4a12-b69d-9b7d147415ee",
+                "text": "Money. And revenge. Both.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "f75bc50c-b320-47e6-b172-8ecf1111c60f",
+                "text": "THE PLAN",
+                "kind": "burst-label",
+                "x": 10,
+                "y": 10,
+                "w": 35,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "83c56429-8c58-473d-a69f-b7d17ed35c18",
+        "layout": "wide-then-two",
+        "panels": [
+          {
+            "id": "6f60fc50-232a-4688-b414-e603304d8830",
+            "image": "url:/maids-revenge/p04-a.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "afdf5aa5-3e71-4990-bbfc-3d45af45b677",
+                "text": "NEXT DAY — Low blouse. Soft knock. Calculated smile.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "c78a9441-b676-4fc2-86d3-a8542a4c183a",
+                "text": "KNOCK KNOCK",
+                "kind": "sfx",
+                "x": 25,
+                "y": 35,
+                "w": 50,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "bf5fd62c-9d1b-41be-8ec8-2f16799968d4",
+            "image": "url:/maids-revenge/p04-b.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "3a3f1009-60ee-48b7-838d-530afa1ee411",
+                "text": "Still sleeping. Perfect.",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              },
+              {
+                "id": "d65deec4-8ef8-41f0-bb6d-502dded047b7",
+                "text": "Door ajar. Soft snores. The coast is clear.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "e3aae050-e490-4144-8f32-d66904c7c999",
+            "image": "url:/maids-revenge/p04-c.jpg",
+            "filter": "noir",
+            "bubbles": [
+              {
+                "id": "e18615e9-0eac-4e20-9f5a-c60245741d27",
+                "text": "Now you will pay, bitch.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              },
+              {
+                "id": "e9fc5e0b-6229-4a22-89ce-383f5da83dd1",
+                "text": "SMIRK",
+                "kind": "burst-label",
+                "x": 10,
+                "y": 10,
+                "w": 35,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "1436cddd-9670-4459-85a8-a35a2cc04eda",
+        "layout": "spotlight",
+        "panels": [
+          {
+            "id": "50daf6dc-1571-4513-831c-4a863b0f2fa3",
+            "image": "url:/maids-revenge/p05-a.jpg",
+            "filter": "pop-art",
+            "bubbles": [
+              {
+                "id": "3f6575ad-a860-46e2-ab5b-e2c822acd601",
+                "text": "Living room. Sweep. Cleavage on display. He notices.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "112a78c9-b8a3-43fa-8751-e4927fa8d86d",
+                "text": "Hard days, sir... kids hungry. Husband gone.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "fcab4323-86d6-49a9-979f-0f27522c42fe",
+            "image": "url:/maids-revenge/p05-b.jpg",
+            "filter": "pop-art",
+            "bubbles": [
+              {
+                "id": "2cd0681e-9725-49ca-8b9d-375cc0704bb9",
+                "text": "Take this. ₹1000. Don't tell Jenny.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              },
+              {
+                "id": "8f99a561-fb1d-4385-8c63-e1f63e52fd7f",
+                "text": "TUCK",
+                "kind": "sfx",
+                "x": 25,
+                "y": 35,
+                "w": 50,
+                "tail": "none"
+              },
+              {
+                "id": "5917d070-cc51-414d-88b2-f7596381d417",
+                "text": "Note slips into her bra. His eyes follow.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "d2e7a44b-28f2-4293-ab9f-e7d0d0bf245d",
+            "image": "url:/maids-revenge/p05-c.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "b8ea881a-4544-499e-9634-1db03506a000",
+                "text": "Another thousand. If you need money — tell ME. Not my wife.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              },
+              {
+                "id": "dd5a5081-ce8e-4595-8443-cd8e5625b29b",
+                "text": "Hooked already...",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "3929a617-e334-4d1c-952c-902326153a85",
+        "layout": "two-v",
+        "panels": [
+          {
+            "id": "538c0127-2969-4906-ab40-ab55b56dd9ef",
+            "image": "url:/maids-revenge/p06-a.jpg",
+            "filter": "noir",
+            "bubbles": [
+              {
+                "id": "7501c349-237e-40dd-ad8c-fd9aa859573c",
+                "text": "I've fallen for you, Surabhi. Jenny... she can't satisfy me.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              },
+              {
+                "id": "824cb67a-8b67-4659-afef-f2047d2f262b",
+                "text": "Sir — if she finds out, she'll fire me!",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "ea781395-f8c8-4998-9c50-63a7626c05c0",
+            "image": "url:/maids-revenge/p06-b.jpg",
+            "filter": "noir",
+            "bubbles": [
+              {
+                "id": "81f25071-9ff3-481b-b3cc-b0498309c0c2",
+                "text": "I protect what's mine. You're safe with me.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              },
+              {
+                "id": "131e2dce-62a4-49a6-9a05-3c0586fa3274",
+                "text": "Fish took the bait.",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "e7265f53-e901-4d5e-8151-fa9ddc60953c",
+        "layout": "three-strip",
+        "panels": [
+          {
+            "id": "20b39993-9458-46a6-9b96-c6d70ceaf17c",
+            "image": "url:/maids-revenge/p07-a.jpg",
+            "filter": "sepia",
+            "bubbles": [
+              {
+                "id": "52c9292d-43ab-4b67-b4ab-0433093be773",
+                "text": "BOTH of you! Standing around like fools! WORK!",
+                "kind": "shout",
+                "x": 18,
+                "y": 12,
+                "w": 56,
+                "tail": "none"
+              },
+              {
+                "id": "4034dfbd-ff62-4dbd-a558-ce4e240d53ca",
+                "text": "Yell all you want. I've already won.",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "51cf7453-eb66-4590-ae80-64c3ead04027",
+            "image": "url:/maids-revenge/p07-b.jpg",
+            "filter": "noir",
+            "bubbles": [
+              {
+                "id": "2f0847dd-d50a-4869-b637-077358116df5",
+                "text": "Tonight... more than words.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              },
+              {
+                "id": "3bdecc38-7054-4a89-8b2d-b1d358d89228",
+                "text": "Soon. Very soon.",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "0a78f5f6-f087-4faf-ba85-6f6309d624b6",
+            "image": "url:/maids-revenge/p07-c.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "e0cce3ea-2371-4bd7-9223-9e2b46ffff0e",
+                "text": "He checks Jenny's door. Locked in her fog. Green light.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "329b3884-8efd-446f-9aed-8509f04752e5",
+                "text": "CREAK",
+                "kind": "sfx",
+                "x": 25,
+                "y": 35,
+                "w": 50,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ea7e16fe-f5e8-4377-ad1c-8a77ce34be34",
+        "layout": "two-then-wide",
+        "panels": [
+          {
+            "id": "e9e3bc93-1ceb-44ce-8ac4-c937e61c6c38",
+            "image": "url:/maids-revenge/p08-a.jpg",
+            "filter": "pop-art",
+            "bubbles": [
+              {
+                "id": "49e4af0c-bd37-49ce-8fd4-69aa46e34bcc",
+                "text": "Jenny's bedroom. Surabhi cleans. He grabs her.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "30c664c7-29ba-47f9-ab0a-3fbb91d4e554",
+                "text": "Mmph—!",
+                "kind": "sfx",
+                "x": 25,
+                "y": 35,
+                "w": 50,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "a17a5967-c29f-4088-8d9f-62369d9fe1f9",
+            "image": "url:/maids-revenge/p08-b.jpg",
+            "filter": "pop-art",
+            "bubbles": [
+              {
+                "id": "9ad46e8b-3b76-4af1-b966-7e3f3da131d6",
+                "text": "Not full undress — too risky. But...",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              },
+              {
+                "id": "39d9cc68-a1bb-4525-bdac-c92f3130da24",
+                "text": "God... his size—",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "fdc67750-644a-40c3-8ae5-1a210932a12d",
+            "image": "url:/maids-revenge/p08-c.jpg",
+            "filter": "technicolor",
+            "bubbles": [
+              {
+                "id": "1b20cbca-a1c8-4774-8e98-2d8f948c5042",
+                "text": "She drops to her knees. He gasps her name.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "a3aa413c-bb14-4f87-9118-bf8c89bd66d1",
+                "text": "Nothing like Jenny—! You're fire—!",
+                "kind": "shout",
+                "x": 18,
+                "y": 12,
+                "w": 56,
+                "tail": "none"
+              },
+              {
+                "id": "82a1e2e6-19ac-4014-8df3-6d066b940c07",
+                "text": "SLURP",
+                "kind": "sfx",
+                "x": 25,
+                "y": 35,
+                "w": 50,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "8cd06952-08f8-4ce6-b360-a38d204bff37",
+        "layout": "four-grid",
+        "panels": [
+          {
+            "id": "997776fe-cf49-4125-9ccd-23f587648d99",
+            "image": "url:/maids-revenge/p09-a.jpg",
+            "filter": "dark-knight",
+            "bubbles": [
+              {
+                "id": "a08c5da4-9818-4995-bfd7-55fac905006d",
+                "text": "WHAT—?! YOU SLUT—!",
+                "kind": "shout",
+                "x": 18,
+                "y": 12,
+                "w": 56,
+                "tail": "none"
+              },
+              {
+                "id": "d253084e-501b-4543-b9db-a3fea36b142a",
+                "text": "GASP!",
+                "kind": "sfx",
+                "x": 25,
+                "y": 35,
+                "w": 50,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "2eadaa8a-1ba2-4e99-af1e-5d262cfa7bc2",
+            "image": "url:/maids-revenge/p09-b.jpg",
+            "filter": "dark-knight",
+            "bubbles": [
+              {
+                "id": "d1716430-9fbb-43ce-8877-3d681b895b65",
+                "text": "Jenny lunges. Hand raised. Fury white-hot.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "66773cf7-ffa0-42b8-94a5-a4e48b757bd6",
+                "text": "DON'T TOUCH HER!",
+                "kind": "shout",
+                "x": 18,
+                "y": 12,
+                "w": 56,
+                "tail": "none"
+              }
+            ]
+          },
+          {
+            "id": "411a0ab3-98d4-495b-8115-548ad1886b66",
+            "image": "url:/maids-revenge/p09-c.jpg",
+            "filter": "dark-knight",
+            "bubbles": [
+              {
+                "id": "98483b28-4291-4e32-94b1-1c0b560b0b45",
+                "text": "SHOVE!",
+                "kind": "sfx",
+                "x": 25,
+                "y": 35,
+                "w": 50,
+                "tail": "none"
+              },
+              {
+                "id": "56161de0-d80f-42a6-a82f-06bd4bea45d1",
+                "text": "Out. Now.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "3f8546c7-fc98-4508-b0ff-3b6848054349",
+            "image": "url:/maids-revenge/p09-d.jpg",
+            "filter": "noir",
+            "bubbles": [
+              {
+                "id": "a8a17049-7302-4f6d-ae2b-5881f6375822",
+                "text": "SLAM",
+                "kind": "sfx",
+                "x": 25,
+                "y": 35,
+                "w": 50,
+                "tail": "none"
+              },
+              {
+                "id": "c89e9add-baad-45de-b51e-549da0475290",
+                "text": "Door shut. One hour. Alone. Revenge lands.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "fcfdc9cb-6070-400d-98dc-34374c6e19ba",
+                "text": "REVENGE",
+                "kind": "burst-label",
+                "x": 10,
+                "y": 10,
+                "w": 35,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "1916430b-f7db-4729-ad1b-50c2bcf75e95",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "644c950f-19e7-4b1d-b6cd-0c002bb56f4f",
+            "image": "url:/maids-revenge/p10-splash.jpg",
+            "filter": "golden-pulp",
+            "bubbles": [
+              {
+                "id": "f9113d37-2008-4b27-a3e9-73f054ed88f1",
+                "text": "Surabhi stays. I married her — in every way that matters. Divorce me if you want.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 42,
+                "tail": "bl"
+              },
+              {
+                "id": "59555e9f-2dc0-4f0e-a26e-0627ed6f77dd",
+                "text": "Jenny pale. Nods. Master bedroom — Surabhi. Guest room — them.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "7fb95fb5-e8bc-4a8c-ad2d-fcfa65e52e83",
+                "text": "She took the house. And him.",
+                "kind": "thought",
+                "x": 50,
+                "y": 6,
+                "w": 40,
+                "tail": "br"
+              },
+              {
+                "id": "9d055762-fd07-4ac7-9d5c-bf95164bfc54",
+                "text": "HAPPILY EVER AFTER...?",
+                "kind": "title-banner",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "4e1f8c33-ef91-4fe5-982c-e616d1c8bd55",
+                "text": "END #1",
+                "kind": "burst-label",
+                "x": 10,
+                "y": 10,
+                "w": 35,
+                "tail": "none"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "createdAt": 1789401495889,
+    "updatedAt": 1789401581269
+  },
+  {
+    "id": "0ec6be2a-4680-483e-9c5b-737aa90bedf4",
+    "title": "Neighbour Aunty",
+    "author": "Aji Mk",
+    "cover": "url:/neighbour-aunty/cover.jpg",
+    "coverConfig": {
+      "template": "action",
+      "titleStyle": "classic-3d",
+      "issueNumber": "#1",
+      "issuePrice": "$3.99",
+      "issueDate": "VOL. 1",
+      "publisherName": "INKFRAME COMICS",
+      "tagline": "THE WOMAN NEXT DOOR",
+      "subtitle": "SHE'S BEEN WATCHING",
+      "showComicsCode": true,
+      "showBarcode": true,
+      "titleColor": "#facc15",
+      "accentColor": "#dc2626",
+      "positions": {
+        "issueBox": {
+          "x": 3,
+          "y": 3
+        },
+        "tagline": {
+          "x": 22,
+          "y": 3
+        },
+        "comicsCode": {
+          "x": 82,
+          "y": 3
+        },
+        "title": {
+          "x": 4,
+          "y": 15
+        },
+        "subtitle": {
+          "x": 12,
+          "y": 28
+        },
+        "authorBadge": {
+          "x": 3,
+          "y": 86
+        },
+        "barcode": {
+          "x": 74,
+          "y": 84
+        }
+      }
+    },
+    "pages": [
+      {
+        "id": "82db0739-1fef-43f2-bc95-c3423728da39",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "b072085d-d59f-487f-a95d-e1abe9aae37c",
+            "image": "url:/neighbour-aunty/cover.jpg",
+            "filter": "anime-cel",
+            "bubbles": [
+              {
+                "id": "2135f972-0efc-4397-a18d-285e8387e257",
+                "text": "Next door. Every evening. Same red saree.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 92,
+                "tail": "none"
+              },
+              {
+                "id": "41f61177-fe7f-48a8-bda9-896040a6315c",
+                "text": "Come in. Don't just stand there.",
+                "kind": "speech",
+                "x": 52,
+                "y": 58,
+                "w": 42,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "createdAt": 1789406481029,
+    "updatedAt": 1789406576363
+  }
+]

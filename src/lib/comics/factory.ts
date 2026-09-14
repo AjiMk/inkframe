@@ -1,5 +1,5 @@
-import { nid } from "@/lib/utils";
-import { LAYOUTS } from "./layouts";
+import { nid } from "../utils.ts";
+import { LAYOUTS } from "./layouts.ts";
 import type {
   Comic,
   CoverConfig,
@@ -123,4 +123,9 @@ export const FILTERS: { id: PanelFilter; label: string }[] = [
   { id: "graphic-novel", label: "Graphic Ink" },
   { id: "anime-cel", label: "Anime Cel" },
   { id: "pencil-sketch", label: "Pencil Sketch" },
+  { id: "manga-screentone", label: "Manga Dots" },
+  { id: "anaglyph-3d", label: "3D Anaglyph" },
+  { id: "golden-pulp", label: "Golden Pulp" },
+  { id: "dark-knight", label: "Dark Knight" },
+  { id: "technicolor", label: "Technicolor" },
 ];

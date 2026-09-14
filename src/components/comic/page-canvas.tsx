@@ -143,16 +143,7 @@ function PanelFrame({
           alt=""
           className={cn(
             "absolute inset-0 size-full object-cover",
-            panel.filter === "ink" && "panel-filter-ink",
-            panel.filter === "noir" && "panel-filter-noir",
-            panel.filter === "sepia" && "panel-filter-sepia",
-            panel.filter === "halftone" && "panel-filter-halftone",
-            panel.filter === "vintage" && "panel-filter-vintage",
-            panel.filter === "pop-art" && "panel-filter-pop-art",
-            panel.filter === "cyber-neon" && "panel-filter-cyber-neon",
-            panel.filter === "graphic-novel" && "panel-filter-graphic-novel",
-            panel.filter === "anime-cel" && "panel-filter-anime-cel",
-            panel.filter === "pencil-sketch" && "panel-filter-pencil-sketch",
+            panel.filter !== "none" && `panel-filter-${panel.filter}`,
             mode === "read" && isFocus && "anim-kenburns",
           )}
         />
@@ -168,6 +159,14 @@ function PanelFrame({
       )}
       {panel.filter === "halftone" || panel.filter === "pop-art" ? (
         <span className="halftone-dot pointer-events-none absolute inset-0" />
+      ) : panel.filter === "manga-screentone" ? (
+        <span className="screentone-dot pointer-events-none absolute inset-0" />
+      ) : panel.filter === "cyber-neon" ? (
+        <span className="scanlines-overlay pointer-events-none absolute inset-0" />
+      ) : panel.filter === "vintage" || panel.filter === "golden-pulp" || panel.filter === "sepia" ? (
+        <span className="vintage-grain pointer-events-none absolute inset-0" />
+      ) : panel.filter === "anaglyph-3d" ? (
+        <span className="anaglyph-split pointer-events-none absolute inset-0" />
       ) : null}
       {bubbles.map((bubble) => (
         <SpeechBubble

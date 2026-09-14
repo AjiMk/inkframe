@@ -19,20 +19,45 @@ import type {
 } from "./types";
 
 const KEY = "inkframe.comics.v1";
+const BACKUP_KEY = "inkframe.comics.v1.backup";
 
 function readComics(): Comic[] {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw === null) return [createDemoComic()];
-    const parsed = JSON.parse(raw) as Comic[];
-    return Array.isArray(parsed) ? parsed : [createDemoComic()];
+    const backupRaw = localStorage.getItem(BACKUP_KEY);
+    let primary: Comic[] = [];
+    let backup: Comic[] = [];
+
+    if (raw !== null) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) primary = parsed;
+    }
+    if (backupRaw !== null) {
+      const parsedBackup = JSON.parse(backupRaw);
+      if (Array.isArray(parsedBackup)) backup = parsedBackup;
+    }
+
+    const map = new Map<string, Comic>();
+    for (const c of backup) map.set(c.id, c);
+    for (const c of primary) map.set(c.id, c);
+
+    if (map.size === 0) return [createDemoComic()];
+    return Array.from(map.values());
   } catch {
     return [createDemoComic()];
   }
 }
 
 function writeComics(comics: Comic[]) {
-  localStorage.setItem(KEY, JSON.stringify(comics));
+  try {
+    const currentRaw = localStorage.getItem(KEY);
+    if (currentRaw) {
+      localStorage.setItem(BACKUP_KEY, currentRaw);
+    }
+    localStorage.setItem(KEY, JSON.stringify(comics));
+  } catch {
+    // ignore
+  }
 }
 
 function touch(comic: Comic): Comic {
@@ -47,6 +72,8 @@ interface ComicState {
   comics: Comic[];
   hydrated: boolean;
   hydrate: () => void;
+  syncMcpComics: () => Promise<void>;
+  importComics: (rawJson: string) => boolean;
   create: (title: string, author: string) => string;
   restoreDemo: () => string;
   rename: (id: string, title: string, author: string) => void;
@@ -85,9 +112,66 @@ export const useComicStore = create<ComicState>((set, get) => ({
   comics: [],
   hydrated: false,
 
+  syncMcpComics: async () => {
+    if (typeof window === "undefined") return;
+    try {
+      const res = await fetch("/mcp_comics.json", { cache: "no-store" });
+      if (!res.ok) return;
+      const mcpComics = (await res.json()) as Comic[];
+      if (!Array.isArray(mcpComics) || mcpComics.length === 0) return;
+
+      const localComics = readComics();
+      const current = get().comics;
+      const map = new Map<string, Comic>();
+
+      for (const c of localComics) map.set(c.id, c);
+      for (const c of current) map.set(c.id, c);
+
+      let changed = false;
+      for (const mcpC of mcpComics) {
+        const existing = map.get(mcpC.id);
+        if (!existing || JSON.stringify(existing) !== JSON.stringify(mcpC)) {
+          map.set(mcpC.id, mcpC);
+          changed = true;
+        }
+      }
+
+      if (changed || map.size > current.length) {
+        const updated = Array.from(map.values());
+        writeComics(updated);
+        set({ comics: updated });
+      }
+    } catch {
+      // ignore network errors
+    }
+  },
+
   hydrate: () => {
     if (get().hydrated || typeof window === "undefined") return;
     set({ comics: readComics(), hydrated: true });
+    void get().syncMcpComics();
+    window.addEventListener("focus", () => void get().syncMcpComics());
+    setInterval(() => void get().syncMcpComics(), 2000);
+  },
+
+  importComics: (rawJson: string) => {
+    try {
+      const parsed = JSON.parse(rawJson);
+      const items = Array.isArray(parsed) ? parsed : [parsed];
+      const valid = items.filter(
+        (c) => c && typeof c === "object" && typeof c.id === "string" && typeof c.title === "string",
+      );
+      if (valid.length === 0) return false;
+
+      const map = new Map(get().comics.map((c) => [c.id, c]));
+      for (const c of valid) map.set(c.id, c as Comic);
+      const updated = Array.from(map.values());
+      writeComics(updated);
+      set({ comics: updated });
+      return true;
+    } catch {
+      return false;
+    }
   },
 
   create: (title, author) => {

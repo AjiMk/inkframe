@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Pencil, Plus, Trash2 } from "lucide-react";
+import { BookOpen, Download, Pencil, Plus, Trash2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -35,8 +35,12 @@ export function LibraryView() {
   const create = useComicStore((s) => s.create);
   const restoreDemo = useComicStore((s) => s.restoreDemo);
   const remove = useComicStore((s) => s.remove);
+  const importComics = useComicStore((s) => s.importComics);
 
   const [open, setOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importError, setImportError] = useState(false);
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
@@ -48,6 +52,26 @@ export function LibraryView() {
     setTitle("");
     setAuthor("");
     void navigate({ to: "/studio/$comicId", params: { comicId: id } });
+  }
+
+  function handleImport(e: React.FormEvent) {
+    e.preventDefault();
+    const ok = importComics(importText);
+    if (ok) {
+      setImportOpen(false);
+      setImportText("");
+      setImportError(false);
+    } else {
+      setImportError(true);
+    }
+  }
+
+  function handleExport() {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(comics, null, 2));
+    const dlAnchorElem = document.createElement("a");
+    dlAnchorElem.setAttribute("href", dataStr);
+    dlAnchorElem.setAttribute("download", "inkframe-comics-backup.json");
+    dlAnchorElem.click();
   }
 
   return (
@@ -70,6 +94,14 @@ export function LibraryView() {
             <Button type="button" onClick={() => setOpen(true)}>
               <Plus />
               New comic
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="size-4" />
+              Import
+            </Button>
+            <Button type="button" variant="outline" onClick={handleExport}>
+              <Download className="size-4" />
+              Export
             </Button>
             <Button
               type="button"
@@ -181,6 +213,42 @@ export function LibraryView() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleImport} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>Import Comic Backup JSON</DialogTitle>
+              <DialogDescription>
+                Paste exported comic JSON or backup JSON data below to restore your comics.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="import-json">Comic JSON Data</Label>
+              <textarea
+                id="import-json"
+                rows={6}
+                value={importText}
+                onChange={(e) => {
+                  setImportText(e.target.value);
+                  setImportError(false);
+                }}
+                placeholder='Paste JSON array or single comic object here...'
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              {importError && (
+                <p className="text-xs text-destructive">Invalid comic JSON format. Please check the text.</p>
+              )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setImportOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Import</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

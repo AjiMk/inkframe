@@ -1,4 +1,4 @@
-import type { PageLayoutId } from "./types";
+import type { PageLayoutId } from "./types.ts";
 
 export interface LayoutDef {
   id: PageLayoutId;

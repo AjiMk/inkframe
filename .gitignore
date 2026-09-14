@@ -16,6 +16,8 @@ screenshots
 
 # Ignore generated media and demo images
 public/demo/
+public/maids-revenge/
+public/uploads/
 *.png
 *.jpg
 *.jpeg
