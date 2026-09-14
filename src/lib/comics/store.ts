@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createDemoComic } from "./demo";
 import {
+  changePageLayoutPreservingImages,
   createBubble,
   createComic,
   createPage,
@@ -70,10 +71,18 @@ function mapComic(comics: Comic[], id: string, fn: (c: Comic) => Comic): Comic[]
 
 interface ComicState {
   comics: Comic[];
+  past: Comic[][];
+  future: Comic[][];
+  canUndo: boolean;
+  canRedo: boolean;
+  lastSavedAt: number | null;
   hydrated: boolean;
   hydrate: () => void;
   syncMcpComics: () => Promise<void>;
   importComics: (rawJson: string) => boolean;
+  undo: () => void;
+  redo: () => void;
+  saveNow: (comicId?: string) => void;
   create: (title: string, author: string) => string;
   restoreDemo: () => string;
   rename: (id: string, title: string, author: string) => void;
@@ -108,9 +117,73 @@ interface ComicState {
   setCoverConfig: (comicId: string, patch: Partial<CoverConfig>) => void;
 }
 
+const MAX_HISTORY = 30;
+
+function pushState(set: any, get: any, newComics: Comic[]) {
+  const past = get().past || [];
+  const current = get().comics;
+  writeComics(newComics);
+  set({
+    comics: newComics,
+    past: [...past.slice(-MAX_HISTORY + 1), current],
+    future: [],
+    canUndo: true,
+    canRedo: false,
+    lastSavedAt: Date.now(),
+  });
+}
+
 export const useComicStore = create<ComicState>((set, get) => ({
   comics: [],
+  past: [],
+  future: [],
+  canUndo: false,
+  canRedo: false,
+  lastSavedAt: null,
   hydrated: false,
+
+  undo: () => {
+    const past = get().past;
+    if (!past || past.length === 0) return;
+    const previous = past[past.length - 1];
+    const newPast = past.slice(0, past.length - 1);
+    const current = get().comics;
+
+    writeComics(previous);
+    set({
+      comics: previous,
+      past: newPast,
+      future: [current, ...get().future],
+      canUndo: newPast.length > 0,
+      canRedo: true,
+      lastSavedAt: Date.now(),
+    });
+  },
+
+  redo: () => {
+    const future = get().future;
+    if (!future || future.length === 0) return;
+    const next = future[0];
+    const newFuture = future.slice(1);
+    const current = get().comics;
+
+    writeComics(next);
+    set({
+      comics: next,
+      past: [...get().past, current],
+      future: newFuture,
+      canUndo: true,
+      canRedo: newFuture.length > 0,
+      lastSavedAt: Date.now(),
+    });
+  },
+
+  saveNow: (comicId?: string) => {
+    const comics = get().comics;
+    writeComics(comics);
+    void get().syncMcpComics();
+    set({ lastSavedAt: Date.now() });
+  },
 
   syncMcpComics: async () => {
     if (typeof window === "undefined") return;
@@ -130,9 +203,14 @@ export const useComicStore = create<ComicState>((set, get) => ({
       let changed = false;
       for (const mcpC of mcpComics) {
         const existing = map.get(mcpC.id);
-        if (!existing || JSON.stringify(existing) !== JSON.stringify(mcpC)) {
-          map.set(mcpC.id, mcpC);
-          changed = true;
+        const mcpTime = mcpC.updatedAt ?? 0;
+        const existingTime = existing?.updatedAt ?? 0;
+
+        if (!existing || mcpTime > existingTime) {
+          if (!existing || JSON.stringify(existing) !== JSON.stringify(mcpC)) {
+            map.set(mcpC.id, mcpC);
+            changed = true;
+          }
         }
       }
 
@@ -196,8 +274,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
       title: title.trim() || c.title,
       author: author.trim() || c.author,
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   remove: (id) => {
@@ -219,8 +296,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
       ...c,
       pages: [...c.pages, page],
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
     return page.id;
   },
 
@@ -229,8 +305,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
       if (c.pages.length <= 1) return c;
       return { ...c, pages: c.pages.filter((p) => p.id !== pageId) };
     });
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   duplicatePage: (comicId, pageId) => {
@@ -251,8 +326,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
       pages.splice(idx + 1, 0, copy);
       return { ...c, pages };
     });
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   movePage: (comicId, pageId, dir) => {
@@ -265,8 +339,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
       pages.splice(next, 0, item);
       return { ...c, pages };
     });
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   reversePages: (comicId) => {
@@ -274,8 +347,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
       ...c,
       pages: [...c.pages].reverse(),
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   reorderPageIndices: (comicId, fromIndex, toIndex) => {
@@ -294,17 +366,17 @@ export const useComicStore = create<ComicState>((set, get) => ({
       pages.splice(toIndex, 0, item);
       return { ...c, pages };
     });
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   setLayout: (comicId, pageId, layout) => {
-    const comics = mapComic(get().comics, comicId, (c) => ({
-      ...c,
-      pages: c.pages.map((p) => (p.id === pageId ? fitPanelsToLayout(p, layout) : p)),
-    }));
-    writeComics(comics);
-    set({ comics });
+    const targetComic = get().comics.find((c) => c.id === comicId);
+    if (!targetComic) return;
+    const updatedComic = changePageLayoutPreservingImages(targetComic, pageId, layout);
+    const comics = get().comics.map((c) =>
+      c.id === comicId ? { ...updatedComic, updatedAt: Date.now() } : c,
+    );
+    pushState(set, get, comics);
   },
 
   setPanelImage: (comicId, pageId, panelId, image) => {
@@ -326,8 +398,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
         };
       }),
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   replacePanelFace: (comicId, pageId, panelId, replacementImage, faceReplacements) => {
@@ -350,8 +421,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
         };
       }),
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   resetPanelFace: (comicId, pageId, panelId) => {
@@ -373,8 +443,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
         };
       }),
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   setPanelFilter: (comicId, pageId, panelId, filter) => {
@@ -391,8 +460,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
           : p,
       ),
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   addBubble: (comicId, pageId, panelId, kind) => {
@@ -412,8 +480,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
           : p,
       ),
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
     return bubble.id;
   },
 
@@ -438,8 +505,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
           : p,
       ),
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   removeBubble: (comicId, pageId, panelId, bubbleId) => {
@@ -461,8 +527,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
           : p,
       ),
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   setCover: (comicId, cover) => {
@@ -470,8 +535,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
       if (c.cover && c.cover !== cover) void deleteMediaRef(c.cover);
       return { ...c, cover };
     });
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 
   setCoverConfig: (comicId, patch) => {
@@ -482,8 +546,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
         ...patch,
       },
     }));
-    writeComics(comics);
-    set({ comics });
+    pushState(set, get, comics);
   },
 }));
 

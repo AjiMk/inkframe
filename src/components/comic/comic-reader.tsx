@@ -163,13 +163,14 @@ export function ComicReader({ comicId }: { comicId: string }) {
         ) : beat.type === "end" ? (
           <EndCard comicId={comicId} onReplay={() => setIndex(0)} />
         ) : page ? (
-          <div className="w-full max-w-[520px]">
+          <div className="flex h-full max-h-[calc(100dvh-130px)] w-full max-w-[580px] items-center justify-center transition-all duration-300 ease-out sm:max-w-[700px] md:max-w-[800px] lg:max-w-[920px] xl:max-w-[1060px] 2xl:max-w-[1200px]">
             <PageCanvas
               key={`${beat.type}-${index}`}
               page={page}
               mode="read"
               reveal={reveal}
               anim={dir}
+              className="max-h-[calc(100dvh-130px)]"
             />
           </div>
         ) : null}
@@ -221,8 +222,8 @@ export function ComicReader({ comicId }: { comicId: string }) {
 
 function TitleCard({ comic }: { comic: Comic }) {
   return (
-    <div className="anim-rise flex w-full max-w-md flex-col items-center text-center">
-      <div className="w-full max-w-[360px]">
+    <div className="anim-rise flex w-full max-w-2xl flex-col items-center justify-center text-center">
+      <div className="flex max-h-[calc(100dvh-140px)] w-full max-w-[420px] items-center justify-center transition-all duration-300 ease-out sm:max-w-[520px] md:max-w-[620px] lg:max-w-[720px] xl:max-w-[820px]">
         <CoverCanvas comic={comic} mode="read" />
       </div>
       <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-paper/60">

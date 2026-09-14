@@ -72,6 +72,130 @@ export function fitPanelsToLayout(page: Page, layout: PageLayoutId): Page {
   return { ...page, layout, panels };
 }
 
+export function changePageLayoutPreservingImages(
+  comic: Comic,
+  pageId: string,
+  newLayout: PageLayoutId,
+): Comic {
+  const pageIndex = comic.pages.findIndex((p) => p.id === pageId);
+  if (pageIndex === -1) return comic;
+
+  const targetPage = comic.pages[pageIndex];
+  const targetCount = LAYOUTS[newLayout].panelCount;
+  const currentCount = targetPage.panels.length;
+
+  const newPages = [...comic.pages];
+
+  if (targetCount === currentCount) {
+    newPages[pageIndex] = { ...targetPage, layout: newLayout };
+    return { ...comic, pages: newPages };
+  }
+
+  if (targetCount < currentCount) {
+    // SHRINKING: Keep first targetCount panels on target page, move excess to new page(s)
+    const keptPanels = targetPage.panels.slice(0, targetCount);
+    const overflowPanels = targetPage.panels.slice(targetCount);
+
+    newPages[pageIndex] = {
+      ...targetPage,
+      layout: newLayout,
+      panels: keptPanels,
+    };
+
+    const activeOverflow = overflowPanels.filter(
+      (p) => p.image || p.bubbles.length > 0 || (p.faceReplacements && p.faceReplacements.length > 0),
+    );
+
+    if (activeOverflow.length > 0) {
+      const createdPages: Page[] = [];
+      let i = 0;
+      while (i < activeOverflow.length) {
+        const remaining = activeOverflow.length - i;
+        let layout: PageLayoutId = "splash";
+        let count = 1;
+        if (remaining >= 4) {
+          layout = "four-grid";
+          count = 4;
+        } else if (remaining === 3) {
+          layout = "three-strip";
+          count = 3;
+        } else if (remaining === 2) {
+          layout = "two-v";
+          count = 2;
+        }
+
+        const chunkPanels = activeOverflow.slice(i, i + count);
+        while (chunkPanels.length < count) {
+          chunkPanels.push(emptyPanel());
+        }
+        createdPages.push({
+          id: nid(),
+          layout,
+          panels: chunkPanels,
+        });
+        i += count;
+      }
+
+      newPages.splice(pageIndex + 1, 0, ...createdPages);
+    }
+  } else {
+    // EXPANDING: Pull content from subsequent pages to fill newly added panel slots
+    const needed = targetCount - currentCount;
+    const additionalPanels: Panel[] = [];
+
+    let pIdx = pageIndex + 1;
+    while (additionalPanels.length < needed && pIdx < newPages.length) {
+      const nextPage = newPages[pIdx];
+      const nextPagePanels = [...nextPage.panels];
+      let pI = 0;
+
+      while (pI < nextPagePanels.length && additionalPanels.length < needed) {
+        const p = nextPagePanels[pI];
+        if (p.image || p.bubbles.length > 0 || (p.faceReplacements && p.faceReplacements.length > 0)) {
+          additionalPanels.push(p);
+          nextPagePanels.splice(pI, 1);
+        } else {
+          pI++;
+        }
+      }
+
+      const hasRemainingContent = nextPagePanels.some(
+        (p) => p.image || p.bubbles.length > 0 || (p.faceReplacements && p.faceReplacements.length > 0),
+      );
+
+      if (!hasRemainingContent) {
+        newPages.splice(pIdx, 1);
+      } else {
+        const remainingActiveCount = nextPagePanels.filter(
+          (p) => p.image || p.bubbles.length > 0 || (p.faceReplacements && p.faceReplacements.length > 0),
+        ).length;
+        let bestLayout: PageLayoutId = "splash";
+        if (remainingActiveCount >= 4) bestLayout = "four-grid";
+        else if (remainingActiveCount === 3) bestLayout = "three-strip";
+        else if (remainingActiveCount === 2) bestLayout = "two-v";
+
+        newPages[pIdx] = fitPanelsToLayout(
+          { ...nextPage, panels: nextPagePanels },
+          bestLayout,
+        );
+        pIdx++;
+      }
+    }
+
+    while (additionalPanels.length < needed) {
+      additionalPanels.push(emptyPanel());
+    }
+
+    newPages[pageIndex] = {
+      ...targetPage,
+      layout: newLayout,
+      panels: [...targetPage.panels, ...additionalPanels],
+    };
+  }
+
+  return { ...comic, pages: newPages };
+}
+
 export function createBubble(
   kind: BubbleKind = "speech",
   text?: string,
