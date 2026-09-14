@@ -839,10 +839,22 @@ function Inspector({
   }) => void;
   onDeleteBubble: () => void;
 }) {
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+
   const hasFaceReplacement = Boolean(
     (panel.faceReplacements && panel.faceReplacements.length > 0) ||
       (panel.originalImage && panel.originalImage !== panel.image),
   );
+
+  const visibleFilters = useMemo(() => {
+    if (filtersExpanded) return FILTERS;
+    const initial = FILTERS.slice(0, 6);
+    if (panel.filter !== "none" && !initial.some((f) => f.id === panel.filter)) {
+      const active = FILTERS.find((f) => f.id === panel.filter);
+      if (active) return [...initial.slice(0, 5), active];
+    }
+    return initial;
+  }, [filtersExpanded, panel.filter]);
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto max-lg:h-auto max-lg:overflow-visible pr-1">
@@ -959,18 +971,23 @@ function Inspector({
           </div>
         ) : null}
 
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase pt-1">
-          Comic Filters
-        </p>
-        <div className="grid grid-cols-2 gap-1 max-h-36 overflow-y-auto pr-1">
-          {FILTERS.map((f) => (
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase">
+            Comic Filters
+          </p>
+          <span className="text-[10px] text-muted-foreground font-medium">
+            {panel.filter !== "none" ? `Active: ${FILTERS.find(f => f.id === panel.filter)?.label}` : "16 styles"}
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-1 transition-all duration-200 ease-out">
+          {visibleFilters.map((f) => (
             <button
               key={f.id}
               type="button"
               onClick={() => onFilter(f.id)}
-              className={`h-7 px-1.5 rounded-md border text-[11px] font-medium truncate ${
+              className={`h-7 px-1.5 rounded-md border text-[11px] font-medium truncate transition-all ${
                 panel.filter === f.id
-                  ? "border-primary bg-primary/15 text-primary font-bold shadow-xs"
+                  ? "border-primary bg-primary/15 text-primary font-bold shadow-xs ring-1 ring-primary/30"
                   : "border-border bg-card hover:border-foreground/30"
               }`}
             >
@@ -978,6 +995,25 @@ function Inspector({
             </button>
           ))}
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setFiltersExpanded((prev) => !prev)}
+          className="w-full h-7 text-[11px] font-semibold gap-1 text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+        >
+          {filtersExpanded ? (
+            <>
+              <span>Show fewer filters</span>
+              <ChevronUp className="size-3.5" />
+            </>
+          ) : (
+            <>
+              <span>Show all 16 filters</span>
+              <ChevronDown className="size-3.5" />
+            </>
+          )}
+        </Button>
       </section>
 
       <Separator className="shrink-0" />
