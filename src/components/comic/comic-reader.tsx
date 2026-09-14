@@ -283,8 +283,9 @@ function buildBeats(comic: Comic, mode: "guided" | "flip"): Beat[] {
           });
         }
       });
+    } else {
+      beats.push({ type: "page", pageIndex });
     }
-    beats.push({ type: "page", pageIndex });
   });
   beats.push({ type: "end" });
   return beats;
