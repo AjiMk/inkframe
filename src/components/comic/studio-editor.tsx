@@ -92,12 +92,15 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   const bubble = panel?.bubbles.find((b) => b.id === bubbleId) ?? null;
 
   useEffect(() => {
-    if (page && pageId !== page.id) setPageId(page.id);
-  }, [page, pageId]);
-
-  useEffect(() => {
-    if (panel && !panelId) setPanelId(panel.id);
-  }, [panel, panelId]);
+    if (page) {
+      if (pageId !== page.id) setPageId(page.id);
+      const validPanel = page.panels.some((p) => p.id === panelId);
+      if (!validPanel) {
+        setPanelId(page.panels[0]?.id ?? null);
+        setBubbleId(null);
+      }
+    }
+  }, [page, pageId, panelId]);
 
   useEffect(() => {
     if (!pageId) return;
@@ -236,7 +239,10 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       onOpenCoverDesigner={() => setCoverDesignerOpen(true)}
       onOpenDialogueModal={() => setDialogueEditorOpen(true)}
       layout={page.layout}
-      onLayout={(layout) => store.setLayout(comicId, page.id, layout)}
+      onLayout={(layout) => {
+        store.setLayout(comicId, page.id, layout);
+        toast.success(`Layout changed to ${layout}`);
+      }}
       panel={panel}
       bubble={bubble}
       onAddDialogue={addDialogue}
@@ -683,9 +689,16 @@ export function StudioEditor({ comicId }: { comicId: string }) {
                   toast.error("A comic needs at least one page.");
                   return;
                 }
+                const idx = comic.pages.findIndex((p) => p.id === page.id);
+                const remainingPages = comic.pages.filter((p) => p.id !== page.id);
+                const nextTargetPage = remainingPages[Math.max(0, idx - 1)] ?? remainingPages[0];
                 store.removePage(comicId, page.id);
-                setPageId(null);
-                setPanelId(null);
+                if (nextTargetPage) {
+                  setPageId(nextTargetPage.id);
+                  setPanelId(nextTargetPage.panels[0]?.id ?? null);
+                  setBubbleId(null);
+                }
+                toast.success("Page deleted.");
               }}
             >
               <Trash2 className="size-4" />

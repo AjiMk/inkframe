@@ -21,9 +21,42 @@ import type {
 
 const KEY = "inkframe.comics.v1";
 const BACKUP_KEY = "inkframe.comics.v1.backup";
+const DELETED_KEY = "inkframe.deleted_ids";
+
+function readDeletedIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(DELETED_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function recordDeletedId(id: string) {
+  try {
+    const set = readDeletedIds();
+    set.add(id);
+    localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(set)));
+  } catch {
+    // ignore
+  }
+}
+
+function clearDeletedId(id: string) {
+  try {
+    const set = readDeletedIds();
+    set.delete(id);
+    localStorage.setItem(DELETED_KEY, JSON.stringify(Array.from(set)));
+  } catch {
+    // ignore
+  }
+}
 
 function readComics(): Comic[] {
   try {
+    const deletedIds = readDeletedIds();
     const raw = localStorage.getItem(KEY);
     const backupRaw = localStorage.getItem(BACKUP_KEY);
     let primary: Comic[] = [];
@@ -39,8 +72,12 @@ function readComics(): Comic[] {
     }
 
     const map = new Map<string, Comic>();
-    for (const c of backup) map.set(c.id, c);
-    for (const c of primary) map.set(c.id, c);
+    for (const c of backup) {
+      if (!deletedIds.has(c.id)) map.set(c.id, c);
+    }
+    for (const c of primary) {
+      if (!deletedIds.has(c.id)) map.set(c.id, c);
+    }
 
     if (map.size === 0) return [createDemoComic()];
     return Array.from(map.values());
@@ -180,9 +217,12 @@ export const useComicStore = create<ComicState>((set, get) => ({
 
   saveNow: (comicId?: string) => {
     const comics = get().comics;
-    writeComics(comics);
+    const updatedComics = comicId
+      ? comics.map((c) => (c.id === comicId ? touch(c) : c))
+      : comics;
+    writeComics(updatedComics);
+    set({ comics: updatedComics, lastSavedAt: Date.now() });
     void get().syncMcpComics();
-    set({ lastSavedAt: Date.now() });
   },
 
   syncMcpComics: async () => {
@@ -193,15 +233,22 @@ export const useComicStore = create<ComicState>((set, get) => ({
       const mcpComics = (await res.json()) as Comic[];
       if (!Array.isArray(mcpComics) || mcpComics.length === 0) return;
 
+      const deletedIds = readDeletedIds();
       const localComics = readComics();
       const current = get().comics;
       const map = new Map<string, Comic>();
 
-      for (const c of localComics) map.set(c.id, c);
-      for (const c of current) map.set(c.id, c);
+      for (const c of localComics) {
+        if (!deletedIds.has(c.id)) map.set(c.id, c);
+      }
+      for (const c of current) {
+        if (!deletedIds.has(c.id)) map.set(c.id, c);
+      }
 
       let changed = false;
       for (const mcpC of mcpComics) {
+        if (deletedIds.has(mcpC.id)) continue;
+
         const existing = map.get(mcpC.id);
         const mcpTime = mcpC.updatedAt ?? 0;
         const existingTime = existing?.updatedAt ?? 0;
@@ -241,6 +288,8 @@ export const useComicStore = create<ComicState>((set, get) => ({
       );
       if (valid.length === 0) return false;
 
+      for (const c of valid) clearDeletedId(c.id);
+
       const map = new Map(get().comics.map((c) => [c.id, c]));
       for (const c of valid) map.set(c.id, c as Comic);
       const updated = Array.from(map.values());
@@ -254,6 +303,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
 
   create: (title, author) => {
     const comic = createComic(title, author);
+    clearDeletedId(comic.id);
     const comics = [comic, ...get().comics];
     writeComics(comics);
     set({ comics });
@@ -262,6 +312,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
 
   restoreDemo: () => {
     const demo = createDemoComic();
+    clearDeletedId(demo.id);
     const comics = [demo, ...get().comics.filter((c) => c.id !== demo.id)];
     writeComics(comics);
     set({ comics });
@@ -278,6 +329,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
   },
 
   remove: (id) => {
+    recordDeletedId(id);
     const target = get().comics.find((c) => c.id === id);
     if (target) {
       void deleteMediaRef(target.cover);
@@ -286,8 +338,10 @@ export const useComicStore = create<ComicState>((set, get) => ({
       }
     }
     const comics = get().comics.filter((c) => c.id !== id);
+    const past = (get().past || []).map((list) => list.filter((c) => c.id !== id));
+    const future = (get().future || []).map((list) => list.filter((c) => c.id !== id));
     writeComics(comics);
-    set({ comics });
+    set({ comics, past, future });
   },
 
   addPage: (comicId, layout = "splash") => {
@@ -301,6 +355,15 @@ export const useComicStore = create<ComicState>((set, get) => ({
   },
 
   removePage: (comicId, pageId) => {
+    const targetComic = get().comics.find((c) => c.id === comicId);
+    if (targetComic) {
+      const pageToDelete = targetComic.pages.find((p) => p.id === pageId);
+      if (pageToDelete) {
+        for (const panel of pageToDelete.panels) {
+          if (panel.image) void deleteMediaRef(panel.image);
+        }
+      }
+    }
     const comics = mapComic(get().comics, comicId, (c) => {
       if (c.pages.length <= 1) return c;
       return { ...c, pages: c.pages.filter((p) => p.id !== pageId) };
