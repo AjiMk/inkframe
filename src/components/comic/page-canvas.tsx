@@ -8,6 +8,7 @@ import { SpeechBubble } from "./speech-bubble";
 export interface RevealState {
   panelId?: string;
   visibleBubbleIds?: string[];
+  activeBubbleId?: string;
   dimOthers?: boolean;
 }
 
@@ -116,21 +117,32 @@ function PanelFrame({
   const dim = Boolean(reveal?.dimOthers && reveal.panelId && reveal.panelId !== panel.id);
   const bubbles = visibleBubbles(panel.bubbles, reveal, panel.id);
 
+  const activeBubble = reveal?.activeBubbleId && reveal?.panelId === panel.id
+    ? panel.bubbles.find((b) => b.id === reveal.activeBubbleId)
+    : null;
+
+  const focusTransform = activeBubble
+    ? {
+        transformOrigin: `${Math.min(Math.max(activeBubble.x + activeBubble.w / 2, 15), 85)}% ${Math.min(Math.max(activeBubble.y + 15, 15), 85)}%`,
+        transform: "scale(1.24)",
+      }
+    : undefined;
+
   function handleDrop(event: React.DragEvent) {
     event.preventDefault();
-    const file = event.dataTransfer.files[0];
+    const file = event.target ? event.dataTransfer.files[0] : null;
     if (file && onDropFile) onDropFile(panel.id, file);
   }
 
   return (
     <div
       className={cn(
-        "relative min-h-0 overflow-hidden rounded-[2px] bg-secondary transition-[opacity,transform,filter] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "relative min-h-0 overflow-hidden rounded-[2px] bg-secondary transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
         selected && mode === "edit" && "ring-2 ring-primary ring-offset-2 ring-offset-ink",
         dim && "opacity-25",
         isFocus && reveal?.panelId === panel.id && mode === "read" && "anim-panel z-10",
       )}
-      style={{ gridArea: area }}
+      style={{ gridArea: area, ...focusTransform }}
       onClick={() => onSelectPanel?.(panel.id)}
       onDragOver={(e) => {
         if (mode === "edit") e.preventDefault();
@@ -175,6 +187,7 @@ function PanelFrame({
           editable={mode === "edit"}
           selected={selectedBubbleId === bubble.id}
           entering={mode === "read" && reveal?.visibleBubbleIds?.includes(bubble.id)}
+          isActive={mode === "read" && reveal?.activeBubbleId === bubble.id}
           onSelect={() => onSelectBubble?.(panel.id, bubble.id)}
           onDoubleClick={() => onDoubleClickBubble?.(panel.id, bubble.id)}
           onMove={(x, y) => onMoveBubble?.(panel.id, bubble.id, x, y)}
