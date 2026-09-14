@@ -1022,74 +1022,33 @@ function Inspector({
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Dialogue & Headings
         </p>
-        <div className={bubble ? "grid grid-cols-1 gap-2" : "space-y-2"}>
-          <div className="grid grid-cols-2 gap-1.5">
-            {(
-              [
-                ["speech", "Speech", MessageCircle],
-                ["thought", "Thought", Cloud],
-                ["shout", "Shout", Megaphone],
-                ["caption", "Caption", Captions],
-                ["sfx", "SFX (KAPOW!)", Zap],
-                ["title-banner", "Scene Banner", Bookmark],
-                ["burst-label", "Starburst", Award],
-              ] as const
-            ).map(([kind, label, Icon]) => {
-              const selected = bubble?.kind === kind;
-              return (
-                <Button
-                  key={kind}
-                  type="button"
-                  variant={selected ? "default" : "secondary"}
-                  size="sm"
-                  className="h-8 justify-start px-2 text-[11px]"
-                  onClick={() => onAddDialogue(kind)}
-                >
-                  <Icon className="size-3.5 shrink-0" />
-                  <span className="truncate">{label}</span>
-                </Button>
-              );
-            })}
-          </div>
-          {bubble ? (
-            <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/10 p-2.5">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-primary truncate">
-                  Selected: "{bubble.text || "Empty Dialogue"}"
-                </p>
-                <p className="text-[10px] text-muted-foreground capitalize">
-                  {bubble.kind} balloon
-                </p>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="default"
-                  className="h-7 text-xs px-2.5 gap-1 font-semibold"
-                  onClick={onOpenDialogueModal}
-                >
-                  <MessageCircle className="size-3.5" />
-                  Edit
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 text-destructive hover:bg-destructive/10"
-                  onClick={onDeleteBubble}
-                  aria-label="Remove balloon"
-                  title="Delete balloon"
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Pick a style to add dialogue, SFX heading, or action banner.
-            </p>
-          )}
+        <div className="grid grid-cols-2 gap-1.5">
+          {(
+            [
+              ["speech", "Speech", MessageCircle],
+              ["thought", "Thought", Cloud],
+              ["shout", "Shout", Megaphone],
+              ["caption", "Caption", Captions],
+              ["sfx", "SFX (KAPOW!)", Zap],
+              ["title-banner", "Scene Banner", Bookmark],
+              ["burst-label", "Starburst", Award],
+            ] as const
+          ).map(([kind, label, Icon]) => {
+            const selected = bubble?.kind === kind;
+            return (
+              <Button
+                key={kind}
+                type="button"
+                variant={selected ? "default" : "secondary"}
+                size="sm"
+                className="h-8 justify-start px-2 text-[11px]"
+                onClick={() => onAddDialogue(kind)}
+              >
+                <Icon className="size-3.5 shrink-0" />
+                <span className="truncate">{label}</span>
+              </Button>
+            );
+          })}
         </div>
       </section>
     </div>
