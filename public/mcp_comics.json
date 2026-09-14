@@ -1393,7 +1393,7 @@
     "id": "8906b565-221c-491c-be29-c79a12010f0c",
     "title": "Indu Bai",
     "author": "Aji Mk",
-    "cover": "url:/indu-bai/cover.jpg",
+    "cover": null,
     "coverConfig": {
       "template": "action",
       "titleStyle": "classic-3d",
@@ -1445,25 +1445,25 @@
         "panels": [
           {
             "id": "41de11b4-3208-4727-89da-48e937a017b9",
-            "image": "url:/indu-bai/p01-splash.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "c8d1536b-ee52-4b03-b228-a70d37a31fb0",
-                "text": "വൈകുന്നേരം 4:45. ഡോർബെൽ.",
+                "text": "4:45 PM. The doorbell.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               },
               {
                 "id": "f7753852-f2de-43b8-8e51-30301fe05474",
-                "text": "ഇന്ദു ബായ് ഗ്രാമത്തിൽ നിന്ന് തിരിച്ചെത്തി.",
+                "text": "Indu bai was back from the village.",
                 "kind": "caption",
                 "x": 4,
-                "y": 78,
-                "w": 90,
+                "y": 4,
+                "w": 92,
                 "tail": "none"
               }
             ]
@@ -1476,32 +1476,32 @@
         "panels": [
           {
             "id": "4972bb17-1898-4a20-9eff-5c803c2812cc",
-            "image": "url:/indu-bai/p02-a.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "2ef0012c-4cff-4012-a47e-9a133a6fc27d",
-                "text": "നീ പോയി നിന്റെ സാധനങ്ങൾ മുറിയിൽ വെക്ക്. രണ്ട് ഗ്ലാസ് തണുത്ത വെള്ളവും എന്റെ മുറിയിൽ കൊണ്ടുവാ.",
+                "text": "Tu ja apna samaan rakh. Do glass thanda pani lekar aa mere kamre mein.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
           },
           {
             "id": "ac5e9024-4c5a-4e9d-a182-fd0cf14baa9a",
-            "image": "url:/indu-bai/p02-b.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "4667e7a6-31ae-43ee-925c-86a0911e51b3",
-                "text": "ജി, ചെറിയ സാറേ.",
+                "text": "Ji chote sahab.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
@@ -1514,48 +1514,48 @@
         "panels": [
           {
             "id": "bc0d664d-9dcc-4f87-a13b-a3ccf8a3ed05",
-            "image": "url:/indu-bai/p03-a.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "83755461-39df-4de4-9818-a0163f1b2364",
-                "text": "അച്ഛന്റെ മുറിയുടെ വാതിൽ തുറന്നു.",
+                "text": "Dad's bedroom door opened.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               }
             ]
           },
           {
             "id": "891882df-6746-4df5-9d1b-6b6427d0f79a",
-            "image": "url:/indu-bai/p03-b.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "b959e884-24f4-464a-a2eb-a317ea16ff1b",
-                "text": "ആദ്യം സുശീല. പിന്നെ അയാൾ.",
+                "text": "Sushila first. Then him.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               }
             ]
           },
           {
             "id": "d123456d-926f-420b-b3d5-5ab9eea88352",
-            "image": "url:/indu-bai/p03-c.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "1dfab483-1070-49b6-9343-07f8dad01c77",
-                "text": "പോയി നോക്ക് മകനേ. പ്രശ്നമായാൽ ഇന്റർകോമിൽ വിളിക്ക്.",
+                "text": "Go for it, son. If she gives you trouble, call the intercom.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
@@ -1568,32 +1568,32 @@
         "panels": [
           {
             "id": "3f013e0a-c7fa-4e3b-b150-f73926f14cd6",
-            "image": "url:/indu-bai/p04-a.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "91823232-d569-4921-9eb8-1666884666f4",
-                "text": "രണ്ട് ഗ്ലാസ് തണുത്ത വെള്ളം.",
+                "text": "Two glasses of cold water.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               }
             ]
           },
           {
             "id": "c7d75971-cdc2-4fcb-9011-412b38adaf9d",
-            "image": "url:/indu-bai/p04-b.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "8fb6f000-7ddd-4137-98ba-4918200dcda7",
-                "text": "പല്ലു തലയിൽ ഇടരുത്. തല തുറന്നിട്ടോ ഇന്ദു.",
+                "text": "Pallu ko mat daal sar par. Maatha khulla rehne de, Indu.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
@@ -1606,48 +1606,48 @@
         "panels": [
           {
             "id": "13078821-cb5e-43a2-8a8a-9647deff4294",
-            "image": "url:/indu-bai/p05-a.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "8004fc86-facc-4349-9107-ec4b8f6f43f2",
-                "text": "ഈ വെള്ളം കുടിക്ക് ഇന്ദു. നീ ഏറെ ക്ഷീണിച്ചിരിക്കുന്നു.",
+                "text": "Tu ye paani pee le Indu. Tu bahut thaki lag rahi hai.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
           },
           {
             "id": "9ee24c88-7397-4f8f-99ff-3cd938951f18",
-            "image": "url:/indu-bai/p05-b.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "1a5043cf-d4a1-4c1d-ade9-cf34ba969ee5",
-                "text": "സാർ, അച്ഛനമ്മമാർ എന്നെ വീട്ടിൽ നിന്ന് പുറത്താക്കി. ഭർത്താവ് പോയത് എന്റെ കുറ്റമാണെന്ന് അവർ പറയുന്നു.",
+                "text": "Sahab, maa-baap ne mujhe ghar se nikaal diya. Woh mujhe dosh dete hain ki mera pati chala gaya.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
           },
           {
             "id": "a19d8bd8-effd-45b8-a142-12d6174c26da",
-            "image": "url:/indu-bai/p05-c.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "83ca8c40-8478-44c2-86b6-c4ea351b9701",
-                "text": "ഇന്ദു, നീ വളരെ സുന്ദരിയാണ്. നീ എനിക്ക് ഏറെ ഇഷ്ടമാണ്.",
+                "text": "Indu, tu bahut khoobsurat aur mast aurat hai. Tu mujhe bahut mast lagti hai.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
@@ -1660,32 +1660,32 @@
         "panels": [
           {
             "id": "c978661f-56c0-434f-8b42-948025281264",
-            "image": "url:/indu-bai/p06-a.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "9b6b2c02-99f1-4fb2-9252-556774a10fcb",
-                "text": "ഇന്ദു ബായ്, എങ്ങോട്ടാണ് പോകുന്നത്!",
+                "text": "Indu bai, kahan ja rahi hai tu!",
                 "kind": "shout",
                 "x": 18,
                 "y": 12,
-                "w": 64,
+                "w": 56,
                 "tail": "none"
               }
             ]
           },
           {
             "id": "ed625b18-0253-452f-b684-18527f00c891",
-            "image": "url:/indu-bai/p06-b.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "738e635a-df2a-4c24-974e-c711ef33c7ca",
-                "text": "കുറച്ച് നിമിഷങ്ങൾക്ക് ശേഷം അവൾ തിരിച്ചുവന്നു. തല ഇപ്പോഴും തുറന്നിരുന്നു.",
+                "text": "A few minutes later, she came back. Head still uncovered.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               }
             ]
@@ -1698,48 +1698,48 @@
         "panels": [
           {
             "id": "9f92e80d-12db-4a9d-b6b2-1f8169c533cc",
-            "image": "url:/indu-bai/p07-a.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "93c72e05-afe8-4f88-b465-8d8399bc4805",
-                "text": "ഇന്ദു, നിന്റെ മുടിക്കെട്ട് അഴിക്ക്. നിന്റെ അഴിഞ്ഞ മുടി കാണിച്ചുതരൂ.",
+                "text": "Indu, tu apna juda khol. Mujhe apne khule baal dikha.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
           },
           {
             "id": "5512fdc3-be9b-452b-8221-d6973bc6df23",
-            "image": "url:/indu-bai/p07-b.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "fc1662df-9349-4f97-934b-760bf67becbe",
-                "text": "അവൾ ഇതിനകം കണ്ണാടിക്ക് മുന്നിലായിരുന്നു.",
+                "text": "She was already at the mirror.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               }
             ]
           },
           {
             "id": "4c4e19ec-6ef0-4ce9-9847-83f08eb56abc",
-            "image": "url:/indu-bai/p07-c.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "56771126-adac-4240-afb8-b0ee967fc6f1",
-                "text": "ഉഫ്, ഇന്ദു. എന്നോടൊപ്പം മുറിയിലേക്ക് വാ.",
+                "text": "Uff, Indu. Chal mere saath kamre mein.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
@@ -1752,32 +1752,32 @@
         "panels": [
           {
             "id": "0ac9db34-1b57-4e2c-a171-243c1daaa814",
-            "image": "url:/indu-bai/p08-a.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "b88adc55-7561-472e-95eb-d6b9ac2cfe5c",
-                "text": "സാർ, ആരെങ്കിലും കണ്ടേക്കും. മെംസാഹിബോ വലിയ സാറോ പിടിച്ചേക്കുമോ?",
+                "text": "Sahab, koi dekh lega. Memsahib ya bade sahab pakad lenge?",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
           },
           {
             "id": "fcf2f898-9104-4aec-82cb-ac53e12ad796",
-            "image": "url:/indu-bai/p08-b.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "974a8f5c-eb57-454d-9c81-e4f146ec6569",
-                "text": "നീ വിഷമിക്കേണ്ട. മെംസാഹിബ് ഡൽഹിയിലാണ്. ഇനി നാടകം നിർത്ത്.",
+                "text": "Tu chinta mat kar. Memsahib Dilli gayi hai. Abb natak bandh kar.",
                 "kind": "speech",
                 "x": 8,
                 "y": 8,
-                "w": 52,
+                "w": 42,
                 "tail": "bl"
               }
             ]
@@ -1790,16 +1790,16 @@
         "panels": [
           {
             "id": "51039f18-334d-4930-bcce-989fe87e1142",
-            "image": "url:/indu-bai/p09-splash.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "bb6078d6-d552-4631-bf2a-017e38863570",
-                "text": "വാതിൽ അടഞ്ഞതോടെ ഇനി ഓടാനില്ല.",
+                "text": "Once the door was shut, there was no more running.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               }
             ]
@@ -1812,32 +1812,32 @@
         "panels": [
           {
             "id": "bd2d59c7-9eda-493a-8c2c-5aa81fe3eb51",
-            "image": "url:/indu-bai/p10-a.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "3c39d5a1-25b4-4931-9b6d-9dbbbd9a8531",
-                "text": "അവൾ അയാളെ പിന്തുടർന്നു.",
+                "text": "She followed him.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               }
             ]
           },
           {
             "id": "745780a7-d36d-49b8-83f0-8b6da8d49940",
-            "image": "url:/indu-bai/p10-b.jpg",
+            "image": null,
             "filter": "none",
             "bubbles": [
               {
                 "id": "6f0ff602-b047-4ea2-860a-06e56c35a648",
-                "text": "കുളിമുറിയുടെ വാതിൽ അവരുടെ പിന്നിൽ അടഞ്ഞു.",
+                "text": "The bathroom door closed behind them.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
-                "w": 90,
+                "w": 92,
                 "tail": "none"
               }
             ]
@@ -1846,6 +1846,802 @@
       }
     ],
     "createdAt": 1789407870353,
-    "updatedAt": 1789409522553
+    "updatedAt": 1789408253555
+  },
+  {
+    "id": "859c5b69-0a11-40ab-9a2f-a4888d8dd2d7",
+    "title": "Kavya",
+    "author": "Aji Mk",
+    "cover": "url:/kavya-4b/cover.jpg",
+    "coverConfig": {
+      "template": "action",
+      "titleStyle": "classic-3d",
+      "issueNumber": "#1",
+      "issuePrice": "$3.99",
+      "issueDate": "VOL. 1",
+      "publisherName": "INKFRAME COMICS",
+      "tagline": "SHE PICKED IT",
+      "subtitle": "FLAT 4B",
+      "showComicsCode": true,
+      "showBarcode": true,
+      "titleColor": "#facc15",
+      "accentColor": "#dc2626",
+      "positions": {
+        "issueBox": {
+          "x": 3,
+          "y": 3
+        },
+        "tagline": {
+          "x": 22,
+          "y": 3
+        },
+        "comicsCode": {
+          "x": 82,
+          "y": 3
+        },
+        "title": {
+          "x": 4,
+          "y": 15
+        },
+        "subtitle": {
+          "x": 12,
+          "y": 28
+        },
+        "authorBadge": {
+          "x": 3,
+          "y": 86
+        },
+        "barcode": {
+          "x": 74,
+          "y": 84
+        }
+      }
+    },
+    "pages": [
+      {
+        "id": "44633303-5a16-492c-a7db-6f05d0eb2134",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "10f5dcc4-30b0-48a5-9555-9a58a22fa1ef",
+            "image": "url:/kavya-4b/s01-akhil-morning.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "2bd70a50-98d9-474a-a4c5-6ecde8d38ceb",
+                "text": "Akhil's room. Morning.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 70,
+                "tail": "none"
+              },
+              {
+                "id": "62a8c769-7819-41a0-8ddd-bd08a5272025",
+                "text": "I woke up knowing I could change anyone's mind.",
+                "kind": "thought",
+                "x": 8,
+                "y": 18,
+                "w": 50,
+                "tail": "br"
+              },
+              {
+                "id": "133c8009-1edf-478d-94a6-3c4639f2bc6e",
+                "text": "I'm not using that on Kavya. Don't need to. She already wants me.",
+                "kind": "thought",
+                "x": 42,
+                "y": 72,
+                "w": 52,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "9c733ebc-58a2-41d9-8245-b9c846b66490",
+        "layout": "two-h",
+        "panels": [
+          {
+            "id": "d5bc31db-d2f1-477f-9586-ab5361f2ac13",
+            "image": "url:/kavya-4b/s02-couch.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "1feca33e-d8e1-41c2-995c-890c11474c14",
+                "text": "Kavya's flat. Evening. Door unlocked.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 88,
+                "tail": "none"
+              },
+              {
+                "id": "e2b864ad-ed23-4865-b222-555e71ab4d49",
+                "text": "I told him you might come.",
+                "kind": "speech",
+                "x": 6,
+                "y": 58,
+                "w": 40,
+                "tail": "bl"
+              },
+              {
+                "id": "ed55cc20-d09c-472c-85d6-95e03661407c",
+                "text": "I can't stand this guy. You know that.",
+                "kind": "speech",
+                "x": 50,
+                "y": 58,
+                "w": 44,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "9651ffe7-ddbb-4197-91fd-fe00e9632d03",
+            "image": "url:/kavya-4b/s02-akhil-arrives.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "fddb2b45-90c3-4da2-8aad-2a017dce1c3e",
+                "text": "I've been waiting for this. Every time I saw you at work. I wanted you to pick it.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 70,
+                "tail": "bl"
+              },
+              {
+                "id": "27857420-f156-4f01-8bef-e00af3e35ef0",
+                "text": "I'm picking it. I'm obsessed with you.",
+                "kind": "speech",
+                "x": 20,
+                "y": 68,
+                "w": 56,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "45b0bd8d-6f03-4b62-b120-0ce9ca172ad1",
+        "layout": "two-h",
+        "panels": [
+          {
+            "id": "7bc16dc8-f313-41e6-85a1-7e13fe91bac8",
+            "image": "url:/kavya-4b/s03-kiss.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "a26ca834-277d-4d4d-a161-0ec80467a68b",
+                "text": "Don't stop.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 36,
+                "tail": "bl"
+              },
+              {
+                "id": "43b0e429-2a13-4b9f-a027-c01e003f1cec",
+                "text": "I waited this long. Why would I stop?",
+                "kind": "speech",
+                "x": 48,
+                "y": 68,
+                "w": 46,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "21d08c7f-0468-47a2-bb62-faee8d3bced2",
+            "image": "url:/kavya-4b/s03-adarsh-watches.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "ab7c5f5c-41f0-4810-a266-4f85a9a713eb",
+                "text": "Adarsh stays in the chair. Silent. Watching.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 88,
+                "tail": "none"
+              },
+              {
+                "id": "b34b717e-c61e-497d-978e-74419e65eee2",
+                "text": "This is what I wanted. You. Not him.",
+                "kind": "speech",
+                "x": 8,
+                "y": 70,
+                "w": 50,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "19a7e46e-d1a6-4e4e-a0aa-b8d39a0bd138",
+        "layout": "two-h",
+        "panels": [
+          {
+            "id": "eb8b9866-bc14-4bee-b380-18f66bc98bff",
+            "image": "url:/kavya-4b/s04-akhil-call.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "7d59135d-2802-4719-a4c1-736bd7d216ab",
+                "text": "Get over here.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 40,
+                "tail": "bl"
+              },
+              {
+                "id": "50329a4b-1d34-402e-ba14-043eb04fad28",
+                "text": "I don't like you. At all.",
+                "kind": "speech",
+                "x": 40,
+                "y": 68,
+                "w": 48,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "5dc87903-2d73-4cc5-83d2-c66293fc9db7",
+            "image": "url:/kavya-4b/s04-adarsh-stands.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "01f155f5-4c82-4dcf-a4dc-fc3692df81c2",
+                "text": "I want you in this. Don't want it? Leave. Staying means you join.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 70,
+                "tail": "bl"
+              },
+              {
+                "id": "7fe307e7-67dd-45ae-8188-d783161d59de",
+                "text": "Because you asked. Not because of him.",
+                "kind": "speech",
+                "x": 20,
+                "y": 68,
+                "w": 56,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "f7ef4709-beee-4c7e-af39-85869ac53549",
+        "layout": "two-h",
+        "panels": [
+          {
+            "id": "dec207cb-445e-468c-8721-ccbcb94ecc42",
+            "image": "url:/kavya-4b/s05-phone.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "6f7cf915-e499-4a78-bff1-c0f6165f00d8",
+                "text": "Send security up. 4B. Not an emergency. He can say no.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 70,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "55eb1d3b-6341-474f-b6da-f85b47c5d086",
+            "image": "url:/kavya-4b/s05-door.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "50c4aad9-c7aa-4e34-a112-beca414c8da0",
+                "text": "Kavya… you sure?",
+                "kind": "speech",
+                "x": 48,
+                "y": 8,
+                "w": 44,
+                "tail": "br"
+              },
+              {
+                "id": "9cd7c656-14cb-4a92-8622-94c3cda34c9c",
+                "text": "Yes. Come in if you want. Shut the door and go if you don't.",
+                "kind": "speech",
+                "x": 6,
+                "y": 68,
+                "w": 55,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "a723606c-1bf4-42ab-b8d2-853adc15846c",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "e2a5dffe-96b4-41e6-ac7c-a9eadd9fff38",
+            "image": "url:/kavya-4b/s06-inside.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "bc9afd41-cbfa-4dc2-ba95-a49fb1ed2e2b",
+                "text": "This is because of you. I wanted you. The rest is extra.",
+                "kind": "speech",
+                "x": 4,
+                "y": 4,
+                "w": 52,
+                "tail": "bl"
+              },
+              {
+                "id": "443088bc-220e-4d3f-aee4-d5de2cfe86ed",
+                "text": "Look at me when you say that. Not him.",
+                "kind": "speech",
+                "x": 50,
+                "y": 4,
+                "w": 44,
+                "tail": "br"
+              },
+              {
+                "id": "73e9f277-8185-484d-b4ed-7d73fd7f7df6",
+                "text": "You already know who I'm looking at.",
+                "kind": "speech",
+                "x": 4,
+                "y": 58,
+                "w": 44,
+                "tail": "bl"
+              },
+              {
+                "id": "25c1e153-d08f-4caa-b62a-6c82e8b74b63",
+                "text": "This is okay? — It's okay. Don't ask again.",
+                "kind": "speech",
+                "x": 48,
+                "y": 70,
+                "w": 48,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0ab22df0-82f0-4005-ada5-7ef99f384949",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "0cd0b42a-3f00-49e3-9fc3-2409b2f0cbc9",
+            "image": "url:/kavya-4b/s07-after.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "8219c78f-1d13-4621-81a7-272f3d3f818d",
+                "text": "After. Hair messy. Almost smiling.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 70,
+                "tail": "none"
+              },
+              {
+                "id": "289250fd-ad5f-4cde-a9f8-fcbf22dcb4c5",
+                "text": "Shall we do it again?",
+                "kind": "speech",
+                "x": 28,
+                "y": 78,
+                "w": 48,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "createdAt": 1789412118993,
+    "updatedAt": 1789412250097
+  },
+  {
+    "id": "d731ec76-66c5-49c2-9b48-748f8d002159",
+    "title": "കാവ്യ",
+    "author": "Aji Mk",
+    "cover": "url:/kavya-4b/cover.jpg",
+    "coverConfig": {
+      "template": "action",
+      "titleStyle": "classic-3d",
+      "issueNumber": "#1",
+      "issuePrice": "$3.99",
+      "issueDate": "VOL. 1",
+      "publisherName": "INKFRAME COMICS",
+      "tagline": "SHE PICKED IT",
+      "subtitle": "FLAT 4B",
+      "showComicsCode": true,
+      "showBarcode": true,
+      "titleColor": "#facc15",
+      "accentColor": "#dc2626",
+      "positions": {
+        "issueBox": {
+          "x": 3,
+          "y": 3
+        },
+        "tagline": {
+          "x": 22,
+          "y": 3
+        },
+        "comicsCode": {
+          "x": 82,
+          "y": 3
+        },
+        "title": {
+          "x": 4,
+          "y": 15
+        },
+        "subtitle": {
+          "x": 12,
+          "y": 28
+        },
+        "authorBadge": {
+          "x": 3,
+          "y": 86
+        },
+        "barcode": {
+          "x": 74,
+          "y": 84
+        }
+      }
+    },
+    "pages": [
+      {
+        "id": "3372a5df-3fe3-472c-8d24-dd13a7e37a58",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "3275d6a6-e1c3-4463-9e36-fc6a263c3e76",
+            "image": "url:/kavya-4b/s01-akhil-morning.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "1292cb80-f8dd-4a71-aedf-ce45abe5a9de",
+                "text": "അഖിലിന്റെ മുറി. രാവിലെ.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 70,
+                "tail": "none"
+              },
+              {
+                "id": "29352d4d-15db-4024-8e7e-6eeb370a3202",
+                "text": "ആരുടെയും മനസ്സ് മാറ്റാമെന്ന് എനിക്കറിയാം.",
+                "kind": "thought",
+                "x": 8,
+                "y": 18,
+                "w": 50,
+                "tail": "br"
+              },
+              {
+                "id": "58c27ec7-2c06-40d7-a937-48eb553f4b8e",
+                "text": "കാവ്യയോട് അത് വേണ്ട. അവൾ ഇപ്പോൾ തന്നെ എന്നെ ആഗ്രഹിക്കുന്നു.",
+                "kind": "thought",
+                "x": 40,
+                "y": 72,
+                "w": 54,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "2c8e76b6-cfc2-484d-b428-e29f53aae112",
+        "layout": "two-h",
+        "panels": [
+          {
+            "id": "ebf9adf1-2a1c-4c09-84f4-1c5ce456e62f",
+            "image": "url:/kavya-4b/s02-couch.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "958f0355-7597-4173-83a2-779b9b72c8e1",
+                "text": "കാവ്യയുടെ ഫ്ലാറ്റ്. വൈകുന്നേരം. വാതിൽ തുറന്നിരിക്കുന്നു.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 90,
+                "tail": "none"
+              },
+              {
+                "id": "8e3ef905-55b7-4f82-977f-597ce63bc946",
+                "text": "നീ വരുമെന്ന് ഞാൻ അവനോട് പറഞ്ഞിട്ടുണ്ട്.",
+                "kind": "speech",
+                "x": 6,
+                "y": 58,
+                "w": 44,
+                "tail": "bl"
+              },
+              {
+                "id": "1c41bf83-481d-40e4-8038-953879427836",
+                "text": "എനിക്ക് ഇയാളെ സഹിക്കാൻ പറ്റില്ല. നിനക്കറിയാം.",
+                "kind": "speech",
+                "x": 50,
+                "y": 58,
+                "w": 44,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "fadeb488-3032-4c40-94b3-6101cbbfff0d",
+            "image": "url:/kavya-4b/s02-akhil-arrives.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "f9dd44c8-22bb-4169-b993-8b79a194b998",
+                "text": "ഇതിനായി ഞാൻ കാത്തിരുന്നു. ജോലിസ്ഥലത്ത് കാണുമ്പോഴൊക്കെ. നീ തന്നെ തിരഞ്ഞെടുക്കണമെന്ന്.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 72,
+                "tail": "bl"
+              },
+              {
+                "id": "fd295fff-029c-4e4b-ae52-0d72f7f7645d",
+                "text": "ഞാൻ തിരഞ്ഞെടുക്കുകയാണ്. നിന്നോട് ഞാൻ മതിമറന്നിരിക്കുന്നു.",
+                "kind": "speech",
+                "x": 16,
+                "y": 68,
+                "w": 70,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "f73611d9-068b-4b4d-8b96-3e968efc17f8",
+        "layout": "two-h",
+        "panels": [
+          {
+            "id": "320a5ebe-a25a-4433-a396-dc072126a67b",
+            "image": "url:/kavya-4b/s03-kiss.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "30da93c2-0bad-4572-b8b8-aca838815fb7",
+                "text": "നിർത്തരുത്.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 36,
+                "tail": "bl"
+              },
+              {
+                "id": "17534312-86f1-40ea-8b3b-a33a1fd12db9",
+                "text": "ഇത്ര കാത്തിരുന്ന ശേഷം ഞാൻ നിർത്തുമോ?",
+                "kind": "speech",
+                "x": 46,
+                "y": 68,
+                "w": 48,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "649259ba-e8b2-4d70-899c-4587ce2cb0b1",
+            "image": "url:/kavya-4b/s03-adarsh-watches.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "21491b45-cca5-4da9-83fe-6f723f89740f",
+                "text": "ആദർശ് കസേരയിൽ ഇരിക്കുന്നു. മിണ്ടാതെ. നോക്കി നിൽക്കുന്നു.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 90,
+                "tail": "none"
+              },
+              {
+                "id": "7276a3e1-bdd8-4708-84b6-e07c84a965ec",
+                "text": "ഞാൻ ആഗ്രഹിച്ചത് ഇതാണ്. നിന്നെ. അവനെയല്ല.",
+                "kind": "speech",
+                "x": 8,
+                "y": 70,
+                "w": 54,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "00c3c781-9583-4dd2-b4a5-c96478039f18",
+        "layout": "two-h",
+        "panels": [
+          {
+            "id": "794ff7c4-cc2b-4b57-8168-2a2346c4358a",
+            "image": "url:/kavya-4b/s04-akhil-call.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "72aff670-87e7-4348-bdc3-2e7cee059dec",
+                "text": "ഇങ്ങോട്ട് വാ.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 36,
+                "tail": "bl"
+              },
+              {
+                "id": "ba5577a4-41eb-4eae-a95c-d09d0ec36c78",
+                "text": "എനിക്ക് നിന്നെ ഇഷ്ടമല്ല. ഒട്ടും.",
+                "kind": "speech",
+                "x": 40,
+                "y": 68,
+                "w": 48,
+                "tail": "br"
+              }
+            ]
+          },
+          {
+            "id": "42e3356e-018c-48e5-9ebe-3eab4f3049a9",
+            "image": "url:/kavya-4b/s04-adarsh-stands.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "7fdfe301-6be3-4f90-8bca-af6071584414",
+                "text": "നീയും ഇതിലുണ്ടാകണം. വേണ്ടെങ്കിൽ പോക്. നിൽക്കുന്നുവെങ്കിൽ ചേരുക.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 72,
+                "tail": "bl"
+              },
+              {
+                "id": "9d34e059-3425-44dc-886e-dac37563bb41",
+                "text": "നീ ചോദിച്ചതുകൊണ്ട്. അവൻ പറഞ്ഞതുകൊണ്ടല്ല.",
+                "kind": "speech",
+                "x": 16,
+                "y": 68,
+                "w": 70,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "10f11aa1-644f-4a2a-9d5e-c55db854fb7c",
+        "layout": "two-h",
+        "panels": [
+          {
+            "id": "18f90111-b3f0-4a2d-8fa3-4d4a40252a8a",
+            "image": "url:/kavya-4b/s05-phone.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "a920c47c-9f8c-46fe-9626-a91c12f43964",
+                "text": "സെക്യൂരിറ്റിയെ അയയ്ക്ക്. 4B. അടിയന്തരമല്ല. അവന് വേണ്ടെന്ന് പറയാം.",
+                "kind": "speech",
+                "x": 8,
+                "y": 8,
+                "w": 72,
+                "tail": "bl"
+              }
+            ]
+          },
+          {
+            "id": "b7a96b25-3c4a-44c7-b0c9-4f4ac7a8f1a2",
+            "image": "url:/kavya-4b/s05-door.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "3981455f-b23a-478c-a59c-a2ee7f8814b5",
+                "text": "കാവ്യ… ഉറപ്പാണോ?",
+                "kind": "speech",
+                "x": 50,
+                "y": 8,
+                "w": 42,
+                "tail": "br"
+              },
+              {
+                "id": "61c599de-5c5a-4d9c-8294-5a204ef4084a",
+                "text": "ഉറപ്പ്. വേണമെങ്കിൽ കയറ്. വേണ്ടെങ്കിൽ വാതിൽ അടച്ച് പോക്.",
+                "kind": "speech",
+                "x": 6,
+                "y": 68,
+                "w": 58,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "3751b5f5-82ca-4e58-acb7-d1b78a27b9af",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "b8df9016-abe7-4196-b0b7-a9e3b9821bb6",
+            "image": "url:/kavya-4b/s06-inside.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "556e0ec7-6cb9-46fb-a9ce-5e310897e75f",
+                "text": "ഇത് നിന്നെക്കുറിച്ചാണ്. ഞാൻ ആഗ്രഹിച്ചത് നിന്നെയാണ്. ബാക്കി അധികം.",
+                "kind": "speech",
+                "x": 4,
+                "y": 4,
+                "w": 54,
+                "tail": "bl"
+              },
+              {
+                "id": "5cd59704-6886-47db-a9af-0a88386c0ef7",
+                "text": "അത് പറയുമ്പോൾ എന്നെ നോക്ക്. അവനെയല്ല.",
+                "kind": "speech",
+                "x": 52,
+                "y": 4,
+                "w": 44,
+                "tail": "br"
+              },
+              {
+                "id": "1ab183c1-b014-415f-9a08-a980a5a0793a",
+                "text": "ഞാൻ ആരെയാണ് നോക്കുന്നതെന്ന് നിനക്കറിയാം.",
+                "kind": "speech",
+                "x": 4,
+                "y": 58,
+                "w": 48,
+                "tail": "bl"
+              },
+              {
+                "id": "17af9ce4-4cd5-4876-b08d-5411e473856c",
+                "text": "ശരിയാണോ? — ശരിയാണ്. വീണ്ടും ചോദിക്കേണ്ട.",
+                "kind": "speech",
+                "x": 48,
+                "y": 70,
+                "w": 48,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "b4ff7148-efd7-47fc-b933-c39398222f91",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "165cf70e-8fd2-44af-836d-8ded3736d7f9",
+            "image": "url:/kavya-4b/s07-after.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "8cab7302-d14d-4ef8-9dd9-2e56f33397b0",
+                "text": "ശേഷം. മുടി ചുരുണ്ട്. ഏകദേശം ചിരി.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 70,
+                "tail": "none"
+              },
+              {
+                "id": "942091a1-7e6c-4b25-9de6-a53920811e27",
+                "text": "വീണ്ടും ചെയ്യാമോ?",
+                "kind": "speech",
+                "x": 30,
+                "y": 78,
+                "w": 44,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "createdAt": 1789412118994,
+    "updatedAt": 1789412250097
   }
 ]

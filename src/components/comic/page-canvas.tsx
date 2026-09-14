@@ -8,6 +8,7 @@ import { SpeechBubble } from "./speech-bubble";
 export interface RevealState {
   panelId?: string;
   visibleBubbleIds?: string[];
+  activeBubbleId?: string;
   dimOthers?: boolean;
 }
 
@@ -118,14 +119,14 @@ function PanelFrame({
 
   function handleDrop(event: React.DragEvent) {
     event.preventDefault();
-    const file = event.dataTransfer.files[0];
+    const file = event.target ? event.dataTransfer.files[0] : null;
     if (file && onDropFile) onDropFile(panel.id, file);
   }
 
   return (
     <div
       className={cn(
-        "relative min-h-0 overflow-hidden rounded-[2px] bg-secondary transition-[opacity,transform,filter] duration-400 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "relative min-h-0 overflow-hidden rounded-[2px] bg-secondary transition-all duration-300 ease-out",
         selected && mode === "edit" && "ring-2 ring-primary ring-offset-2 ring-offset-ink",
         dim && "opacity-25",
         isFocus && reveal?.panelId === panel.id && mode === "read" && "anim-panel z-10",
@@ -144,7 +145,6 @@ function PanelFrame({
           className={cn(
             "absolute inset-0 size-full object-cover",
             panel.filter !== "none" && `panel-filter-${panel.filter}`,
-            mode === "read" && isFocus && "anim-kenburns",
           )}
         />
       ) : mode === "edit" ? (
@@ -175,6 +175,7 @@ function PanelFrame({
           editable={mode === "edit"}
           selected={selectedBubbleId === bubble.id}
           entering={mode === "read" && reveal?.visibleBubbleIds?.includes(bubble.id)}
+          isActive={mode === "read" && reveal?.activeBubbleId === bubble.id}
           onSelect={() => onSelectBubble?.(panel.id, bubble.id)}
           onDoubleClick={() => onDoubleClickBubble?.(panel.id, bubble.id)}
           onMove={(x, y) => onMoveBubble?.(panel.id, bubble.id, x, y)}

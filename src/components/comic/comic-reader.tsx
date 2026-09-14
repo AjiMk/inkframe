@@ -11,7 +11,7 @@ import { CoverCanvas } from "./cover-canvas";
 
 type Beat =
   | { type: "title" }
-  | { type: "panel"; pageIndex: number; panelId: string; bubbleIds: string[] }
+  | { type: "panel"; pageIndex: number; panelId: string; bubbleIds: string[]; activeBubbleId?: string }
   | { type: "page"; pageIndex: number }
   | { type: "end" };
 
@@ -91,7 +91,12 @@ export function ComicReader({ comicId }: { comicId: string }) {
   const page = comic.pages[pageIndex];
   const reveal: RevealState | undefined =
     beat.type === "panel"
-      ? { panelId: beat.panelId, visibleBubbleIds: beat.bubbleIds, dimOthers: true }
+      ? {
+          panelId: beat.panelId,
+          visibleBubbleIds: beat.bubbleIds,
+          activeBubbleId: beat.activeBubbleId,
+          dimOthers: true,
+        }
       : undefined;
 
   return (
@@ -274,11 +279,13 @@ function buildBeats(comic: Comic, mode: "guided" | "flip"): Beat[] {
             pageIndex,
             panelId: panel.id,
             bubbleIds: [...ids],
+            activeBubbleId: bubble.id,
           });
         }
       });
+    } else {
+      beats.push({ type: "page", pageIndex });
     }
-    beats.push({ type: "page", pageIndex });
   });
   beats.push({ type: "end" });
   return beats;

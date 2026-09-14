@@ -7,6 +7,7 @@ interface Props {
   editable?: boolean;
   selected?: boolean;
   entering?: boolean;
+  isActive?: boolean;
   onSelect?: () => void;
   onDoubleClick?: () => void;
   onMove?: (x: number, y: number) => void;
@@ -18,6 +19,7 @@ export function SpeechBubble({
   editable,
   selected,
   entering,
+  isActive,
   onSelect,
   onDoubleClick,
   onMove,
@@ -123,8 +125,9 @@ export function SpeechBubble({
   return (
     <div
       className={cn(
-        "absolute z-10 touch-none",
+        "absolute z-10 touch-none transition-all duration-300 ease-out",
         entering && "anim-bubble",
+        isActive && "z-30 anim-bubble-active",
         editable && "cursor-grab active:cursor-grabbing",
       )}
       style={{
@@ -139,9 +142,10 @@ export function SpeechBubble({
     >
       <div
         className={cn(
-          "relative select-none px-2.5 py-1.5 text-center text-[0.78rem] leading-snug text-ink sm:text-sm",
+          "relative select-none px-2.5 py-1.5 text-center text-[0.78rem] leading-snug text-ink sm:text-sm transition-all duration-300 ease-out",
           kindClass(bubble.kind),
           selected && "ring-2 ring-primary ring-offset-2 ring-offset-transparent",
+          isActive && "ring-4 ring-primary shadow-2xl scale-[1.05]",
         )}
       >
         {bubble.kind === "shout" ? (
