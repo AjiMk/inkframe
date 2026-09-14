@@ -19,6 +19,7 @@ interface PageCanvasProps {
   reveal?: RevealState;
   onSelectPanel?: (panelId: string) => void;
   onSelectBubble?: (panelId: string, bubbleId: string) => void;
+  onDoubleClickBubble?: (panelId: string, bubbleId: string) => void;
   onMoveBubble?: (panelId: string, bubbleId: string, x: number, y: number) => void;
   onResizeBubble?: (panelId: string, bubbleId: string, w: number) => void;
   onDropFile?: (panelId: string, file: File) => void;
@@ -34,6 +35,7 @@ export function PageCanvas({
   reveal,
   onSelectPanel,
   onSelectBubble,
+  onDoubleClickBubble,
   onMoveBubble,
   onResizeBubble,
   onDropFile,
@@ -71,6 +73,7 @@ export function PageCanvas({
             reveal={reveal}
             onSelectPanel={onSelectPanel}
             onSelectBubble={onSelectBubble}
+            onDoubleClickBubble={onDoubleClickBubble}
             onMoveBubble={onMoveBubble}
             onResizeBubble={onResizeBubble}
             onDropFile={onDropFile}
@@ -90,6 +93,7 @@ function PanelFrame({
   reveal,
   onSelectPanel,
   onSelectBubble,
+  onDoubleClickBubble,
   onMoveBubble,
   onResizeBubble,
   onDropFile,
@@ -102,6 +106,7 @@ function PanelFrame({
   reveal?: RevealState;
   onSelectPanel?: (panelId: string) => void;
   onSelectBubble?: (panelId: string, bubbleId: string) => void;
+  onDoubleClickBubble?: (panelId: string, bubbleId: string) => void;
   onMoveBubble?: (panelId: string, bubbleId: string, x: number, y: number) => void;
   onResizeBubble?: (panelId: string, bubbleId: string, w: number) => void;
   onDropFile?: (panelId: string, file: File) => void;
@@ -142,6 +147,12 @@ function PanelFrame({
             panel.filter === "noir" && "panel-filter-noir",
             panel.filter === "sepia" && "panel-filter-sepia",
             panel.filter === "halftone" && "panel-filter-halftone",
+            panel.filter === "vintage" && "panel-filter-vintage",
+            panel.filter === "pop-art" && "panel-filter-pop-art",
+            panel.filter === "cyber-neon" && "panel-filter-cyber-neon",
+            panel.filter === "graphic-novel" && "panel-filter-graphic-novel",
+            panel.filter === "anime-cel" && "panel-filter-anime-cel",
+            panel.filter === "pencil-sketch" && "panel-filter-pencil-sketch",
             mode === "read" && isFocus && "anim-kenburns",
           )}
         />
@@ -155,7 +166,7 @@ function PanelFrame({
       ) : (
         <div className="h-full bg-secondary" />
       )}
-      {panel.filter === "halftone" ? (
+      {panel.filter === "halftone" || panel.filter === "pop-art" ? (
         <span className="halftone-dot pointer-events-none absolute inset-0" />
       ) : null}
       {bubbles.map((bubble) => (
@@ -166,6 +177,7 @@ function PanelFrame({
           selected={selectedBubbleId === bubble.id}
           entering={mode === "read" && reveal?.visibleBubbleIds?.includes(bubble.id)}
           onSelect={() => onSelectBubble?.(panel.id, bubble.id)}
+          onDoubleClick={() => onDoubleClickBubble?.(panel.id, bubble.id)}
           onMove={(x, y) => onMoveBubble?.(panel.id, bubble.id, x, y)}
           onResize={(w) => onResizeBubble?.(panel.id, bubble.id, w)}
         />

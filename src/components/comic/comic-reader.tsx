@@ -7,6 +7,7 @@ import { useMediaUrl } from "@/lib/comics/media";
 import { useComicStore } from "@/lib/comics/store";
 import type { Comic } from "@/lib/comics/types";
 import { PageCanvas, type RevealState } from "./page-canvas";
+import { CoverCanvas } from "./cover-canvas";
 
 type Beat =
   | { type: "title" }
@@ -219,25 +220,13 @@ export function ComicReader({ comicId }: { comicId: string }) {
 }
 
 function TitleCard({ comic }: { comic: Comic }) {
-  const src = useMediaUrl(coverRef(comic));
   return (
     <div className="anim-rise flex w-full max-w-md flex-col items-center text-center">
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-lg paper-shadow">
-        {src ? (
-          <img src={src} alt="" className="absolute inset-0 size-full object-cover anim-kenburns" />
-        ) : (
-          <div className="size-full bg-secondary" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/20 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 p-5 text-left">
-          <h1 className="font-display text-4xl leading-none text-paper sm:text-5xl">
-            {comic.title}
-          </h1>
-          <p className="mt-2 text-sm text-paper/75">{comic.author}</p>
-        </div>
+      <div className="w-full max-w-[360px]">
+        <CoverCanvas comic={comic} mode="read" />
       </div>
-      <p className="mt-4 text-xs uppercase tracking-[0.2em] text-paper/55">
-        Tap to begin
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.2em] text-paper/60">
+        Tap anywhere to begin
       </p>
     </div>
   );

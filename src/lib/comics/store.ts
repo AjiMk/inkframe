@@ -4,12 +4,14 @@ import {
   createBubble,
   createComic,
   createPage,
+  defaultCoverConfig,
   fitPanelsToLayout,
 } from "./factory";
 import { deleteMediaRef } from "./media";
 import type {
   BubbleKind,
   Comic,
+  CoverConfig,
   FaceReplacement,
   PageLayoutId,
   PanelFilter,
@@ -76,6 +78,7 @@ interface ComicState {
   ) => void;
   removeBubble: (comicId: string, pageId: string, panelId: string, bubbleId: string) => void;
   setCover: (comicId: string, cover: string | null) => void;
+  setCoverConfig: (comicId: string, patch: Partial<CoverConfig>) => void;
 }
 
 export const useComicStore = create<ComicState>((set, get) => ({
@@ -383,6 +386,18 @@ export const useComicStore = create<ComicState>((set, get) => ({
       if (c.cover && c.cover !== cover) void deleteMediaRef(c.cover);
       return { ...c, cover };
     });
+    writeComics(comics);
+    set({ comics });
+  },
+
+  setCoverConfig: (comicId, patch) => {
+    const comics = mapComic(get().comics, comicId, (c) => ({
+      ...c,
+      coverConfig: {
+        ...(c.coverConfig ?? defaultCoverConfig()),
+        ...patch,
+      },
+    }));
     writeComics(comics);
     set({ comics });
   },

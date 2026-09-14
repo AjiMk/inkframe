@@ -125,6 +125,30 @@
     filter: contrast(1.12) saturate(0.85);
   }
 
+  .panel-filter-vintage {
+    filter: sepia(0.28) contrast(1.25) saturate(1.4) hue-rotate(-10deg);
+  }
+
+  .panel-filter-pop-art {
+    filter: contrast(1.6) saturate(2.2) brightness(1.05);
+  }
+
+  .panel-filter-cyber-neon {
+    filter: contrast(1.4) saturate(2.5) hue-rotate(140deg);
+  }
+
+  .panel-filter-graphic-novel {
+    filter: grayscale(0.85) contrast(1.85) brightness(0.9);
+  }
+
+  .panel-filter-anime-cel {
+    filter: contrast(1.2) saturate(1.6) brightness(1.08);
+  }
+
+  .panel-filter-pencil-sketch {
+    filter: grayscale(1) contrast(2.2) brightness(1.1);
+  }
+
   .halftone-dot::after {
     content: "";
     position: absolute;
@@ -134,6 +158,51 @@
     background-size: 4px 4px;
     mix-blend-mode: multiply;
     opacity: 0.55;
+  }
+
+  /* Comic Book Headings & Typography Utilities */
+  .comic-sfx-text {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    line-height: 0.9;
+    color: #ffeb3b;
+    -webkit-text-stroke: 2px #161310;
+    paint-order: stroke fill;
+    text-shadow: 3px 3px 0 #d32f2f, 5px 5px 0 #161310;
+    transform: rotate(-4deg) scale(1.05);
+    letter-spacing: 0.06em;
+  }
+
+  .comic-banner-box {
+    background-color: #fef08a;
+    border: 3px solid #161310;
+    box-shadow: 3px 3px 0 #161310;
+    color: #161310;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .comic-starburst-label {
+    background-color: #dc2626;
+    color: #ffffff;
+    font-family: var(--font-display);
+    clip-path: polygon(50% 0%, 63% 12%, 81% 3%, 84% 21%, 100% 25%, 93% 42%, 100% 58%, 85% 66%, 89% 84%, 71% 83%, 64% 98%, 48% 90%, 33% 97%, 28% 82%, 10% 84%, 13% 66%, 0% 57%, 8% 42%, 0% 25%, 16% 20%, 17% 3%, 35% 10%);
+    padding: 0.75rem 0.6rem;
+    text-align: center;
+    -webkit-text-stroke: 1px #161310;
+    paint-order: stroke fill;
+    text-shadow: 2px 2px 0 #161310;
+  }
+
+  .cover-title-3d {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    line-height: 0.85;
+    letter-spacing: 0.05em;
+    -webkit-text-stroke: 3px #161310;
+    paint-order: stroke fill;
+    text-shadow: 4px 4px 0 #161310, 6px 6px 0 rgb(0 0 0 / 0.5);
   }
 
   .page-stage {

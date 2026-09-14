@@ -26,6 +26,7 @@ import { coverRef } from "@/lib/comics/factory";
 import { useMediaUrl } from "@/lib/comics/media";
 import { useComicStore } from "@/lib/comics/store";
 import type { Comic } from "@/lib/comics/types";
+import { CoverCanvas } from "./cover-canvas";
 
 export function LibraryView() {
   const navigate = useNavigate();
@@ -185,33 +186,20 @@ export function LibraryView() {
 }
 
 function ComicCard({ comic, onDelete }: { comic: Comic; onDelete: () => void }) {
-  const src = useMediaUrl(coverRef(comic));
   const pages = comic.pages.length;
 
   return (
-    <article className="group overflow-hidden rounded-xl bg-card paper-shadow transition-transform duration-200 ease-out hover:-translate-y-0.5">
+    <article className="group overflow-hidden rounded-xl bg-card paper-shadow transition-transform duration-200 ease-out hover:-translate-y-0.5 border border-border">
       <Link
         to="/read/$comicId"
         params={{ comicId: comic.id }}
         className="block"
       >
         <div className="relative aspect-[2/3] overflow-hidden bg-secondary">
-          {src ? (
-            <img
-              src={src}
-              alt=""
-              className="absolute inset-0 size-full object-cover outline outline-1 -outline-offset-1 outline-foreground/10 transition-transform duration-500 ease-out group-hover:scale-[1.03]"
-            />
-          ) : (
-            <div className="flex h-full items-end p-4">
-              <span className="font-display text-3xl leading-none text-foreground/80">
-                {comic.title}
-              </span>
-            </div>
-          )}
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/80 to-transparent p-3 pt-10">
-            <h2 className="truncate font-semibold text-paper">{comic.title}</h2>
-            <p className="truncate text-xs text-paper/70">
+          <CoverCanvas comic={comic} mode="thumb" />
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent p-3 pt-8">
+            <h2 className="truncate font-display text-lg text-paper">{comic.title}</h2>
+            <p className="truncate text-xs text-paper/80 font-medium">
               {comic.author} · {pages} {pages === 1 ? "page" : "pages"}
             </p>
           </div>

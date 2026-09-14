@@ -16,8 +16,12 @@ import {
   Plus,
   RotateCcw,
   ScanFace,
+  Sparkles,
   Trash2,
   Video,
+  Zap,
+  Award,
+  Bookmark,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -49,6 +53,9 @@ import { HeadReplacementDialog } from "./head-replacement-dialog";
 import { LayoutPicker } from "./layout-picker";
 import { PageCanvas } from "./page-canvas";
 import { VideoCaptureDialog } from "./video-capture-dialog";
+import { CoverCanvas } from "./cover-canvas";
+import { CoverDesignerDialog } from "./cover-designer-dialog";
+import { DialogueEditorDialog } from "./dialogue-editor-dialog";
 
 export function StudioEditor({ comicId }: { comicId: string }) {
   const navigate = useNavigate();
@@ -67,6 +74,9 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   const [draggedPageIndex, setDraggedPageIndex] = useState<number | null>(null);
   const [dragOverPageIndex, setDragOverPageIndex] = useState<number | null>(null);
   const [headReplaceOpen, setHeadReplaceOpen] = useState(false);
+  const [coverDesignerOpen, setCoverDesignerOpen] = useState(false);
+  const [dialogueEditorOpen, setDialogueEditorOpen] = useState(false);
+  const [isCoverSelected, setIsCoverSelected] = useState(false);
   const [mediaTab, setMediaTab] = useState<"video" | "library">("video");
   const photoRef = useRef<HTMLInputElement>(null);
 
@@ -154,6 +164,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
     if (!page || !panel) return;
     const id = store.addBubble(comicId, page.id, panel.id, kind);
     setBubbleId(id);
+    setDialogueEditorOpen(true);
   }
 
   if (!hydrated) {
@@ -183,6 +194,8 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       comicTitle={comic.title}
       comicAuthor={comic.author}
       onRename={(title, author) => store.rename(comicId, title, author)}
+      onOpenCoverDesigner={() => setCoverDesignerOpen(true)}
+      onOpenDialogueModal={() => setDialogueEditorOpen(true)}
       layout={page.layout}
       onLayout={(layout) => store.setLayout(comicId, page.id, layout)}
       panel={panel}
@@ -279,6 +292,16 @@ export function StudioEditor({ comicId }: { comicId: string }) {
           type="button"
           variant="outline"
           size="sm"
+          onClick={() => setCoverDesignerOpen(true)}
+          className="gap-1.5 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+        >
+          <Sparkles className="size-3.5" />
+          Design Cover
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
           className="lg:hidden"
           onClick={() => setToolsOpen(true)}
         >
@@ -343,70 +366,97 @@ export function StudioEditor({ comicId }: { comicId: string }) {
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
             <div className="flex flex-col gap-2 pb-2">
-            {comic.pages.map((p, i) => (
+              {/* Cover Page Card */}
               <div
-                key={p.id}
-                data-page-id={p.id}
-                draggable
-                onDragStart={(e) => {
-                  setDraggedPageIndex(i);
-                  e.dataTransfer.effectAllowed = "move";
-                  e.dataTransfer.setData("text/plain", String(i));
-                }}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = "move";
-                  if (dragOverPageIndex !== i) setDragOverPageIndex(i);
-                }}
-                onDragLeave={() => {
-                  setDragOverPageIndex(null);
-                }}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (draggedPageIndex !== null && draggedPageIndex !== i) {
-                    store.reorderPageIndices(comicId, draggedPageIndex, i);
-                    toast.success(`Moved Page ${draggedPageIndex + 1} to position ${i + 1}`);
-                  }
-                  setDraggedPageIndex(null);
-                  setDragOverPageIndex(null);
-                }}
-                onDragEnd={() => {
-                  setDraggedPageIndex(null);
-                  setDragOverPageIndex(null);
-                }}
-                className={`group relative shrink-0 overflow-hidden rounded-lg border p-1 text-left transition-all duration-150 cursor-grab active:cursor-grabbing ${
-                  p.id === page.id
-                    ? "border-primary ring-2 ring-primary/20"
+                className={`group relative shrink-0 overflow-hidden rounded-lg border p-1 text-left transition-all duration-150 cursor-pointer ${
+                  isCoverSelected
+                    ? "border-primary ring-2 ring-primary/20 bg-primary/5"
                     : "border-border hover:border-foreground/30"
-                } ${
-                  draggedPageIndex === i ? "opacity-40 scale-95" : ""
-                } ${
-                  dragOverPageIndex === i && draggedPageIndex !== i
-                    ? "ring-2 ring-primary border-primary bg-primary/5 scale-[1.02]"
-                    : ""
                 }`}
+                onClick={() => setIsCoverSelected(true)}
               >
-                <button
-                  type="button"
-                  className="w-full text-left"
-                  onClick={() => {
-                    setPageId(p.id);
-                    setPanelId(p.panels[0]?.id ?? null);
-                    setBubbleId(null);
-                  }}
-                >
-                  <PageCanvas page={p} mode="thumb" />
-                  <div className="mt-1 flex items-center justify-between px-1">
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      Page {i + 1}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity">
-                      Drag to reorder
-                    </span>
-                  </div>
-                </button>
+                <CoverCanvas comic={comic} mode="thumb" />
+                <div className="mt-1 flex items-center justify-between px-1">
+                  <span className="text-[11px] font-bold text-primary flex items-center gap-1">
+                    <Sparkles className="size-3" /> Cover
+                  </span>
+                  <span
+                    className="text-[10px] text-primary hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCoverDesignerOpen(true);
+                    }}
+                  >
+                    Edit Cover
+                  </span>
+                </div>
               </div>
-            ))}
+
+              {comic.pages.map((p, i) => (
+                <div
+                  key={p.id}
+                  data-page-id={p.id}
+                  draggable
+                  onDragStart={(e) => {
+                    setDraggedPageIndex(i);
+                    e.dataTransfer.effectAllowed = "move";
+                    e.dataTransfer.setData("text/plain", String(i));
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverPageIndex !== i) setDragOverPageIndex(i);
+                  }}
+                  onDragLeave={() => {
+                    setDragOverPageIndex(null);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (draggedPageIndex !== null && draggedPageIndex !== i) {
+                      store.reorderPageIndices(comicId, draggedPageIndex, i);
+                      toast.success(`Moved Page ${draggedPageIndex + 1} to position ${i + 1}`);
+                    }
+                    setDraggedPageIndex(null);
+                    setDragOverPageIndex(null);
+                  }}
+                  onDragEnd={() => {
+                    setDraggedPageIndex(null);
+                    setDragOverPageIndex(null);
+                  }}
+                  className={`group relative shrink-0 overflow-hidden rounded-lg border p-1 text-left transition-all duration-150 cursor-grab active:cursor-grabbing ${
+                    p.id === page.id && !isCoverSelected
+                      ? "border-primary ring-2 ring-primary/20"
+                      : "border-border hover:border-foreground/30"
+                  } ${
+                    draggedPageIndex === i ? "opacity-40 scale-95" : ""
+                  } ${
+                    dragOverPageIndex === i && draggedPageIndex !== i
+                      ? "ring-2 ring-primary border-primary bg-primary/5 scale-[1.02]"
+                      : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="w-full text-left"
+                    onClick={() => {
+                      setIsCoverSelected(false);
+                      setPageId(p.id);
+                      setPanelId(p.panels[0]?.id ?? null);
+                      setBubbleId(null);
+                    }}
+                  >
+                    <PageCanvas page={p} mode="thumb" />
+                    <div className="mt-1 flex items-center justify-between px-1">
+                      <span className="text-[11px] font-medium text-muted-foreground">
+                        Page {i + 1}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity">
+                        Drag to reorder
+                      </span>
+                    </div>
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         </aside>
@@ -424,31 +474,55 @@ export function StudioEditor({ comicId }: { comicId: string }) {
                   height: "min(100cqh, calc(100cqw * 3 / 2))",
                 }}
               >
-                <PageCanvas
-                  page={page}
-                  mode="edit"
-                  className="h-full w-full aspect-auto"
-                  selectedPanelId={panel.id}
-                  selectedBubbleId={bubbleId}
-                  onSelectPanel={(id) => {
-                    setPanelId(id);
-                    setBubbleId(null);
-                  }}
-                  onSelectBubble={(pid, bid) => {
-                    setPanelId(pid);
-                    setBubbleId(bid);
-                  }}
-                  onMoveBubble={(pid, bid, x, y) =>
-                    store.updateBubble(comicId, page.id, pid, bid, { x, y })
-                  }
-                  onResizeBubble={(pid, bid, w) =>
-                    store.updateBubble(comicId, page.id, pid, bid, { w })
-                  }
-                  onDropFile={(pid, file) => {
-                    const target = page.panels.find((p) => p.id === pid);
-                    if (target) void assignImage(target, file);
-                  }}
-                />
+                {isCoverSelected ? (
+                  <div className="relative h-full w-full flex flex-col items-center justify-center">
+                    <CoverCanvas
+                      comic={comic}
+                      mode="edit"
+                      className="h-full w-full aspect-auto"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="absolute bottom-4 z-20 shadow-lg gap-2"
+                      onClick={() => setCoverDesignerOpen(true)}
+                    >
+                      <Sparkles className="size-4" /> Customize Cover Page
+                    </Button>
+                  </div>
+                ) : (
+                  <PageCanvas
+                    page={page}
+                    mode="edit"
+                    className="h-full w-full aspect-auto"
+                    selectedPanelId={panel.id}
+                    selectedBubbleId={bubbleId}
+                    onSelectPanel={(id) => {
+                      setPanelId(id);
+                      setBubbleId(null);
+                    }}
+                    onSelectBubble={(pid, bid) => {
+                      setPanelId(pid);
+                      setBubbleId(bid);
+                      setDialogueEditorOpen(true);
+                    }}
+                    onDoubleClickBubble={(pid, bid) => {
+                      setPanelId(pid);
+                      setBubbleId(bid);
+                      setDialogueEditorOpen(true);
+                    }}
+                    onMoveBubble={(pid, bid, x, y) =>
+                      store.updateBubble(comicId, page.id, pid, bid, { x, y })
+                    }
+                    onResizeBubble={(pid, bid, w) =>
+                      store.updateBubble(comicId, page.id, pid, bid, { w })
+                    }
+                    onDropFile={(pid, file) => {
+                      const target = page.panels.find((p) => p.id === pid);
+                      if (target) void assignImage(target, file);
+                    }}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -582,6 +656,27 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         panel={panel}
       />
 
+      <CoverDesignerDialog
+        open={coverDesignerOpen}
+        onOpenChange={setCoverDesignerOpen}
+        comic={comic}
+      />
+
+      <DialogueEditorDialog
+        open={dialogueEditorOpen}
+        onOpenChange={setDialogueEditorOpen}
+        comicId={comicId}
+        pageId={page.id}
+        panelId={panel.id}
+        bubble={bubble}
+        onDelete={() => {
+          if (bubble && page && panel) {
+            store.removeBubble(comicId, page.id, panel.id, bubble.id);
+            setBubbleId(null);
+          }
+        }}
+      />
+
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -611,6 +706,8 @@ function Inspector({
   comicTitle,
   comicAuthor,
   onRename,
+  onOpenCoverDesigner,
+  onOpenDialogueModal,
   layout,
   onLayout,
   panel,
@@ -631,6 +728,8 @@ function Inspector({
   comicTitle: string;
   comicAuthor: string;
   onRename: (title: string, author: string) => void;
+  onOpenCoverDesigner: () => void;
+  onOpenDialogueModal: () => void;
   layout: Parameters<typeof LayoutPicker>[0]["value"];
   onLayout: Parameters<typeof LayoutPicker>[0]["onChange"];
   panel: Panel;
@@ -658,13 +757,13 @@ function Inspector({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2 overflow-hidden max-lg:h-auto max-lg:overflow-visible">
+    <div className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto max-lg:h-auto max-lg:overflow-visible pr-1">
       <section className="grid shrink-0 grid-cols-2 gap-2">
         <div className="space-y-1">
           <Label htmlFor="comic-title">Title</Label>
           <Input
             id="comic-title"
-            className="h-8"
+            className="h-8 text-xs font-semibold"
             defaultValue={comicTitle}
             onBlur={(e) => onRename(e.target.value, comicAuthor)}
           />
@@ -673,12 +772,23 @@ function Inspector({
           <Label htmlFor="comic-author">Byline</Label>
           <Input
             id="comic-author"
-            className="h-8"
+            className="h-8 text-xs"
             defaultValue={comicAuthor}
             onBlur={(e) => onRename(comicTitle, e.target.value)}
           />
         </div>
       </section>
+
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        onClick={onOpenCoverDesigner}
+        className="w-full text-xs font-bold gap-1.5 border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+      >
+        <Sparkles className="size-3.5" />
+        Open Cover Page Designer
+      </Button>
 
       <Separator className="shrink-0" />
 
@@ -760,16 +870,20 @@ function Inspector({
             </Button>
           </div>
         ) : null}
-        <div className="grid grid-cols-3 gap-1">
+
+        <p className="text-[11px] font-semibold text-muted-foreground uppercase pt-1">
+          Comic Filters
+        </p>
+        <div className="grid grid-cols-2 gap-1 max-h-36 overflow-y-auto pr-1">
           {FILTERS.map((f) => (
             <button
               key={f.id}
               type="button"
               onClick={() => onFilter(f.id)}
-              className={`h-7 rounded-md border text-xs font-medium ${
+              className={`h-7 px-1.5 rounded-md border text-[11px] font-medium truncate ${
                 panel.filter === f.id
-                  ? "border-primary bg-secondary"
-                  : "border-border bg-card"
+                  ? "border-primary bg-primary/15 text-primary font-bold shadow-xs"
+                  : "border-border bg-card hover:border-foreground/30"
               }`}
             >
               {f.label}
@@ -782,16 +896,19 @@ function Inspector({
 
       <section className="shrink-0 space-y-2">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Dialogue
+          Dialogue & Headings
         </p>
-        <div className={bubble ? "grid grid-cols-[6.75rem_1fr] items-start gap-2" : "space-y-2"}>
-          <div className={bubble ? "grid grid-cols-1 content-start gap-1.5" : "grid grid-cols-2 gap-2"}>
+        <div className={bubble ? "grid grid-cols-1 gap-2" : "space-y-2"}>
+          <div className="grid grid-cols-2 gap-1.5">
             {(
               [
                 ["speech", "Speech", MessageCircle],
                 ["thought", "Thought", Cloud],
                 ["shout", "Shout", Megaphone],
                 ["caption", "Caption", Captions],
+                ["sfx", "SFX (KAPOW!)", Zap],
+                ["title-banner", "Scene Banner", Bookmark],
+                ["burst-label", "Starburst", Award],
               ] as const
             ).map(([kind, label, Icon]) => {
               const selected = bubble?.kind === kind;
@@ -801,25 +918,37 @@ function Inspector({
                   type="button"
                   variant={selected ? "default" : "secondary"}
                   size="sm"
-                  className={bubble ? "h-8 justify-start px-2 text-xs" : undefined}
+                  className="h-8 justify-start px-2 text-[11px]"
                   onClick={() => onAddDialogue(kind)}
                 >
-                  <Icon className="size-3.5" />
-                  {label}
+                  <Icon className="size-3.5 shrink-0" />
+                  <span className="truncate">{label}</span>
                 </Button>
               );
             })}
           </div>
           {bubble ? (
             <div className="space-y-2 rounded-lg border border-primary/25 bg-secondary/40 p-2.5">
-              <Label htmlFor="bubble-text" className="sr-only">
-                Balloon text
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="bubble-text" className="text-xs font-semibold">
+                  Balloon Content
+                </Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-[10px] px-2 gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                  onClick={onOpenDialogueModal}
+                >
+                  <MessageCircle className="size-3" />
+                  Open Modal
+                </Button>
+              </div>
               <Textarea
                 id="bubble-text"
                 value={bubble.text}
                 onChange={(e) => onBubblePatch({ text: e.target.value })}
-                className="min-h-16 resize-none"
+                className="min-h-16 resize-none text-xs"
               />
               <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-1.5">
                 <label className="text-xs text-muted-foreground">
@@ -833,6 +962,9 @@ function Inspector({
                     <option value="thought">Thought</option>
                     <option value="shout">Shout</option>
                     <option value="caption">Caption</option>
+                    <option value="sfx">SFX Sound Effect</option>
+                    <option value="title-banner">Scene Banner</option>
+                    <option value="burst-label">Starburst Badge</option>
                   </select>
                 </label>
                 <label className="text-xs text-muted-foreground">
@@ -863,7 +995,7 @@ function Inspector({
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Pick a style to add a balloon, or select one on the page.
+              Pick a style to add dialogue, SFX heading, or action banner.
             </p>
           )}
         </div>

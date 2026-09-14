@@ -1,6 +1,54 @@
-export type BubbleKind = "speech" | "thought" | "shout" | "caption";
+export type BubbleKind =
+  | "speech"
+  | "thought"
+  | "shout"
+  | "caption"
+  | "sfx"
+  | "title-banner"
+  | "burst-label";
+
 export type TailDir = "bl" | "br" | "tl" | "tr" | "none";
-export type PanelFilter = "none" | "ink" | "noir" | "halftone" | "sepia";
+
+export type PanelFilter =
+  | "none"
+  | "ink"
+  | "noir"
+  | "halftone"
+  | "sepia"
+  | "vintage"
+  | "pop-art"
+  | "cyber-neon"
+  | "graphic-novel"
+  | "anime-cel"
+  | "pencil-sketch";
+
+export type CoverTemplateStyle =
+  | "classic"
+  | "action"
+  | "vintage"
+  | "pulp"
+  | "graphic-novel";
+
+export interface CoverElementPosition {
+  x: number;
+  y: number;
+}
+
+export interface CoverConfig {
+  template: CoverTemplateStyle;
+  titleStyle: "classic-3d" | "retro-bold" | "neon-glitch" | "distressed-pulp";
+  issueNumber: string;
+  issuePrice: string;
+  issueDate: string;
+  publisherName: string;
+  tagline: string;
+  subtitle: string;
+  showComicsCode: boolean;
+  showBarcode: boolean;
+  titleColor: string;
+  accentColor: string;
+  positions?: Record<string, CoverElementPosition>;
+}
 
 export type PageLayoutId =
   | "splash"
@@ -59,6 +107,7 @@ export interface Comic {
   title: string;
   author: string;
   cover: string | null;
+  coverConfig?: CoverConfig;
   pages: Page[];
   createdAt: number;
   updatedAt: number;

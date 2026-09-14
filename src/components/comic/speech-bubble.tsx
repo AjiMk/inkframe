@@ -8,6 +8,7 @@ interface Props {
   selected?: boolean;
   entering?: boolean;
   onSelect?: () => void;
+  onDoubleClick?: () => void;
   onMove?: (x: number, y: number) => void;
   onResize?: (w: number) => void;
 }
@@ -18,6 +19,7 @@ export function SpeechBubble({
   selected,
   entering,
   onSelect,
+  onDoubleClick,
   onMove,
   onResize,
 }: Props) {
@@ -29,13 +31,21 @@ export function SpeechBubble({
     parent: DOMRect;
   } | null>(null);
 
+  const hasMoved = useRef(false);
+
   function startDrag(event: React.PointerEvent<HTMLDivElement>) {
     if (!editable) return;
     event.stopPropagation();
-    onSelect?.();
+    hasMoved.current = false;
     const parent = event.currentTarget.parentElement?.getBoundingClientRect();
     if (!parent) return;
-    event.currentTarget.setPointerCapture(event.pointerId);
+    try {
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+    } catch {
+      // ignore pointer capture support issues
+    }
     drag.current = {
       x: bubble.x,
       y: bubble.y,
@@ -47,19 +57,43 @@ export function SpeechBubble({
 
   function onPointerMove(event: React.PointerEvent<HTMLDivElement>) {
     if (!drag.current || !onMove) return;
-    const dx = ((event.clientX - drag.current.px) / drag.current.parent.width) * 100;
-    const dy = ((event.clientY - drag.current.py) / drag.current.parent.height) * 100;
+    const dxPx = event.clientX - drag.current.px;
+    const dyPx = event.clientY - drag.current.py;
+    if (Math.hypot(dxPx, dyPx) > 4) {
+      hasMoved.current = true;
+    }
+    if (!hasMoved.current) return;
+
+    const dx = (dxPx / drag.current.parent.width) * 100;
+    const dy = (dyPx / drag.current.parent.height) * 100;
     onMove(
       clamp(drag.current.x + dx, 0, 100 - bubble.w),
-      clamp(drag.current.y + dy, 0, 86),
+      clamp(drag.current.y + dy, 0, 95),
     );
   }
 
   function endDrag(event: React.PointerEvent<HTMLDivElement>) {
     if (drag.current) {
-      event.currentTarget.releasePointerCapture(event.pointerId);
+      try {
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+      } catch {
+        // ignore
+      }
       drag.current = null;
     }
+  }
+
+  function handleClick(event: React.MouseEvent<HTMLDivElement>) {
+    if (!editable) return;
+    event.stopPropagation();
+    if (hasMoved.current) {
+      event.preventDefault();
+      return;
+    }
+    onSelect?.();
+    onDoubleClick?.();
   }
 
   function startResize(event: React.PointerEvent<HTMLButtonElement>) {
@@ -101,10 +135,7 @@ export function SpeechBubble({
       onPointerDown={startDrag}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
-      onClick={(e) => {
-        e.stopPropagation();
-        onSelect?.();
-      }}
+      onClick={handleClick}
     >
       <div
         className={cn(
@@ -117,10 +148,26 @@ export function SpeechBubble({
           <span className="font-display text-base leading-none sm:text-lg">
             {bubble.text}
           </span>
+        ) : bubble.kind === "sfx" ? (
+          <span className="comic-sfx-text block uppercase">
+            {bubble.text}
+          </span>
+        ) : bubble.kind === "title-banner" ? (
+          <span className="font-display text-sm sm:text-base tracking-widest uppercase">
+            {bubble.text}
+          </span>
+        ) : bubble.kind === "burst-label" ? (
+          <span className="font-display text-sm sm:text-base tracking-wider uppercase block">
+            {bubble.text}
+          </span>
         ) : (
           bubble.text
         )}
-        {bubble.kind !== "caption" && bubble.kind !== "shout" ? (
+        {bubble.kind !== "caption" &&
+        bubble.kind !== "shout" &&
+        bubble.kind !== "sfx" &&
+        bubble.kind !== "title-banner" &&
+        bubble.kind !== "burst-label" ? (
           <BubbleTail kind={bubble.kind} dir={bubble.tail} />
         ) : null}
         {editable && selected ? (
@@ -144,6 +191,12 @@ function kindClass(kind: SpeechBubbleData["kind"]) {
       return "border-[3px] border-ink bg-paper [clip-path:polygon(6%_10%,18%_0,34%_8%,50%_0,66%_9%,82%_0,96%_14%,88%_32%,100%_50%,87%_66%,97%_86%,74%_90%,60%_100%,46%_91%,28%_100%,12%_88%,0_74%,10%_56%,0_40%,12%_24%)] px-4 py-3";
     case "caption":
       return "rounded-sm border-2 border-ink bg-secondary text-left font-medium";
+    case "sfx":
+      return "bg-transparent p-0 border-none shadow-none";
+    case "title-banner":
+      return "comic-banner-box px-3 py-1 text-center";
+    case "burst-label":
+      return "comic-starburst-label";
     default:
       return "rounded-[1.4rem] border-[3px] border-ink bg-paper";
   }
