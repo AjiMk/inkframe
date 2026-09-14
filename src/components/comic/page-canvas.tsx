@@ -117,17 +117,6 @@ function PanelFrame({
   const dim = Boolean(reveal?.dimOthers && reveal.panelId && reveal.panelId !== panel.id);
   const bubbles = visibleBubbles(panel.bubbles, reveal, panel.id);
 
-  const activeBubble = reveal?.activeBubbleId && reveal?.panelId === panel.id
-    ? panel.bubbles.find((b) => b.id === reveal.activeBubbleId)
-    : null;
-
-  const focusTransform = activeBubble
-    ? {
-        transformOrigin: `${Math.min(Math.max(activeBubble.x + activeBubble.w / 2, 15), 85)}% ${Math.min(Math.max(activeBubble.y + 15, 15), 85)}%`,
-        transform: "scale(1.24)",
-      }
-    : undefined;
-
   function handleDrop(event: React.DragEvent) {
     event.preventDefault();
     const file = event.target ? event.dataTransfer.files[0] : null;
@@ -137,12 +126,12 @@ function PanelFrame({
   return (
     <div
       className={cn(
-        "relative min-h-0 overflow-hidden rounded-[2px] bg-secondary transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "relative min-h-0 overflow-hidden rounded-[2px] bg-secondary transition-all duration-300 ease-out",
         selected && mode === "edit" && "ring-2 ring-primary ring-offset-2 ring-offset-ink",
         dim && "opacity-25",
         isFocus && reveal?.panelId === panel.id && mode === "read" && "anim-panel z-10",
       )}
-      style={{ gridArea: area, ...focusTransform }}
+      style={{ gridArea: area }}
       onClick={() => onSelectPanel?.(panel.id)}
       onDragOver={(e) => {
         if (mode === "edit") e.preventDefault();
@@ -156,7 +145,6 @@ function PanelFrame({
           className={cn(
             "absolute inset-0 size-full object-cover",
             panel.filter !== "none" && `panel-filter-${panel.filter}`,
-            mode === "read" && isFocus && "anim-kenburns",
           )}
         />
       ) : mode === "edit" ? (
