@@ -383,16 +383,6 @@ export function StudioEditor({ comicId }: { comicId: string }) {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => setCoverDesignerOpen(true)}
-          className="gap-1.5 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
-        >
-          <Sparkles className="size-3.5" />
-          Design Cover
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
           className="lg:hidden"
           onClick={() => setToolsOpen(true)}
         >
