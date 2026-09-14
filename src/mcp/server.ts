@@ -4,6 +4,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import {
+  changePageLayoutPreservingImages,
   createComic,
   createPage,
   createBubble,
@@ -278,18 +279,14 @@ server.tool(
     if (!comic) {
       return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
     }
-    const pageIndex = comic.pages.findIndex((p) => p.id === pageId);
-    if (pageIndex === -1) {
-      return { isError: true, content: [{ type: "text", text: `Page "${pageId}" not found.` }] };
-    }
-    comic.pages[pageIndex] = fitPanelsToLayout(comic.pages[pageIndex], layout as PageLayoutId);
-    comic.updatedAt = Date.now();
+    const updated = changePageLayoutPreservingImages(comic, pageId, layout as PageLayoutId);
+    comicsStore.set(comicId, { ...updated, updatedAt: Date.now() });
     persistStore();
     return {
       content: [
         {
           type: "text",
-          text: `Updated Page ${pageIndex + 1} layout to "${layout}" (${comic.pages[pageIndex].panels.length} panels).`,
+          text: `Updated Page layout to "${layout}" while preserving all panel images.`,
         },
       ],
     };

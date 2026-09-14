@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createDemoComic } from "./demo";
 import {
+  changePageLayoutPreservingImages,
   createBubble,
   createComic,
   createPage,
@@ -369,10 +370,12 @@ export const useComicStore = create<ComicState>((set, get) => ({
   },
 
   setLayout: (comicId, pageId, layout) => {
-    const comics = mapComic(get().comics, comicId, (c) => ({
-      ...c,
-      pages: c.pages.map((p) => (p.id === pageId ? fitPanelsToLayout(p, layout) : p)),
-    }));
+    const targetComic = get().comics.find((c) => c.id === comicId);
+    if (!targetComic) return;
+    const updatedComic = changePageLayoutPreservingImages(targetComic, pageId, layout);
+    const comics = get().comics.map((c) =>
+      c.id === comicId ? { ...updatedComic, updatedAt: Date.now() } : c,
+    );
     pushState(set, get, comics);
   },
 
