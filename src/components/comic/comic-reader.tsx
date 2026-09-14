@@ -45,6 +45,14 @@ export function ComicReader({ comicId }: { comicId: string }) {
     return () => window.clearInterval(id);
   }, [playing, beats.length]);
 
+  function handleExit() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+    } else {
+      void navigate({ to: "/" });
+    }
+  }
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === " " || e.key === "Enter") {
@@ -54,7 +62,7 @@ export function ComicReader({ comicId }: { comicId: string }) {
         e.preventDefault();
         go(-1);
       } else if (e.key === "Escape") {
-        void navigate({ to: "/studio/$comicId", params: { comicId } });
+        handleExit();
       }
     }
     window.addEventListener("keydown", onKey);
@@ -116,15 +124,14 @@ export function ComicReader({ comicId }: { comicId: string }) {
     >
       <header className="absolute inset-x-0 top-0 z-20 flex items-center gap-2 bg-gradient-to-b from-ink/80 to-transparent px-2 py-2 sm:px-4">
         <Button
-          asChild
+          type="button"
           variant="ghost"
           size="icon"
           className="text-paper hover:bg-paper/10 hover:text-paper"
+          onClick={handleExit}
           aria-label="Close reader"
         >
-          <Link to="/studio/$comicId" params={{ comicId }}>
-            <X />
-          </Link>
+          <X />
         </Button>
         <div className="min-w-0 flex-1">
           <p className="truncate font-display text-lg leading-none tracking-wide">
