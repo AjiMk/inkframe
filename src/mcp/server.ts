@@ -13,7 +13,16 @@ import {
   FILTERS,
 } from "../lib/comics/factory.ts";
 import { LAYOUTS } from "../lib/comics/layouts.ts";
-import type { Comic, PageLayoutId, BubbleKind, PanelFilter, CoverTemplateStyle } from "../lib/comics/types.ts";
+import type {
+  Comic,
+  PageLayoutId,
+  BubbleKind,
+  PanelFilter,
+  CoverTemplateStyle,
+  AssetReferenceContext,
+  BackgroundReference,
+  CharacterReference,
+} from "../lib/comics/types.ts";
 
 const STORAGE_PATH = path.resolve(process.cwd(), "public/mcp_comics.json");
 
@@ -101,32 +110,100 @@ server.resource(
   })
 );
 
-// Resource 3: Cover templates & title styles
+// Resource 4: Active Comic Full Context by ID
 server.resource(
-  "templates",
-  "inkframe://templates",
-  async (uri) => ({
-    contents: [
+  "comic-context",
+  "inkframe://comics/{comicId}",
+  async (uri, params: any) => {
+    const comicId = params?.comicId as string | undefined;
+    const comic = comicId ? comicsStore.get(comicId) : null;
+    return {
+      contents: [
+        {
+          uri: uri.href,
+          text: JSON.stringify(comic ?? { error: "Comic not found", comicId }, null, 2),
+          mimeType: "application/json",
+        },
+      ],
+    };
+  }
+);
+
+// Resource 5: Comic Visual References (Characters & Background Context)
+server.resource(
+  "comic-references",
+  "inkframe://comics/{comicId}/references",
+  async (uri, params: any) => {
+    const comicId = params?.comicId as string | undefined;
+    const comic = comicId ? comicsStore.get(comicId) : null;
+    const assetContext = comic?.assetContext ?? {
+      styleGuide: "Default clean comic book style",
+      backgrounds: {},
+      characters: {},
+    };
+    return {
+      contents: [
+        {
+          uri: uri.href,
+          text: JSON.stringify(assetContext, null, 2),
+          mimeType: "application/json",
+        },
+      ],
+    };
+  }
+);
+
+// --- PROMPTS (Contextual Templates) ---
+
+// Prompt 1: Manga Story Generator Context
+server.prompt(
+  "generate-manga-story",
+  "Template to generate a multi-page manga chapter with screen-tone filters and action dialogue",
+  {
+    title: z.string().describe("Manga title"),
+    theme: z.string().describe("Genre/Theme (e.g. Cyberpunk Ninja, Supernatural, Sci-Fi)"),
+  },
+  ({ title, theme }) => ({
+    messages: [
       {
-        uri: uri.href,
-        text: JSON.stringify(
-          {
-            templates: ["classic", "action", "vintage", "pulp", "graphic-novel"],
-            titleStyles: ["classic-3d", "retro-bold", "neon-glitch", "distressed-pulp"],
-            bubbleKinds: [
-              "speech",
-              "thought",
-              "shout",
-              "caption",
-              "sfx",
-              "title-banner",
-              "burst-label",
-            ],
-          },
-          null,
-          2
-        ),
-        mimeType: "application/json",
+        role: "user",
+        content: {
+          type: "text",
+          text: `Create a comic titled "${title}" with a "${theme}" theme. Use 'manga-screentone' and 'dark-knight' filters, and add dramatic SFX and dialogue balloons.`,
+        },
+      },
+    ],
+  })
+);
+
+// Prompt 2: Structured 3-Step Pipeline for Consistent Comic Generation
+server.prompt(
+  "generate-consistent-comic",
+  "Template for establishing background references, character model sheets, and plot panels for visual consistency",
+  {
+    title: z.string().describe("Comic title"),
+    setting: z.string().describe("Primary setting description (e.g. 3BHK apartment in Kolkata)"),
+    characters: z.string().describe("Characters list and descriptions"),
+  },
+  ({ title, setting, characters }) => ({
+    messages: [
+      {
+        role: "user",
+        content: {
+          type: "text",
+          text: `You are creating a multi-page comic titled "${title}".
+
+Follow this mandatory 3-step context pipeline to maintain visual consistency:
+
+STEP 1: BACKGROUND REFERENCES
+First, define visual specs for locations in "${setting}". Call 'set_comic_references' to save background reference keys (e.g., 'livingRoom', 'balcony', 'kitchen').
+
+STEP 2: CHARACTER MODEL SHEETS
+Second, define character reference sheets for: ${characters}. Call 'set_comic_references' to save character keys (e.g., height, facial features, outfit, color palette).
+
+STEP 3: PLOT IMAGE GENERATION
+When rendering each panel, call 'get_panel_prompt' with the relevant character and background keys to compile a unified, consistent image generation prompt.`,
+        },
       },
     ],
   })
@@ -450,6 +527,149 @@ server.tool(
         {
           type: "text",
           text: `Applied "${filter}" filter to Panel ${panelIndex + 1} on Page ${pageId}.`,
+        },
+      ],
+    };
+  }
+);
+
+// Tool 8: Set Comic References (Character Sheets & Background Context)
+server.tool(
+  "set_comic_references",
+  "Save character reference sheets, background reference specs, and visual style guides for consistent panel generation",
+  {
+    comicId: z.string().describe("ID of the comic"),
+    styleGuide: z.string().optional().describe("Overall visual art style guide"),
+    backgrounds: z
+      .array(
+        z.object({
+          id: z.string().describe("Unique identifier for background (e.g., 'livingRoom')"),
+          name: z.string().describe("Human-readable name"),
+          description: z.string().describe("Detailed visual prompt specs (lighting, furniture, palette)"),
+          imageRef: z.string().optional().describe("Optional URL or base64 reference image"),
+        })
+      )
+      .optional()
+      .describe("Array of background references"),
+    characters: z
+      .array(
+        z.object({
+          id: z.string().describe("Unique identifier for character (e.g., 'surabhi')"),
+          name: z.string().describe("Character name"),
+          role: z.string().optional().describe("Role in story"),
+          appearance: z.string().describe("Detailed model sheet (age, height, complexion, hairstyle, clothing)"),
+          imageRef: z.string().optional().describe("Optional character sheet reference image"),
+        })
+      )
+      .optional()
+      .describe("Array of character model sheets"),
+  },
+  async ({ comicId, styleGuide, backgrounds, characters }) => {
+    const comic = comicsStore.get(comicId);
+    if (!comic) {
+      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
+    }
+
+    if (!comic.assetContext) {
+      comic.assetContext = { styleGuide: "", backgrounds: {}, characters: {} };
+    }
+
+    if (styleGuide !== undefined) {
+      comic.assetContext.styleGuide = styleGuide;
+    }
+
+    if (backgrounds) {
+      if (!comic.assetContext.backgrounds) comic.assetContext.backgrounds = {};
+      for (const bg of backgrounds) {
+        comic.assetContext.backgrounds[bg.id] = bg;
+      }
+    }
+
+    if (characters) {
+      if (!comic.assetContext.characters) comic.assetContext.characters = {};
+      for (const char of characters) {
+        comic.assetContext.characters[char.id] = char;
+      }
+    }
+
+    comic.updatedAt = Date.now();
+    persistStore();
+
+    const charCount = Object.keys(comic.assetContext.characters || {}).length;
+    const bgCount = Object.keys(comic.assetContext.backgrounds || {}).length;
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Updated reference context for "${comic.title}". Registered ${charCount} character model sheets and ${bgCount} background references.`,
+        },
+      ],
+    };
+  }
+);
+
+// Tool 9: Get Panel Prompt (Compiles consistent character & background context)
+server.tool(
+  "get_panel_prompt",
+  "Build a unified, visually consistent image generation prompt combining background specs, character model sheets, and action description",
+  {
+    comicId: z.string().describe("ID of the comic"),
+    backgroundId: z.string().optional().describe("ID of the background reference (e.g. 'livingRoom')"),
+    characterIds: z.array(z.string()).optional().describe("Array of character IDs present in this panel"),
+    actionDescription: z.string().describe("Detailed description of action/scene in this specific panel"),
+  },
+  async ({ comicId, backgroundId, characterIds, actionDescription }) => {
+    const comic = comicsStore.get(comicId);
+    if (!comic) {
+      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
+    }
+
+    const ctx = comic.assetContext ?? {};
+    const promptParts: string[] = [];
+
+    if (ctx.styleGuide) {
+      promptParts.push(`[ART STYLE]: ${ctx.styleGuide}`);
+    }
+
+    if (backgroundId && ctx.backgrounds?.[backgroundId]) {
+      const bg = ctx.backgrounds[backgroundId];
+      promptParts.push(`[SETTING (${bg.name})]: ${bg.description}`);
+    }
+
+    if (characterIds && characterIds.length > 0 && ctx.characters) {
+      const charSpecs = characterIds
+        .map((id) => ctx.characters?.[id])
+        .filter((c): c is NonNullable<typeof c> => Boolean(c))
+        .map((c) => `${c.name} (${c.appearance})`)
+        .join("; ");
+
+      if (charSpecs) {
+        promptParts.push(`[CHARACTERS]: ${charSpecs}`);
+      }
+    }
+
+    promptParts.push(`[SCENE ACTION]: ${actionDescription}`);
+    const compiledPrompt = promptParts.join("\n");
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              comicId,
+              compiledPrompt,
+              parts: {
+                styleGuide: ctx.styleGuide,
+                background: backgroundId ? ctx.backgrounds?.[backgroundId] : null,
+                characters: characterIds?.map((id) => ctx.characters?.[id]).filter(Boolean),
+                actionDescription,
+              },
+            },
+            null,
+            2
+          ),
         },
       ],
     };

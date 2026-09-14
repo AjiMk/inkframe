@@ -107,12 +107,34 @@ export interface Page {
   panels: Panel[];
 }
 
+export interface BackgroundReference {
+  id: string;
+  name: string;
+  description: string;
+  imageRef?: string;
+}
+
+export interface CharacterReference {
+  id: string;
+  name: string;
+  role?: string;
+  appearance: string;
+  imageRef?: string;
+}
+
+export interface AssetReferenceContext {
+  styleGuide?: string;
+  backgrounds?: Record<string, BackgroundReference>;
+  characters?: Record<string, CharacterReference>;
+}
+
 export interface Comic {
   id: string;
   title: string;
   author: string;
   cover: string | null;
   coverConfig?: CoverConfig;
+  assetContext?: AssetReferenceContext;
   pages: Page[];
   createdAt: number;
   updatedAt: number;
