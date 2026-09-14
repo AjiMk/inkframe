@@ -8,8 +8,10 @@ import {
   ChevronDown,
   ChevronUp,
   Copy,
+  FileDown,
   ImagePlus,
   Images,
+  Loader2,
   MessageCircle,
   Cloud,
   Megaphone,
@@ -33,6 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
+import { exportComicToPdf } from "@/lib/comics/pdf-export";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,7 +85,25 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   const [dialogueEditorOpen, setDialogueEditorOpen] = useState(false);
   const [isCoverSelected, setIsCoverSelected] = useState(false);
   const [mediaTab, setMediaTab] = useState<"video" | "library">("video");
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
+
+  async function handleExportPdf() {
+    if (!comic) return;
+    setIsExportingPdf(true);
+    const toastId = toast.loading("Preparing PDF export...");
+    try {
+      await exportComicToPdf(comic, (status) => {
+        toast.loading(status, { id: toastId });
+      });
+      toast.success("PDF exported successfully!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export PDF.", { id: toastId });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }
 
   const page = useMemo(
     () => comic?.pages.find((p) => p.id === pageId) ?? comic?.pages[0],
@@ -377,6 +398,22 @@ export function StudioEditor({ comicId }: { comicId: string }) {
           >
             <Save className="size-3.5 text-primary" />
             <span>Save</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={isExportingPdf}
+            onClick={handleExportPdf}
+            className="h-8 gap-1.5 text-xs font-semibold text-foreground border-border hover:bg-accent"
+            title="Export PDF"
+          >
+            {isExportingPdf ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <FileDown className="size-3.5" />
+            )}
+            <span>Export PDF</span>
           </Button>
         </div>
         <Button

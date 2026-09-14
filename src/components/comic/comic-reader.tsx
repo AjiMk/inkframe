@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Pause, Play, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileDown, Loader2, Pause, Play, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { coverRef } from "@/lib/comics/factory";
 import { useMediaUrl } from "@/lib/comics/media";
+import { exportComicToPdf } from "@/lib/comics/pdf-export";
 import { useComicStore } from "@/lib/comics/store";
 import type { Comic } from "@/lib/comics/types";
 import { PageCanvas, type RevealState } from "./page-canvas";
@@ -23,7 +25,25 @@ export function ComicReader({ comicId }: { comicId: string }) {
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [dir, setDir] = useState<"next" | "prev">("next");
+  const [isExporting, setIsExporting] = useState(false);
   const touch = useRef<{ x: number; y: number } | null>(null);
+
+  async function handleExportPdf() {
+    if (!comic) return;
+    setIsExporting(true);
+    const toastId = toast.loading("Preparing PDF export...");
+    try {
+      await exportComicToPdf(comic, (status) => {
+        toast.loading(status, { id: toastId });
+      });
+      toast.success("PDF exported successfully!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export PDF.", { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   const beats = useMemo(
     () => (comic ? buildBeats(comic, mode) : []),
@@ -144,21 +164,39 @@ export function ComicReader({ comicId }: { comicId: string }) {
               : null}
           </p>
         </div>
-        <div className="flex rounded-full bg-paper/10 p-0.5 text-xs">
-          <button
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-full bg-paper/10 p-0.5 text-xs">
+            <button
+              type="button"
+              className={`rounded-full px-3 py-1.5 ${mode === "guided" ? "bg-paper text-ink" : "text-paper/80"}`}
+              onClick={() => setMode("guided")}
+            >
+              Guided
+            </button>
+            <button
+              type="button"
+              className={`rounded-full px-3 py-1.5 ${mode === "flip" ? "bg-paper text-ink" : "text-paper/80"}`}
+              onClick={() => setMode("flip")}
+            >
+              Flip
+            </button>
+          </div>
+          <Button
             type="button"
-            className={`rounded-full px-3 py-1.5 ${mode === "guided" ? "bg-paper text-ink" : "text-paper/80"}`}
-            onClick={() => setMode("guided")}
+            variant="ghost"
+            size="sm"
+            disabled={isExporting}
+            onClick={handleExportPdf}
+            className="h-8 gap-1.5 rounded-full bg-paper/10 px-3 text-xs text-paper hover:bg-paper/20 hover:text-paper"
+            title="Export PDF"
           >
-            Guided
-          </button>
-          <button
-            type="button"
-            className={`rounded-full px-3 py-1.5 ${mode === "flip" ? "bg-paper text-ink" : "text-paper/80"}`}
-            onClick={() => setMode("flip")}
-          >
-            Flip
-          </button>
+            {isExporting ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <FileDown className="size-3.5" />
+            )}
+            <span className="hidden sm:inline">Export PDF</span>
+          </Button>
         </div>
       </header>
 

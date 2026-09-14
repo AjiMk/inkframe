@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Download, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { BookOpen, Download, FileDown, Loader2, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -24,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { coverRef } from "@/lib/comics/factory";
 import { useMediaUrl } from "@/lib/comics/media";
+import { exportComicToPdf } from "@/lib/comics/pdf-export";
 import { useComicStore } from "@/lib/comics/store";
 import type { Comic } from "@/lib/comics/types";
 import { CoverCanvas } from "./cover-canvas";
@@ -255,6 +257,23 @@ export function LibraryView() {
 
 function ComicCard({ comic, onDelete }: { comic: Comic; onDelete: () => void }) {
   const pages = comic.pages.length;
+  const [isExporting, setIsExporting] = useState(false);
+
+  async function handleExportPdf() {
+    setIsExporting(true);
+    const toastId = toast.loading("Preparing PDF export...");
+    try {
+      await exportComicToPdf(comic, (status) => {
+        toast.loading(status, { id: toastId });
+      });
+      toast.success("PDF exported successfully!", { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to export PDF.", { id: toastId });
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   return (
     <article className="group overflow-hidden rounded-xl bg-card paper-shadow transition-transform duration-200 ease-out hover:-translate-y-0.5 border border-border">
@@ -274,15 +293,15 @@ function ComicCard({ comic, onDelete }: { comic: Comic; onDelete: () => void }) 
         </div>
       </Link>
       <div className="flex items-center gap-1 p-2">
-        <Button asChild variant="ghost" size="sm" className="flex-1">
+        <Button asChild variant="ghost" size="sm" className="flex-1 px-2 text-xs">
           <Link to="/read/$comicId" params={{ comicId: comic.id }}>
-            <BookOpen />
+            <BookOpen className="size-3.5" />
             Read
           </Link>
         </Button>
-        <Button asChild variant="ghost" size="sm" className="flex-1">
+        <Button asChild variant="ghost" size="sm" className="flex-1 px-2 text-xs">
           <Link to="/studio/$comicId" params={{ comicId: comic.id }}>
-            <Pencil />
+            <Pencil className="size-3.5" />
             Edit
           </Link>
         </Button>
@@ -290,9 +309,26 @@ function ComicCard({ comic, onDelete }: { comic: Comic; onDelete: () => void }) 
           type="button"
           variant="ghost"
           size="icon"
-          className="size-9 text-muted-foreground"
+          disabled={isExporting}
+          className="size-8 text-muted-foreground"
+          onClick={handleExportPdf}
+          aria-label={`Export PDF for ${comic.title}`}
+          title="Export PDF"
+        >
+          {isExporting ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <FileDown className="size-4" />
+          )}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8 text-muted-foreground"
           onClick={onDelete}
           aria-label={`Delete ${comic.title}`}
+          title="Delete"
         >
           <Trash2 className="size-4" />
         </Button>
