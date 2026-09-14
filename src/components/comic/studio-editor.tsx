@@ -1052,66 +1052,34 @@ function Inspector({
             })}
           </div>
           {bubble ? (
-            <div className="space-y-2 rounded-lg border border-primary/25 bg-secondary/40 p-2.5">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="bubble-text" className="text-xs font-semibold">
-                  Balloon Content
-                </Label>
+            <div className="flex items-center justify-between gap-2 rounded-lg border border-primary/30 bg-primary/10 p-2.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-primary truncate">
+                  Selected: "{bubble.text || "Empty Dialogue"}"
+                </p>
+                <p className="text-[10px] text-muted-foreground capitalize">
+                  {bubble.kind} balloon
+                </p>
+              </div>
+              <div className="flex items-center gap-1">
                 <Button
                   type="button"
                   size="sm"
-                  variant="outline"
-                  className="h-6 text-[10px] px-2 gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                  variant="default"
+                  className="h-7 text-xs px-2.5 gap-1 font-semibold"
                   onClick={onOpenDialogueModal}
                 >
-                  <MessageCircle className="size-3" />
-                  Open Modal
+                  <MessageCircle className="size-3.5" />
+                  Edit
                 </Button>
-              </div>
-              <Textarea
-                id="bubble-text"
-                value={bubble.text}
-                onChange={(e) => onBubblePatch({ text: e.target.value })}
-                className="min-h-16 resize-none text-xs"
-              />
-              <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-1.5">
-                <label className="text-xs text-muted-foreground">
-                  Style
-                  <select
-                    className="mt-1 h-8 w-full rounded-md border border-input bg-card px-2 text-xs text-foreground"
-                    value={bubble.kind}
-                    onChange={(e) => onBubblePatch({ kind: e.target.value as BubbleKind })}
-                  >
-                    <option value="speech">Speech</option>
-                    <option value="thought">Thought</option>
-                    <option value="shout">Shout</option>
-                    <option value="caption">Caption</option>
-                    <option value="sfx">SFX Sound Effect</option>
-                    <option value="title-banner">Scene Banner</option>
-                    <option value="burst-label">Starburst Badge</option>
-                  </select>
-                </label>
-                <label className="text-xs text-muted-foreground">
-                  Tail
-                  <select
-                    className="mt-1 h-8 w-full rounded-md border border-input bg-card px-2 text-xs text-foreground"
-                    value={bubble.tail}
-                    onChange={(e) => onBubblePatch({ tail: e.target.value as TailDir })}
-                  >
-                    <option value="bl">Bottom left</option>
-                    <option value="br">Bottom right</option>
-                    <option value="tl">Top left</option>
-                    <option value="tr">Top right</option>
-                    <option value="none">None</option>
-                  </select>
-                </label>
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="size-8"
+                  className="size-7 text-destructive hover:bg-destructive/10"
                   onClick={onDeleteBubble}
                   aria-label="Remove balloon"
+                  title="Delete balloon"
                 >
                   <Trash2 className="size-3.5" />
                 </Button>
