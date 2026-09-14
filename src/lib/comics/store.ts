@@ -130,9 +130,14 @@ export const useComicStore = create<ComicState>((set, get) => ({
       let changed = false;
       for (const mcpC of mcpComics) {
         const existing = map.get(mcpC.id);
-        if (!existing || JSON.stringify(existing) !== JSON.stringify(mcpC)) {
-          map.set(mcpC.id, mcpC);
-          changed = true;
+        const mcpTime = mcpC.updatedAt ?? 0;
+        const existingTime = existing?.updatedAt ?? 0;
+
+        if (!existing || mcpTime > existingTime) {
+          if (!existing || JSON.stringify(existing) !== JSON.stringify(mcpC)) {
+            map.set(mcpC.id, mcpC);
+            changed = true;
+          }
         }
       }
 
