@@ -1,0 +1,73 @@
+[
+  {
+    "id": "3bc6eeec-4af0-4078-a6ad-2cce09e1333b",
+    "title": "The Midnight Falcon",
+    "author": "Inkframe Studio",
+    "cover": null,
+    "coverConfig": {
+      "template": "classic",
+      "titleStyle": "classic-3d",
+      "issueNumber": "#1",
+      "issuePrice": "25¢",
+      "issueDate": "VOL. 1",
+      "publisherName": "INKFRAME COMICS",
+      "tagline": "ACTION-PACKED FIRST ISSUE!",
+      "subtitle": "ORIGIN OF THE FALCON",
+      "showComicsCode": true,
+      "showBarcode": true,
+      "titleColor": "#facc15",
+      "accentColor": "#dc2626",
+      "positions": {
+        "issueBox": {
+          "x": 3,
+          "y": 3
+        },
+        "tagline": {
+          "x": 22,
+          "y": 3
+        },
+        "comicsCode": {
+          "x": 82,
+          "y": 3
+        },
+        "title": {
+          "x": 4,
+          "y": 15
+        },
+        "subtitle": {
+          "x": 12,
+          "y": 28
+        },
+        "authorBadge": {
+          "x": 3,
+          "y": 86
+        },
+        "barcode": {
+          "x": 74,
+          "y": 84
+        }
+      }
+    },
+    "assetContext": {
+      "styleGuide": "Clean line art, authentic comic book aesthetic",
+      "backgrounds": {},
+      "characters": {}
+    },
+    "pages": [
+      {
+        "id": "08ae6d6d-2a81-4619-ae7d-d7911e19bab9",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "234ecd2b-0adf-42b5-8d38-bbe4229e304f",
+            "image": null,
+            "filter": "none",
+            "bubbles": []
+          }
+        ]
+      }
+    ],
+    "createdAt": 1790435516481,
+    "updatedAt": 1790435516481
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "inkframe": {
+      "command": "npm",
+      "args": ["run", "mcp"],
+      "cwd": "/home/aji/Projects/inkframe"
+    }
+  }
+}

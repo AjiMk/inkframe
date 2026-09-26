@@ -1,0 +1,424 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@theme {
+  --color-background: #f3ead8;
+  --color-foreground: #161310;
+  --color-card: #fff8ee;
+  --color-card-foreground: #161310;
+  --color-primary: #c23b22;
+  --color-primary-foreground: #fff8ee;
+  --color-secondary: #e8dcc6;
+  --color-secondary-foreground: #161310;
+  --color-muted: #e6dcc8;
+  --color-muted-foreground: #6b6358;
+  --color-accent: #e8dcc6;
+  --color-accent-foreground: #161310;
+  --color-destructive: #9f2d1a;
+  --color-destructive-foreground: #fff8ee;
+  --color-border: #d4c7b0;
+  --color-input: #d4c7b0;
+  --color-ring: #c23b22;
+  --color-ink: #161310;
+  --color-paper: #fff8ee;
+  --color-newsprint: #f3ead8;
+  --color-gutter: #161310;
+
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius: 12px;
+
+  --font-sans: "Figtree", "Noto Sans Malayalam", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bangers", "Noto Sans Malayalam", "Impact", "Arial Black", sans-serif;
+
+  --shadow-border:
+    0 0 0 1px rgb(22 19 16 / 0.08),
+    0 1px 2px -1px rgb(22 19 16 / 0.08),
+    0 8px 24px -12px rgb(22 19 16 / 0.18);
+  --shadow-border-hover:
+    0 0 0 1px rgb(22 19 16 / 0.12),
+    0 1px 2px -1px rgb(22 19 16 / 0.1),
+    0 14px 32px -14px rgb(22 19 16 / 0.24);
+
+  --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-quick: 150ms;
+  --motion-fast: 250ms;
+  --motion-slow: 400ms;
+  --motion-emphasis: 700ms;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html,
+  body,
+  #app {
+    min-height: 100%;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    background-image:
+      radial-gradient(rgb(22 19 16 / 0.035) 0.7px, transparent 0.7px),
+      linear-gradient(180deg, #f7f0e0 0%, var(--color-background) 28%);
+    background-size: 3px 3px, auto;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: 0.04em;
+  }
+
+  .paper-shadow {
+    box-shadow: var(--shadow-border);
+    transition: box-shadow 150ms ease-out;
+  }
+
+  .paper-shadow:hover,
+  .paper-shadow-hover {
+    box-shadow: var(--shadow-border-hover);
+  }
+
+  .comic-gutter {
+    background: var(--color-gutter);
+  }
+
+  .panel-filter-ink {
+    filter: grayscale(1) contrast(1.22) brightness(0.98);
+  }
+
+  .panel-filter-noir {
+    filter: grayscale(1) contrast(1.55) brightness(0.88);
+  }
+
+  .panel-filter-sepia {
+    filter: sepia(0.42) contrast(1.08) saturate(0.85);
+  }
+
+  .panel-filter-halftone {
+    filter: contrast(1.12) saturate(0.85);
+  }
+
+  .panel-filter-vintage {
+    filter: sepia(0.28) contrast(1.25) saturate(1.4) hue-rotate(-10deg);
+  }
+
+  .panel-filter-pop-art {
+    filter: contrast(1.6) saturate(2.2) brightness(1.05);
+  }
+
+  .panel-filter-cyber-neon {
+    filter: contrast(1.4) saturate(2.5) hue-rotate(140deg);
+  }
+
+  .panel-filter-graphic-novel {
+    filter: grayscale(0.85) contrast(1.85) brightness(0.9);
+  }
+
+  .panel-filter-anime-cel {
+    filter: contrast(1.2) saturate(1.6) brightness(1.08);
+  }
+
+  .panel-filter-pencil-sketch {
+    filter: grayscale(1) contrast(2.2) brightness(1.1);
+  }
+
+  .panel-filter-manga-screentone {
+    filter: grayscale(1) contrast(1.9) brightness(0.95);
+  }
+
+  .panel-filter-anaglyph-3d {
+    filter: contrast(1.35) saturate(1.8);
+  }
+
+  .panel-filter-golden-pulp {
+    filter: sepia(0.55) contrast(1.15) saturate(1.2) hue-rotate(-15deg);
+  }
+
+  .panel-filter-dark-knight {
+    filter: grayscale(1) contrast(3.2) brightness(0.9);
+  }
+
+  .panel-filter-technicolor {
+    filter: contrast(1.45) saturate(2.8) brightness(1.02);
+  }
+
+  .halftone-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, rgb(22 19 16 / 0.28) 0.55px, transparent 0.85px);
+    background-size: 4px 4px;
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+  }
+
+  .screentone-dot::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(45deg, rgb(0 0 0 / 0.18) 0, rgb(0 0 0 / 0.18) 1px, transparent 0, transparent 3px);
+    mix-blend-mode: multiply;
+    opacity: 0.65;
+  }
+
+  .scanlines-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.22) 1px, transparent 1px, transparent 3px);
+    mix-blend-mode: overlay;
+    opacity: 0.65;
+  }
+
+  .vintage-grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, rgba(120, 80, 20, 0.2) 0.6px, transparent 0.9px);
+    background-size: 3px 3px;
+    mix-blend-mode: multiply;
+    opacity: 0.55;
+  }
+
+  .anaglyph-split::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    box-shadow: inset 3px 0 0 rgba(255, 0, 80, 0.4), inset -3px 0 0 rgba(0, 220, 255, 0.4);
+    mix-blend-mode: screen;
+  }
+
+  /* Comic Book Headings & Typography Utilities */
+  .comic-sfx-text {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    line-height: 0.9;
+    color: #ffeb3b;
+    -webkit-text-stroke: 2px #161310;
+    paint-order: stroke fill;
+    text-shadow: 3px 3px 0 #d32f2f, 5px 5px 0 #161310;
+    transform: rotate(-4deg) scale(1.05);
+    letter-spacing: 0.06em;
+  }
+
+  .comic-banner-box {
+    background-color: #fef08a;
+    border: 3px solid #161310;
+    box-shadow: 3px 3px 0 #161310;
+    color: #161310;
+    font-family: var(--font-display);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .comic-starburst-label {
+    background-color: #dc2626;
+    color: #ffffff;
+    font-family: var(--font-display);
+    clip-path: polygon(50% 0%, 63% 12%, 81% 3%, 84% 21%, 100% 25%, 93% 42%, 100% 58%, 85% 66%, 89% 84%, 71% 83%, 64% 98%, 48% 90%, 33% 97%, 28% 82%, 10% 84%, 13% 66%, 0% 57%, 8% 42%, 0% 25%, 16% 20%, 17% 3%, 35% 10%);
+    padding: 0.75rem 0.6rem;
+    text-align: center;
+    -webkit-text-stroke: 1px #161310;
+    paint-order: stroke fill;
+    text-shadow: 2px 2px 0 #161310;
+  }
+
+  .cover-title-3d {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    line-height: 0.85;
+    letter-spacing: 0.05em;
+    -webkit-text-stroke: 3px #161310;
+    paint-order: stroke fill;
+    text-shadow: 4px 4px 0 #161310, 6px 6px 0 rgb(0 0 0 / 0.5);
+  }
+
+  .page-stage {
+    perspective: 1800px;
+  }
+
+  .ink-stage {
+    background-color: var(--color-ink);
+    background-image: radial-gradient(rgb(255 248 238 / 0.07) 0.7px, transparent 0.7px);
+    background-size: 3px 3px;
+  }
+}
+
+@keyframes marching-ants {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+.selection-ants {
+  stroke-dasharray: 8 6;
+  animation: marching-ants 700ms linear infinite;
+}
+
+/* Reader + studio motion */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes page-turn-next {
+  from {
+    opacity: 0;
+    transform: rotateY(-22deg) translateX(4%) scale(0.97);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes page-turn-prev {
+  from {
+    opacity: 0;
+    transform: rotateY(22deg) translateX(-4%) scale(0.97);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes panel-focus {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes bubble-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+@keyframes bubble-pulse {
+  0% {
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 10px rgba(250, 204, 21, 0);
+  }
+  100% {
+    transform: scale(1.04);
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0);
+  }
+}
+
+@keyframes kenburns {
+  from {
+    transform: scale(1.08) translate3d(-1%, 0, 0);
+  }
+  to {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
+.anim-rise {
+  animation: rise-in var(--motion-slow) var(--ease-smooth-out) both;
+}
+
+.anim-page-next {
+  animation: page-turn-next var(--motion-emphasis) var(--ease-smooth-out) both;
+}
+
+.anim-page-prev {
+  animation: page-turn-prev var(--motion-emphasis) var(--ease-smooth-out) both;
+}
+
+.anim-panel {
+  animation: panel-focus 520ms var(--ease-smooth-out) both;
+}
+
+.anim-bubble {
+  animation: bubble-enter 380ms var(--ease-smooth-out) both;
+}
+
+.anim-bubble-active {
+  animation: bubble-pulse 550ms var(--ease-smooth-out) both;
+}
+
+.anim-kenburns {
+  animation: kenburns 7s var(--ease-out) both;
+}
+
+.stagger-1 { animation-delay: 40ms; }
+.stagger-2 { animation-delay: 90ms; }
+.stagger-3 { animation-delay: 140ms; }
+.stagger-4 { animation-delay: 190ms; }
+.stagger-5 { animation-delay: 240ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-rise,
+  .anim-page-next,
+  .anim-page-prev,
+  .anim-panel,
+  .anim-bubble,
+  .anim-kenburns,
+  .selection-ants {
+    animation: none;
+  }
+}
