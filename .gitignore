@@ -14,18 +14,13 @@ screenshots
 .node_modules.lock
 .DS_Store
 
-# Ignore generated media and demo images
-public/demo/
-public/maids-revenge/
+# Ignore user uploads and temporary media
 public/uploads/
-*.png
-*.jpg
-*.jpeg
-*.webp
-*.gif
-*.avif
 
-# Allow documentation screenshots
+# Allow bundled demo comic images and documentation screenshots
+!public/demo/
+!public/demo/*
 !public/screenshots/
 !public/screenshots/*.png
+
 
