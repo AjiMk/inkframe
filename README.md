@@ -298,4 +298,5 @@ For further details, see [CONTRIBUTING.md](file:///home/aji/Projects/inkframe/CO
 
 ## License
 
-Proprietary / Personal Hobby Project. All rights reserved.
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for full details.
+
