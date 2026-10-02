@@ -292,7 +292,7 @@ npm run format
 3. Provide a clear summary of the changes and motivation in the PR description.
 4. Squash & Merge (or Rebase & Merge) upon approval to maintain a clean linear commit history.
 
-For further details, see [CONTRIBUTING.md](file:///home/aji/Projects/inkframe/CONTRIBUTING.md).
+For further details, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
