@@ -4,6 +4,16 @@
 
 It serves as a local-first web application and AI-assisted studio that turns photos, illustrations, and video stills into structured graphic novels, comics, and visual storyboards.
 
+## Interface Showcase
+
+| Studio Canvas & Panel Editor | Immersive Comic Reader |
+| :---: | :---: |
+| ![Studio Editor](public/screenshots/studio-editor.png) | ![Comic Reader](public/screenshots/comic-reader.png) |
+
+| Project Library & Workspace Gallery |
+| :---: |
+| ![Project Library](public/screenshots/library-view.png) |
+
 ---
 
 ## About & Vision
