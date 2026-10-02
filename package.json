@@ -1,6 +1,6 @@
 {
   "name": "inkframe",
-  "private": true,
+  "license": "MIT",
   "sideEffects": false,
   "type": "module",
   "overrides": {
