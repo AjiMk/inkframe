@@ -39,11 +39,15 @@ function loadStore(): Map<string, Comic> {
     console.error("Failed to load mcp_comics.json:", err);
   }
   if (store.size === 0) {
-    const sampleComic = createComic("The Midnight Falcon", "Inkframe Studio");
+    const sampleComic = createComic("Last One Out", "Inkframe Studio");
     sampleComic.coverConfig = {
       ...defaultCoverConfig(),
-      tagline: "ACTION-PACKED FIRST ISSUE!",
-      subtitle: "ORIGIN OF THE FALCON",
+      template: "classic",
+      titleStyle: "classic-3d",
+      tagline: "A LATE-SHIFT HORROR",
+      subtitle: "THE CRY WAS NOT A CHILD",
+      titleColor: "#fef08a",
+      accentColor: "#dc2626",
       issueNumber: "#1",
       issuePrice: "25¢",
     };

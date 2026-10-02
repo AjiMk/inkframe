@@ -24,3 +24,8 @@ public/uploads/
 *.webp
 *.gif
 *.avif
+
+# Allow documentation screenshots
+!public/screenshots/
+!public/screenshots/*.png
+

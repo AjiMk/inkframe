@@ -1,9 +1,9 @@
 [
   {
-    "id": "3bc6eeec-4af0-4078-a6ad-2cce09e1333b",
-    "title": "The Midnight Falcon",
+    "id": "demo-night-bus-42",
+    "title": "Last One Out",
     "author": "Inkframe Studio",
-    "cover": null,
+    "cover": "url:/demo/cover.jpg",
     "coverConfig": {
       "template": "classic",
       "titleStyle": "classic-3d",
@@ -11,11 +11,11 @@
       "issuePrice": "25¢",
       "issueDate": "VOL. 1",
       "publisherName": "INKFRAME COMICS",
-      "tagline": "ACTION-PACKED FIRST ISSUE!",
-      "subtitle": "ORIGIN OF THE FALCON",
+      "tagline": "A LATE-SHIFT HORROR",
+      "subtitle": "THE CRY WAS NOT A CHILD",
       "showComicsCode": true,
       "showBarcode": true,
-      "titleColor": "#facc15",
+      "titleColor": "#fef08a",
       "accentColor": "#dc2626",
       "positions": {
         "issueBox": {
@@ -49,25 +49,302 @@
       }
     },
     "assetContext": {
-      "styleGuide": "Clean line art, authentic comic book aesthetic",
+      "styleGuide": "Cel-shaded anime, night city sidewalk, bold ink and flat color. Adult woman in a navy business suit. Fictional. No gore.",
       "backgrounds": {},
       "characters": {}
     },
+    "createdAt": 1790939054903,
+    "updatedAt": 1790939054903,
     "pages": [
       {
-        "id": "08ae6d6d-2a81-4619-ae7d-d7911e19bab9",
+        "id": "d-p1",
         "layout": "splash",
         "panels": [
           {
-            "id": "234ecd2b-0adf-42b5-8d38-bbe4229e304f",
-            "image": null,
+            "id": "d-p1a",
+            "image": "url:/demo/p1.jpg",
             "filter": "none",
-            "bubbles": []
+            "bubbles": [
+              {
+                "id": "d-b1",
+                "text": "11:47 PM. Forty stories of glass and steel fall dead silent. The last shift ends.",
+                "kind": "title-banner",
+                "x": 3,
+                "y": 2,
+                "w": 94,
+                "tail": "none"
+              },
+              {
+                "id": "d-b2",
+                "text": "The heavy glass lobby doors lock automatically behind me.",
+                "kind": "caption",
+                "x": 4,
+                "y": 30,
+                "w": 58,
+                "tail": "none"
+              },
+              {
+                "id": "d-b3",
+                "text": "Keys. Phone. Purse. Just make it to the train...",
+                "kind": "thought",
+                "x": 8,
+                "y": 78,
+                "w": 62,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d-p2",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "d-p2a",
+            "image": "url:/demo/p2.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "d-b4",
+                "text": "Four blocks to the station. Every sharp click of my heels echoes off the darkened storefronts.",
+                "kind": "title-banner",
+                "x": 3,
+                "y": 2,
+                "w": 94,
+                "tail": "none"
+              },
+              {
+                "id": "d-b5",
+                "text": "Traffic signals cycle green for streets abandoned for hours.",
+                "kind": "caption",
+                "x": 4,
+                "y": 30,
+                "w": 62,
+                "tail": "none"
+              },
+              {
+                "id": "d-b6",
+                "text": "It’s too quiet tonight. Don’t look back.",
+                "kind": "thought",
+                "x": 8,
+                "y": 78,
+                "w": 64,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d-p3",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "d-p3a",
+            "image": "url:/demo/p3.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "d-b7",
+                "text": "Drip... drip... drip. A heavy, rhythmic tapping cuts through the freezing fog.",
+                "kind": "title-banner",
+                "x": 3,
+                "y": 2,
+                "w": 94,
+                "tail": "none"
+              },
+              {
+                "id": "d-b8",
+                "text": "Subway steam vents hiss softly into the empty street.",
+                "kind": "caption",
+                "x": 4,
+                "y": 30,
+                "w": 62,
+                "tail": "none"
+              },
+              {
+                "id": "d-b9",
+                "text": "Just condensation from a pipe. Keep moving.",
+                "kind": "thought",
+                "x": 8,
+                "y": 78,
+                "w": 64,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d-p4",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "d-p4a",
+            "image": "url:/demo/p4.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "d-b10",
+                "text": "Curiosity overrides caution as a faint voice turns down the narrow alleyway.",
+                "kind": "title-banner",
+                "x": 3,
+                "y": 2,
+                "w": 94,
+                "tail": "none"
+              },
+              {
+                "id": "d-b10b",
+                "text": "…Mommy…?",
+                "kind": "shout",
+                "x": 54,
+                "y": 34,
+                "w": 40,
+                "tail": "none"
+              },
+              {
+                "id": "d-b11",
+                "text": "High, fragile... a child's cry, impossibly close.",
+                "kind": "caption",
+                "x": 4,
+                "y": 22,
+                "w": 48,
+                "tail": "none"
+              },
+              {
+                "id": "d-b12",
+                "text": "A kid? Out here at midnight?",
+                "kind": "thought",
+                "x": 6,
+                "y": 64,
+                "w": 46,
+                "tail": "bl"
+              },
+              {
+                "id": "d-b13",
+                "text": "I can't ignore them. Hello?!",
+                "kind": "thought",
+                "x": 28,
+                "y": 80,
+                "w": 64,
+                "tail": "br"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d-p5",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "d-p5a",
+            "image": "url:/demo/p5.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "d-b14",
+                "text": "The alley is a dead end. No child... only a waterlogged porcelain doll.",
+                "kind": "title-banner",
+                "x": 3,
+                "y": 2,
+                "w": 94,
+                "tail": "none"
+              },
+              {
+                "id": "d-b15",
+                "text": "The weeping stops dead the instant my shadow touches it.",
+                "kind": "caption",
+                "x": 4,
+                "y": 28,
+                "w": 62,
+                "tail": "none"
+              },
+              {
+                "id": "d-b16",
+                "text": "No footprints... no shadow. Where did the voice come from?",
+                "kind": "thought",
+                "x": 8,
+                "y": 78,
+                "w": 68,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d-p6",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "d-p6a",
+            "image": "url:/demo/p6.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "d-b17",
+                "text": "SNAP. The streetlights plunge the entire block into pitch darkness.",
+                "kind": "title-banner",
+                "x": 3,
+                "y": 2,
+                "w": 94,
+                "tail": "none"
+              },
+              {
+                "id": "d-b18",
+                "text": "Not a single window glowing. Absolute silence.",
+                "kind": "caption",
+                "x": 4,
+                "y": 30,
+                "w": 52,
+                "tail": "none"
+              },
+              {
+                "id": "d-b19",
+                "text": "I can't see the street... I can't see my hands...",
+                "kind": "thought",
+                "x": 8,
+                "y": 78,
+                "w": 48,
+                "tail": "bl"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d-p7",
+        "layout": "splash",
+        "panels": [
+          {
+            "id": "d-p7a",
+            "image": "url:/demo/p7.jpg",
+            "filter": "none",
+            "bubbles": [
+              {
+                "id": "d-b20",
+                "text": "An icy, agonizing weight drops onto my shoulder. Cold fingers claw into fabric.",
+                "kind": "caption",
+                "x": 4,
+                "y": 4,
+                "w": 70,
+                "tail": "none"
+              },
+              {
+                "id": "d-b21",
+                "text": "It didn't lure me into the alley... it was waiting for me to stop.",
+                "kind": "thought",
+                "x": 8,
+                "y": 78,
+                "w": 72,
+                "tail": "bl"
+              }
+            ]
           }
         ]
       }
-    ],
-    "createdAt": 1790435516481,
-    "updatedAt": 1790435516481
+    ]
   }
 ]

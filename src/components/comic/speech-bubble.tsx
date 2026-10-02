@@ -157,7 +157,7 @@ export function SpeechBubble({
             {bubble.text}
           </span>
         ) : bubble.kind === "title-banner" ? (
-          <span className="font-display text-sm sm:text-base tracking-widest uppercase">
+          <span className="font-display block text-[0.68rem] leading-snug tracking-wide uppercase sm:text-xs">
             {bubble.text}
           </span>
         ) : bubble.kind === "burst-label" ? (

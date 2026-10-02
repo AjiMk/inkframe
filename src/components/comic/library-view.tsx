@@ -126,7 +126,7 @@ export function LibraryView() {
           <div className="rounded-xl border border-dashed border-border bg-card px-6 py-16 text-center">
             <p className="font-semibold">No comics yet</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Start a blank book, or restore Night Bus 42 to see the reader.
+              Start a blank book, or restore Last One Out to see the reader.
             </p>
             <div className="mt-5 flex justify-center gap-2">
               <Button type="button" onClick={() => setOpen(true)}>
@@ -169,7 +169,7 @@ export function LibraryView() {
                 id="new-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Night Bus 42"
+                placeholder="Last One Out"
                 autoFocus
               />
             </div>
