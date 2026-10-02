@@ -54,7 +54,7 @@
       "characters": {}
     },
     "createdAt": 1790939054903,
-    "updatedAt": 1790939054903,
+    "updatedAt": 1790951673970,
     "pages": [
       {
         "id": "d-p1",
@@ -67,7 +67,7 @@
             "bubbles": [
               {
                 "id": "d-b1",
-                "text": "11:47 PM. Forty stories of glass and steel fall dead silent. The last shift ends.",
+                "text": "11:47 PM — last one out. Office tower, business dress, empty sidewalk. No one else leaves.",
                 "kind": "title-banner",
                 "x": 3,
                 "y": 2,
@@ -76,7 +76,7 @@
               },
               {
                 "id": "d-b2",
-                "text": "The heavy glass lobby doors lock automatically behind me.",
+                "text": "Lobby dark. Door locks behind her.",
                 "kind": "caption",
                 "x": 4,
                 "y": 30,
@@ -85,10 +85,10 @@
               },
               {
                 "id": "d-b3",
-                "text": "Keys. Phone. Purse. Just make it to the train...",
+                "text": "Bag. Keys. Subway. Home.",
                 "kind": "thought",
-                "x": 8,
-                "y": 78,
+                "x": 38,
+                "y": 37.91641963109354,
                 "w": 62,
                 "tail": "bl"
               }
@@ -107,7 +107,7 @@
             "bubbles": [
               {
                 "id": "d-b4",
-                "text": "Four blocks to the station. Every sharp click of my heels echoes off the darkened storefronts.",
+                "text": "Four blocks. No one. Her heels are the only sound between her and the station.",
                 "kind": "title-banner",
                 "x": 3,
                 "y": 2,
@@ -116,19 +116,19 @@
               },
               {
                 "id": "d-b5",
-                "text": "Traffic signals cycle green for streets abandoned for hours.",
+                "text": "Shops shut. Signals green for nothing.",
                 "kind": "caption",
-                "x": 4,
-                "y": 30,
+                "x": 3.3014050129862,
+                "y": 19.43202404479578,
                 "w": 62,
                 "tail": "none"
               },
               {
                 "id": "d-b6",
-                "text": "It’s too quiet tonight. Don’t look back.",
+                "text": "Too quiet. Don’t look back.",
                 "kind": "thought",
-                "x": 8,
-                "y": 78,
+                "x": 33.75323090402728,
+                "y": 33.147603754940704,
                 "w": 64,
                 "tail": "bl"
               }
@@ -147,7 +147,7 @@
             "bubbles": [
               {
                 "id": "d-b7",
-                "text": "Drip... drip... drip. A heavy, rhythmic tapping cuts through the freezing fog.",
+                "text": "Drip. Drip. Drip. She slows. The drip is regular. Something sits under it.",
                 "kind": "title-banner",
                 "x": 3,
                 "y": 2,
@@ -156,19 +156,19 @@
               },
               {
                 "id": "d-b8",
-                "text": "Subway steam vents hiss softly into the empty street.",
+                "text": "Pipe overhead. Water on concrete.",
                 "kind": "caption",
-                "x": 4,
-                "y": 30,
+                "x": 2.380636480270363,
+                "y": 8.091032608695652,
                 "w": 62,
                 "tail": "none"
               },
               {
                 "id": "d-b9",
-                "text": "Just condensation from a pipe. Keep moving.",
+                "text": "Just a leak. Keep walking.",
                 "kind": "thought",
-                "x": 8,
-                "y": 78,
+                "x": 35.52996213662108,
+                "y": 28.07308135704875,
                 "w": 64,
                 "tail": "bl"
               }
@@ -187,7 +187,7 @@
             "bubbles": [
               {
                 "id": "d-b10",
-                "text": "Curiosity overrides caution as a faint voice turns down the narrow alleyway.",
+                "text": "She leaves the subway path and follows the sound into the side street.",
                 "kind": "title-banner",
                 "x": 3,
                 "y": 2,
@@ -196,39 +196,39 @@
               },
               {
                 "id": "d-b10b",
-                "text": "…Mommy…?",
+                "text": "…Mommy…",
                 "kind": "shout",
-                "x": 54,
-                "y": 34,
+                "x": 60,
+                "y": 43.390954380764164,
                 "w": 40,
                 "tail": "none"
               },
               {
                 "id": "d-b11",
-                "text": "High, fragile... a child's cry, impossibly close.",
+                "text": "Thin. Close. Not on the street. She runs.",
                 "kind": "caption",
-                "x": 4,
-                "y": 22,
+                "x": 52,
+                "y": 6.303977272727274,
                 "w": 48,
                 "tail": "none"
               },
               {
                 "id": "d-b12",
-                "text": "A kid? Out here at midnight?",
+                "text": "A kid? Out here?",
                 "kind": "thought",
-                "x": 6,
-                "y": 64,
+                "x": 1.8694495728635356,
+                "y": 7.710371376811597,
                 "w": 46,
                 "tail": "bl"
               },
               {
                 "id": "d-b13",
-                "text": "I can't ignore them. Hello?!",
+                "text": "Don’t think. Find them.",
                 "kind": "thought",
-                "x": 28,
-                "y": 80,
+                "x": 2.950840191507338,
+                "y": 14.071352108036894,
                 "w": 64,
-                "tail": "br"
+                "tail": "bl"
               }
             ]
           }
@@ -245,7 +245,7 @@
             "bubbles": [
               {
                 "id": "d-b14",
-                "text": "The alley is a dead end. No child... only a waterlogged porcelain doll.",
+                "text": "No child. A toy on wet pavement. No footprints. No voice left.",
                 "kind": "title-banner",
                 "x": 3,
                 "y": 2,
@@ -254,19 +254,19 @@
               },
               {
                 "id": "d-b15",
-                "text": "The weeping stops dead the instant my shadow touches it.",
+                "text": "Cry stops the moment she sees it.",
                 "kind": "caption",
-                "x": 4,
-                "y": 28,
+                "x": 2.7412773414275433,
+                "y": 8.100255270092227,
                 "w": 62,
                 "tail": "none"
               },
               {
                 "id": "d-b16",
-                "text": "No footprints... no shadow. Where did the voice come from?",
+                "text": "Where are you? Who left this?",
                 "kind": "thought",
-                "x": 8,
-                "y": 78,
+                "x": 5.457521043902744,
+                "y": 25.668601778656125,
                 "w": 68,
                 "tail": "bl"
               }
@@ -285,7 +285,7 @@
             "bubbles": [
               {
                 "id": "d-b17",
-                "text": "SNAP. The streetlights plunge the entire block into pitch darkness.",
+                "text": "Lights out. Street, windows, signals — all dead. She cannot see the way back.",
                 "kind": "title-banner",
                 "x": 3,
                 "y": 2,
@@ -294,19 +294,19 @@
               },
               {
                 "id": "d-b18",
-                "text": "Not a single window glowing. Absolute silence.",
+                "text": "Whole block. At once.",
                 "kind": "caption",
-                "x": 4,
-                "y": 30,
+                "x": 2.498763964076728,
+                "y": 8.676198122529645,
                 "w": 52,
                 "tail": "none"
               },
               {
                 "id": "d-b19",
-                "text": "I can't see the street... I can't see my hands...",
+                "text": "No. No, no—",
                 "kind": "thought",
-                "x": 8,
-                "y": 78,
+                "x": 20.134274180930625,
+                "y": 24.174551218708828,
                 "w": 48,
                 "tail": "bl"
               }
@@ -325,7 +325,7 @@
             "bubbles": [
               {
                 "id": "d-b20",
-                "text": "An icy, agonizing weight drops onto my shoulder. Cold fingers claw into fabric.",
+                "text": "Weight on the shoulder. Nails through the dress.",
                 "kind": "caption",
                 "x": 4,
                 "y": 4,
@@ -334,10 +334,10 @@
               },
               {
                 "id": "d-b21",
-                "text": "It didn't lure me into the alley... it was waiting for me to stop.",
+                "text": "It was behind me the whole time.",
                 "kind": "thought",
-                "x": 8,
-                "y": 78,
+                "x": 0.7731013549457089,
+                "y": 44.96156538208169,
                 "w": 72,
                 "tail": "bl"
               }
