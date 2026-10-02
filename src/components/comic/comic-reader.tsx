@@ -220,7 +220,7 @@ export function ComicReader({ comicId }: { comicId: string }) {
               mode="read"
               reveal={reveal}
               anim={dir}
-              className="max-h-[calc(100dvh-130px)]"
+              className="h-auto w-[min(100%,calc((100dvh-130px)*2/3))] max-w-full"
             />
           </div>
         ) : null}
