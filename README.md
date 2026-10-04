@@ -1,10 +1,8 @@
 # Inkframe
 
-Local-first comic studio for photos, video stills, and AI-assisted dialogue. MIT licensed. Work in progress.
+**Inkframe** is an open hobby project created to make comic creation easy, intuitive, and seamlessly connected with AI through the Model Context Protocol (MCP).
 
-Turn photos, illustrations, and video freeze-frames into a comic or storyboard in the browser. Projects stay on your device. An AI assistant can drive layouts and dialogue through a built-in MCP server.
-
-**Status:** active development, not a finished release. PDF export works. CBZ, image bundles, and JSON layout interchange are still planned.
+It serves as a local-first web application and AI-assisted studio that turns photos, illustrations, and video stills into structured graphic novels, comics, and visual storyboards.
 
 ## Interface Showcase
 
@@ -20,7 +18,7 @@ Turn photos, illustrations, and video freeze-frames into a comic or storyboard i
 
 ## About & Vision
 
-Inkframe started as a personal passion project with a simple goal: to lower the barrier to comic creation and experiment with AI-driven narrative tools.
+Inkframe started as a personal passion project with a simple goal: to lower the barrier to comic creation and experiment with AI-driven narrative tools. 
 
 By integrating a native **Model Context Protocol (MCP) server**, Inkframe allows AI assistants (like Claude, Cursor, and Antigravity) to act as creative partners—manipulating panel layouts, inserting dialogue, and generating panel prompts directly inside your workspace.
 
@@ -237,7 +235,7 @@ inkframe/
 
 ## Contribution Guide
 
-Contributions, feature ideas, and bug reports are welcome. This is a hobby project still in progress.
+Contributions, feature ideas, and bug reports are welcome! As a hobby project, community contributions help drive new layout tools, filters, and export formats.
 
 ### 1. Branching Strategy
 
@@ -300,4 +298,4 @@ For further details, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) file for full details.
