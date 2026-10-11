@@ -9,6 +9,13 @@ import { nitro } from "nitro/vite";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
+import { mergeComics } from "./src/lib/comics/sync.ts";
+import {
+  readComicsFromDisk,
+  atomicWriteJsonSync,
+  DEFAULT_STORAGE_PATH,
+} from "./src/lib/comics/sync-node.ts";
+import type { Comic } from "./src/lib/comics/types.ts";
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
 function hasGlobbedMigrations(root: string): boolean {
@@ -140,6 +147,83 @@ function authPopupPlugin(): Plugin {
   };
 }
 
+function parseJsonBody<T>(req: NodeJS.ReadableStream): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk: Buffer | string) => {
+      data += chunk;
+      if (data.length > 50 * 1024 * 1024) {
+        reject(new Error("Payload too large"));
+      }
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? (JSON.parse(data) as T) : ({} as T));
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function inkframeSyncPlugin(): Plugin {
+  return {
+    name: "app-builder:inkframe-sync",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        const rawUrl = req.url ?? "";
+        const pathOnly = rawUrl.split("?", 1)[0] ?? "";
+        if (pathOnly !== "/__inkframe/comics") {
+          next();
+          return;
+        }
+
+        const method = (req.method ?? "GET").toUpperCase();
+
+        try {
+          if (method === "GET") {
+            const comics = readComicsFromDisk();
+            res.statusCode = 200;
+            res.setHeader("content-type", "application/json; charset=utf-8");
+            res.setHeader("cache-control", "no-store");
+            res.end(JSON.stringify({ comics, deletedIds: [] }));
+            return;
+          }
+
+          if (method === "PUT") {
+            const body = await parseJsonBody<{ comics?: Comic[]; deletedIds?: string[] }>(req);
+            const diskComics = readComicsFromDisk();
+            const incomingComics = Array.isArray(body.comics) ? body.comics : [];
+            const deletedIds = Array.isArray(body.deletedIds) ? body.deletedIds : [];
+
+            const { merged } = mergeComics(diskComics, incomingComics, deletedIds);
+            atomicWriteJsonSync(DEFAULT_STORAGE_PATH, merged);
+
+            res.statusCode = 200;
+            res.setHeader("content-type", "application/json; charset=utf-8");
+            res.setHeader("cache-control", "no-store");
+            res.end(JSON.stringify({ ok: true, comics: merged }));
+            return;
+          }
+
+          res.statusCode = 405;
+          res.setHeader("content-type", "text/plain; charset=utf-8");
+          res.end("Method Not Allowed");
+        } catch (err) {
+          console.error("[inkframe-sync] Error handling /__inkframe/comics:", err);
+          if (!res.headersSent) {
+            res.statusCode = 500;
+            res.setHeader("content-type", "application/json; charset=utf-8");
+            res.end(JSON.stringify({ error: err instanceof Error ? err.message : "Sync error" }));
+          }
+        }
+      });
+    },
+  };
+}
+
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
@@ -159,6 +243,8 @@ export default defineConfig(({ command, isPreview }) => ({
     pgliteBootstrapPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
+    // Dev-only two-way sync for MCP and browser.
+    inkframeSyncPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.
     appEnvPlugin(),
     tailwindcss(),

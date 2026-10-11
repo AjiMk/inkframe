@@ -1,6 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import {
@@ -8,66 +6,43 @@ import {
   createComic,
   createPage,
   createBubble,
-  fitPanelsToLayout,
   defaultCoverConfig,
   FILTERS,
 } from "../lib/comics/factory.ts";
 import { LAYOUTS } from "../lib/comics/layouts.ts";
+import {
+  readComicsFromDisk,
+  atomicWriteJsonSync,
+  DEFAULT_STORAGE_PATH,
+} from "../lib/comics/sync-node.ts";
 import type {
   Comic,
   PageLayoutId,
   BubbleKind,
   PanelFilter,
   CoverTemplateStyle,
-  AssetReferenceContext,
-  BackgroundReference,
-  CharacterReference,
 } from "../lib/comics/types.ts";
-
-const STORAGE_PATH = path.resolve(process.cwd(), "public/mcp_comics.json");
 
 function loadStore(): Map<string, Comic> {
   const store = new Map<string, Comic>();
-  try {
-    if (fs.existsSync(STORAGE_PATH)) {
-      const data = JSON.parse(fs.readFileSync(STORAGE_PATH, "utf-8")) as Comic[];
-      for (const c of data) {
-        store.set(c.id, c);
-      }
-    }
-  } catch (err) {
-    console.error("Failed to load mcp_comics.json:", err);
-  }
-  if (store.size === 0) {
-    const sampleComic = createComic("Last One Out", "Inkframe Studio");
-    sampleComic.coverConfig = {
-      ...defaultCoverConfig(),
-      template: "classic",
-      titleStyle: "classic-3d",
-      tagline: "A LATE-SHIFT HORROR",
-      subtitle: "THE CRY WAS NOT A CHILD",
-      titleColor: "#fef08a",
-      accentColor: "#dc2626",
-      issueNumber: "#1",
-      issuePrice: "25¢",
-    };
-    store.set(sampleComic.id, sampleComic);
+  const list = readComicsFromDisk();
+  for (const c of list) {
+    store.set(c.id, c);
   }
   return store;
 }
 
-const comicsStore = loadStore();
-
-function persistStore() {
-  try {
-    const list = Array.from(comicsStore.values());
-    fs.mkdirSync(path.dirname(STORAGE_PATH), { recursive: true });
-    fs.writeFileSync(STORAGE_PATH, JSON.stringify(list, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed to save mcp_comics.json:", err);
-  }
+function persistStore(store: Map<string, Comic>) {
+  const list = Array.from(store.values());
+  atomicWriteJsonSync(DEFAULT_STORAGE_PATH, list);
 }
-persistStore();
+
+function mutateStore<T>(fn: (store: Map<string, Comic>) => T): T {
+  const store = loadStore();
+  const res = fn(store);
+  persistStore(store);
+  return res;
+}
 
 const server = new McpServer({
   name: "inkframe-mcp-server",
@@ -77,69 +52,63 @@ const server = new McpServer({
 // --- RESOURCES ---
 
 // Resource 1: Available page layouts
-server.resource(
-  "layouts",
-  "inkframe://layouts",
-  async (uri) => ({
-    contents: [
-      {
-        uri: uri.href,
-        text: JSON.stringify(
-          Object.entries(LAYOUTS).map(([id, layout]) => ({
-            id,
-            label: layout.label,
-            panelCount: layout.panelCount,
-          })),
-          null,
-          2
-        ),
-        mimeType: "application/json",
-      },
-    ],
-  })
-);
+server.resource("layouts", "inkframe://layouts", async (uri) => ({
+  contents: [
+    {
+      uri: uri.href,
+      text: JSON.stringify(
+        Object.entries(LAYOUTS).map(([id, layout]) => ({
+          id,
+          label: layout.label,
+          panelCount: layout.panelCount,
+        })),
+        null,
+        2,
+      ),
+      mimeType: "application/json",
+    },
+  ],
+}));
 
 // Resource 2: Available comic filters
-server.resource(
-  "filters",
-  "inkframe://filters",
-  async (uri) => ({
-    contents: [
-      {
-        uri: uri.href,
-        text: JSON.stringify(FILTERS, null, 2),
-        mimeType: "application/json",
-      },
-    ],
-  })
-);
+server.resource("filters", "inkframe://filters", async (uri) => ({
+  contents: [
+    {
+      uri: uri.href,
+      text: JSON.stringify(FILTERS, null, 2),
+      mimeType: "application/json",
+    },
+  ],
+}));
 
 // Resource 4: Active Comic Full Context by ID
 server.resource(
   "comic-context",
-  "inkframe://comics/{comicId}",
-  async (uri, params: any) => {
-    const comicId = params?.comicId as string | undefined;
-    const comic = comicId ? comicsStore.get(comicId) : null;
+  new ResourceTemplate("inkframe://comics/{comicId}", { list: undefined }),
+  async (uri, { comicId }) => {
+    const store = loadStore();
+    const id = String(comicId ?? "");
+    const comic = id ? store.get(id) : null;
     return {
       contents: [
         {
           uri: uri.href,
-          text: JSON.stringify(comic ?? { error: "Comic not found", comicId }, null, 2),
+          text: JSON.stringify(comic ?? { error: "Comic not found", comicId: id }, null, 2),
           mimeType: "application/json",
         },
       ],
     };
-  }
+  },
 );
 
 // Resource 5: Comic Visual References (Characters & Background Context)
 server.resource(
   "comic-references",
-  "inkframe://comics/{comicId}/references",
-  async (uri, params: any) => {
-    const comicId = params?.comicId as string | undefined;
-    const comic = comicId ? comicsStore.get(comicId) : null;
+  new ResourceTemplate("inkframe://comics/{comicId}/references", { list: undefined }),
+  async (uri, { comicId }) => {
+    const store = loadStore();
+    const id = String(comicId ?? "");
+    const comic = id ? store.get(id) : null;
     const assetContext = comic?.assetContext ?? {
       styleGuide: "Default clean comic book style",
       backgrounds: {},
@@ -154,7 +123,7 @@ server.resource(
         },
       ],
     };
-  }
+  },
 );
 
 // --- PROMPTS (Contextual Templates) ---
@@ -173,71 +142,71 @@ server.prompt(
         role: "user",
         content: {
           type: "text",
-          text: `Create a comic titled "${title}" with a "${theme}" theme. Use 'manga-screentone' and 'dark-knight' filters, and add dramatic SFX and dialogue balloons.`,
+          text: `Create a compelling 3-page comic outline for a manga titled "${title}" with the theme "${theme}".
+
+For each page, suggest:
+1. Panel layout pattern ("splash", "two-v", "two-h", "three-strip", "four-grid", "wide-then-two", "two-then-wide", "spotlight")
+2. Visual description for each panel (including camera angle, mood, and composition)
+3. Recommended panel filter (e.g. "manga-screentone", "noir", "ink", "cyber-neon")
+4. Dialogue or sound effects to place in each panel (kinds: "speech", "thought", "shout", "caption", "sfx", "title-banner", "burst-label")
+5. Character appearances and recurring background locations to save in the Story Bible
+
+Then use the inkframe tools to create the comic, add the pages, and attach dialogue elements!`,
         },
       },
     ],
-  })
+  }),
 );
 
-// Prompt 2: Structured 3-Step Pipeline for Consistent Comic Generation
+// Prompt 2: Noir Detective Issue Context
 server.prompt(
-  "generate-consistent-comic",
-  "Template for establishing background references, character model sheets, and plot panels for visual consistency",
+  "noir-detective-case",
+  "Template for creating a gritty hardboiled crime mystery comic",
   {
-    title: z.string().describe("Comic title"),
-    setting: z.string().describe("Primary setting description (e.g. 3BHK apartment in Kolkata)"),
-    characters: z.string().describe("Characters list and descriptions"),
+    detectiveName: z.string().describe("Name of the lead investigator"),
+    caseSubject: z.string().describe("The crime or mystery being investigated"),
   },
-  ({ title, setting, characters }) => ({
+  ({ detectiveName, caseSubject }) => ({
     messages: [
       {
         role: "user",
         content: {
           type: "text",
-          text: `You are creating a multi-page comic titled "${title}".
+          text: `Develop a classic pulp noir comic chapter featuring ${detectiveName} investigating "${caseSubject}".
 
-Follow this mandatory 3-step context pipeline to maintain visual consistency:
-
-STEP 1: BACKGROUND REFERENCES
-First, define visual specs for locations in "${setting}". Call 'set_comic_references' to save background reference keys (e.g., 'livingRoom', 'balcony', 'kitchen').
-
-STEP 2: CHARACTER MODEL SHEETS
-Second, define character reference sheets for: ${characters}. Call 'set_comic_references' to save character keys (e.g., height, facial features, outfit, color palette).
-
-STEP 3: PLOT IMAGE GENERATION
-When rendering each panel, call 'get_panel_prompt' with the relevant character and background keys to compile a unified, consistent image generation prompt.`,
+Design requirements:
+- Use "noir" or "anaglyph-3d" filter for dark, moody chiaroscuro lighting
+- Heavy use of "caption" bubbles for internal hardboiled narration
+- Use "classic-3d" or "distressed-pulp" title typography
+- Include at least one confrontation with "shout" bubbles or "sfx" impacts
+- Store ${detectiveName}'s visual character sheet and key crime scene location using set_comic_references`,
         },
       },
     ],
-  })
+  }),
 );
 
 // --- TOOLS ---
 
 // Tool 1: List comics
-server.tool(
-  "list_comics",
-  "List all comics created in this session",
-  {},
-  async () => {
-    const list = Array.from(comicsStore.values()).map((c) => ({
-      id: c.id,
-      title: c.title,
-      author: c.author,
-      pageCount: c.pages.length,
-      createdAt: new Date(c.createdAt).toISOString(),
-    }));
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify(list, null, 2),
-        },
-      ],
-    };
-  }
-);
+server.tool("list_comics", "List all comics created in this session", {}, async () => {
+  const store = loadStore();
+  const list = Array.from(store.values()).map((c) => ({
+    id: c.id,
+    title: c.title,
+    author: c.author,
+    pageCount: c.pages.length,
+    createdAt: new Date(c.createdAt).toISOString(),
+  }));
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(list, null, 2),
+      },
+    ],
+  };
+});
 
 // Tool 2: Create comic
 server.tool(
@@ -248,18 +217,19 @@ server.tool(
     author: z.string().optional().describe("Author or creator byline"),
   },
   async ({ title, author }) => {
-    const comic = createComic(title, author ?? "Anonymous");
-    comicsStore.set(comic.id, comic);
-    persistStore();
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Created comic "${comic.title}" (ID: ${comic.id}) with 1 splash page.`,
-        },
-      ],
-    };
-  }
+    return mutateStore((store) => {
+      const comic = createComic(title, author ?? "Anonymous");
+      store.set(comic.id, comic);
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Created comic "${comic.title}" (ID: ${comic.id}) with 1 splash page.`,
+          },
+        ],
+      };
+    });
+  },
 );
 
 // Tool 3: Get comic detail
@@ -270,7 +240,8 @@ server.tool(
     comicId: z.string().describe("ID of the comic to retrieve"),
   },
   async ({ comicId }) => {
-    const comic = comicsStore.get(comicId);
+    const store = loadStore();
+    const comic = store.get(comicId);
     if (!comic) {
       return {
         isError: true,
@@ -290,7 +261,7 @@ server.tool(
         },
       ],
     };
-  }
+  },
 );
 
 // Tool 4: Add page
@@ -313,26 +284,27 @@ server.tool(
       .describe("Page layout pattern"),
   },
   async ({ comicId, layout }) => {
-    const comic = comicsStore.get(comicId);
-    if (!comic) {
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
+      const page = createPage(layout as PageLayoutId);
+      comic.pages.push(page);
+      comic.updatedAt = Date.now();
       return {
-        isError: true,
-        content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        content: [
+          {
+            type: "text",
+            text: `Added Page ${comic.pages.length} (ID: ${page.id}) with layout "${layout}" (${page.panels.length} panels) to "${comic.title}".`,
+          },
+        ],
       };
-    }
-    const page = createPage(layout as PageLayoutId);
-    comic.pages.push(page);
-    comic.updatedAt = Date.now();
-    persistStore();
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Added Page ${comic.pages.length} (ID: ${page.id}) with layout "${layout}" (${page.panels.length} panels) to "${comic.title}".`,
-        },
-      ],
-    };
-  }
+    });
+  },
 );
 
 // Tool 4b: Set page layout
@@ -356,22 +328,26 @@ server.tool(
       .describe("Page layout pattern"),
   },
   async ({ comicId, pageId, layout }) => {
-    const comic = comicsStore.get(comicId);
-    if (!comic) {
-      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
-    }
-    const updated = changePageLayoutPreservingImages(comic, pageId, layout as PageLayoutId);
-    comicsStore.set(comicId, { ...updated, updatedAt: Date.now() });
-    persistStore();
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Updated Page layout to "${layout}" while preserving all panel images.`,
-        },
-      ],
-    };
-  }
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
+      const updated = changePageLayoutPreservingImages(comic, pageId, layout as PageLayoutId);
+      store.set(comicId, { ...updated, updatedAt: Date.now() });
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Updated Page layout to "${layout}" while preserving all panel images.`,
+          },
+        ],
+      };
+    });
+  },
 );
 
 // Tool 5: Add dialogue or SFX element
@@ -383,49 +359,45 @@ server.tool(
     pageId: z.string().describe("ID of the page"),
     panelIndex: z.number().int().min(0).describe("Panel index on the page (0-based)"),
     kind: z
-      .enum([
-        "speech",
-        "thought",
-        "shout",
-        "caption",
-        "sfx",
-        "title-banner",
-        "burst-label",
-      ])
+      .enum(["speech", "thought", "shout", "caption", "sfx", "title-banner", "burst-label"])
       .describe("Style / type of dialogue element"),
     text: z.string().optional().describe("Text content for the dialogue element"),
   },
   async ({ comicId, pageId, panelIndex, kind, text }) => {
-    const comic = comicsStore.get(comicId);
-    if (!comic) {
-      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
-    }
-    const page = comic.pages.find((p) => p.id === pageId);
-    if (!page) {
-      return { isError: true, content: [{ type: "text", text: `Page "${pageId}" not found.` }] };
-    }
-    const panel = page.panels[panelIndex];
-    if (!panel) {
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
+      const page = comic.pages.find((p) => p.id === pageId);
+      if (!page) {
+        return { isError: true, content: [{ type: "text", text: `Page "${pageId}" not found.` }] };
+      }
+      const panel = page.panels[panelIndex];
+      if (!panel) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Panel index ${panelIndex} out of bounds.` }],
+        };
+      }
+
+      const bubble = createBubble(kind as BubbleKind, text);
+      panel.bubbles.push(bubble);
+      comic.updatedAt = Date.now();
+
       return {
-        isError: true,
-        content: [{ type: "text", text: `Panel index ${panelIndex} out of bounds.` }],
+        content: [
+          {
+            type: "text",
+            text: `Added ${kind} bubble ("${bubble.text}") to Panel ${panelIndex + 1} on Page ${pageId}.`,
+          },
+        ],
       };
-    }
-
-    const bubble = createBubble(kind as BubbleKind, text);
-    panel.bubbles.push(bubble);
-    comic.updatedAt = Date.now();
-    persistStore();
-
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Added ${kind} bubble ("${bubble.text}") to Panel ${panelIndex + 1} on Page ${pageId}.`,
-        },
-      ],
-    };
-  }
+    });
+  },
 );
 
 // Tool 6: Update Cover Config
@@ -448,35 +420,48 @@ server.tool(
     issuePrice: z.string().optional().describe("Cover price (e.g. '25¢')"),
     issueDate: z.string().optional().describe("Vol/Date header (e.g. 'VOL. 1')"),
   },
-  async ({ comicId, template, titleStyle, tagline, subtitle, issueNumber, issuePrice, issueDate }) => {
-    const comic = comicsStore.get(comicId);
-    if (!comic) {
-      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
-    }
+  async ({
+    comicId,
+    template,
+    titleStyle,
+    tagline,
+    subtitle,
+    issueNumber,
+    issuePrice,
+    issueDate,
+  }) => {
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
 
-    comic.coverConfig = {
-      ...defaultCoverConfig(),
-      ...comic.coverConfig,
-      ...(template && { template: template as CoverTemplateStyle }),
-      ...(titleStyle && { titleStyle }),
-      ...(tagline !== undefined && { tagline }),
-      ...(subtitle !== undefined && { subtitle }),
-      ...(issueNumber !== undefined && { issueNumber }),
-      ...(issuePrice !== undefined && { issuePrice }),
-      ...(issueDate !== undefined && { issueDate }),
-    };
-    comic.updatedAt = Date.now();
-    persistStore();
+      comic.coverConfig = {
+        ...defaultCoverConfig(),
+        ...comic.coverConfig,
+        ...(template && { template: template as CoverTemplateStyle }),
+        ...(titleStyle && { titleStyle }),
+        ...(tagline !== undefined && { tagline }),
+        ...(subtitle !== undefined && { subtitle }),
+        ...(issueNumber !== undefined && { issueNumber }),
+        ...(issuePrice !== undefined && { issuePrice }),
+        ...(issueDate !== undefined && { issueDate }),
+      };
+      comic.updatedAt = Date.now();
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Updated cover page config for "${comic.title}".`,
-        },
-      ],
-    };
-  }
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Updated cover page config for "${comic.title}".`,
+          },
+        ],
+      };
+    });
+  },
 );
 
 // Tool 7: Apply Comic Filter
@@ -509,32 +494,39 @@ server.tool(
       .describe("Filter style"),
   },
   async ({ comicId, pageId, panelIndex, filter }) => {
-    const comic = comicsStore.get(comicId);
-    if (!comic) {
-      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
-    }
-    const page = comic.pages.find((p) => p.id === pageId);
-    if (!page) {
-      return { isError: true, content: [{ type: "text", text: `Page "${pageId}" not found.` }] };
-    }
-    const panel = page.panels[panelIndex];
-    if (!panel) {
-      return { isError: true, content: [{ type: "text", text: `Panel index ${panelIndex} out of bounds.` }] };
-    }
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
+      const page = comic.pages.find((p) => p.id === pageId);
+      if (!page) {
+        return { isError: true, content: [{ type: "text", text: `Page "${pageId}" not found.` }] };
+      }
+      const panel = page.panels[panelIndex];
+      if (!panel) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Panel index ${panelIndex} out of bounds.` }],
+        };
+      }
 
-    panel.filter = filter as PanelFilter;
-    comic.updatedAt = Date.now();
-    persistStore();
+      panel.filter = filter as PanelFilter;
+      comic.updatedAt = Date.now();
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Applied "${filter}" filter to Panel ${panelIndex + 1} on Page ${pageId}.`,
-        },
-      ],
-    };
-  }
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Applied "${filter}" filter to Panel ${panelIndex + 1} on Page ${pageId}.`,
+          },
+        ],
+      };
+    });
+  },
 );
 
 // Tool 8: Set Comic References (Character Sheets & Background Context)
@@ -549,9 +541,11 @@ server.tool(
         z.object({
           id: z.string().describe("Unique identifier for background (e.g., 'livingRoom')"),
           name: z.string().describe("Human-readable name"),
-          description: z.string().describe("Detailed visual prompt specs (lighting, furniture, palette)"),
+          description: z
+            .string()
+            .describe("Detailed visual prompt specs (lighting, furniture, palette)"),
           imageRef: z.string().optional().describe("Optional URL or base64 reference image"),
-        })
+        }),
       )
       .optional()
       .describe("Array of background references"),
@@ -561,56 +555,62 @@ server.tool(
           id: z.string().describe("Unique identifier for character (e.g., 'surabhi')"),
           name: z.string().describe("Character name"),
           role: z.string().optional().describe("Role in story"),
-          appearance: z.string().describe("Detailed model sheet (age, height, complexion, hairstyle, clothing)"),
+          appearance: z
+            .string()
+            .describe("Detailed model sheet (age, height, complexion, hairstyle, clothing)"),
           imageRef: z.string().optional().describe("Optional character sheet reference image"),
-        })
+        }),
       )
       .optional()
       .describe("Array of character model sheets"),
   },
   async ({ comicId, styleGuide, backgrounds, characters }) => {
-    const comic = comicsStore.get(comicId);
-    if (!comic) {
-      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
-    }
-
-    if (!comic.assetContext) {
-      comic.assetContext = { styleGuide: "", backgrounds: {}, characters: {} };
-    }
-
-    if (styleGuide !== undefined) {
-      comic.assetContext.styleGuide = styleGuide;
-    }
-
-    if (backgrounds) {
-      if (!comic.assetContext.backgrounds) comic.assetContext.backgrounds = {};
-      for (const bg of backgrounds) {
-        comic.assetContext.backgrounds[bg.id] = bg;
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
       }
-    }
 
-    if (characters) {
-      if (!comic.assetContext.characters) comic.assetContext.characters = {};
-      for (const char of characters) {
-        comic.assetContext.characters[char.id] = char;
+      if (!comic.assetContext) {
+        comic.assetContext = { styleGuide: "", backgrounds: {}, characters: {} };
       }
-    }
 
-    comic.updatedAt = Date.now();
-    persistStore();
+      if (styleGuide !== undefined) {
+        comic.assetContext.styleGuide = styleGuide;
+      }
 
-    const charCount = Object.keys(comic.assetContext.characters || {}).length;
-    const bgCount = Object.keys(comic.assetContext.backgrounds || {}).length;
+      if (backgrounds) {
+        if (!comic.assetContext.backgrounds) comic.assetContext.backgrounds = {};
+        for (const bg of backgrounds) {
+          comic.assetContext.backgrounds[bg.id] = bg;
+        }
+      }
 
-    return {
-      content: [
-        {
-          type: "text",
-          text: `Updated reference context for "${comic.title}". Registered ${charCount} character model sheets and ${bgCount} background references.`,
-        },
-      ],
-    };
-  }
+      if (characters) {
+        if (!comic.assetContext.characters) comic.assetContext.characters = {};
+        for (const char of characters) {
+          comic.assetContext.characters[char.id] = char;
+        }
+      }
+
+      comic.updatedAt = Date.now();
+
+      const charCount = Object.keys(comic.assetContext.characters || {}).length;
+      const bgCount = Object.keys(comic.assetContext.backgrounds || {}).length;
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Updated reference context for "${comic.title}". Registered ${charCount} character model sheets and ${bgCount} background references.`,
+          },
+        ],
+      };
+    });
+  },
 );
 
 // Tool 9: Get Panel Prompt (Compiles consistent character & background context)
@@ -619,12 +619,21 @@ server.tool(
   "Build a unified, visually consistent image generation prompt combining background specs, character model sheets, and action description",
   {
     comicId: z.string().describe("ID of the comic"),
-    backgroundId: z.string().optional().describe("ID of the background reference (e.g. 'livingRoom')"),
-    characterIds: z.array(z.string()).optional().describe("Array of character IDs present in this panel"),
-    actionDescription: z.string().describe("Detailed description of action/scene in this specific panel"),
+    backgroundId: z
+      .string()
+      .optional()
+      .describe("ID of the background reference (e.g. 'livingRoom')"),
+    characterIds: z
+      .array(z.string())
+      .optional()
+      .describe("Array of character IDs present in this panel"),
+    actionDescription: z
+      .string()
+      .describe("Detailed description of action/scene in this specific panel"),
   },
   async ({ comicId, backgroundId, characterIds, actionDescription }) => {
-    const comic = comicsStore.get(comicId);
+    const store = loadStore();
+    const comic = store.get(comicId);
     if (!comic) {
       return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
     }
@@ -672,12 +681,12 @@ server.tool(
               },
             },
             null,
-            2
+            2,
           ),
         },
       ],
     };
-  }
+  },
 );
 
 // Start the MCP server over stdio transport
