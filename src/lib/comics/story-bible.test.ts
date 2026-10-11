@@ -1,7 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { useComicStore, getComicMediaRefs, collectAllReferencedMedia } from "./store.ts";
-import { createComic } from "./factory.ts";
+import { createComic, changePageLayoutPreservingImages } from "./factory.ts";
 import { slugifyReferenceName, makeReferenceId } from "./references.ts";
 import { selectOrphanMediaIds, RECENT_UPLOAD_GRACE_MS, isAssetRef, assetSrc } from "./media.ts";
 import type { CharacterReference, BackgroundReference } from "./types.ts";
@@ -200,5 +200,93 @@ describe("Story Bible & Continuity Manager Store Actions", () => {
       allPreserved.has("idb:temp_portrait_789"),
       "Media referenced in undo stack must be preserved from pruning",
     );
+  });
+
+  it("attaches scene continuity metadata to a panel via setPanelScene", () => {
+    const store = useComicStore.getState();
+    const comicId = store.create("Scene Test", "Author S");
+    const comic = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    const pageId = comic.pages[0].id;
+    const panelId = comic.pages[0].panels[0].id;
+
+    store.setPanelScene(comicId, pageId, panelId, {
+      characterIds: ["char_1", "char_2"],
+      backgroundId: "bg_1",
+      shot: "close-up",
+      action: "Elena whispers a secret to Marcus",
+    });
+
+    const updated = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    const panel = updated.pages[0].panels.find((p) => p.id === panelId)!;
+    assert.deepEqual(panel.scene?.characterIds, ["char_1", "char_2"]);
+    assert.equal(panel.scene?.backgroundId, "bg_1");
+    assert.equal(panel.scene?.shot, "close-up");
+    assert.equal(panel.scene?.action, "Elena whispers a secret to Marcus");
+
+    // Clear scene with null
+    store.setPanelScene(comicId, pageId, panelId, null);
+    const cleared = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    const clearedPanel = cleared.pages[0].panels.find((p) => p.id === panelId)!;
+    assert.equal(clearedPanel.scene, undefined);
+  });
+
+  it("cascades character and background deletions to linked panel scenes", () => {
+    const store = useComicStore.getState();
+    const comicId = store.create("Cascade Test", "Author C");
+
+    store.upsertCharacter(comicId, {
+      id: "elena",
+      name: "Elena",
+      appearance: "Cyber punk",
+    });
+    store.upsertCharacter(comicId, {
+      id: "marcus",
+      name: "Marcus",
+      appearance: "Android companion",
+    });
+    store.upsertBackground(comicId, {
+      id: "cyber_docks",
+      name: "Cyber Docks",
+      description: "Neon lit shipping dock",
+    });
+
+    const comic = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    const pageId = comic.pages[0].id;
+    const panelId = comic.pages[0].panels[0].id;
+
+    store.setPanelScene(comicId, pageId, panelId, {
+      characterIds: ["elena", "marcus"],
+      backgroundId: "cyber_docks",
+      shot: "wide",
+      action: "Meeting at the docks",
+    });
+
+    // Delete Elena -> panel.scene.characterIds should now only contain marcus
+    store.deleteCharacter(comicId, "elena");
+    let updated = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    let panel = updated.pages[0].panels.find((p) => p.id === panelId)!;
+    assert.deepEqual(panel.scene?.characterIds, ["marcus"]);
+    assert.equal(panel.scene?.backgroundId, "cyber_docks");
+
+    // Delete Cyber Docks -> panel.scene.backgroundId should be undefined
+    store.deleteBackground(comicId, "cyber_docks");
+    updated = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    panel = updated.pages[0].panels.find((p) => p.id === panelId)!;
+    assert.equal(panel.scene?.backgroundId, undefined);
+    assert.deepEqual(panel.scene?.characterIds, ["marcus"]);
+  });
+
+  it("preserves panels with active scene metadata during page layout changes", () => {
+    const comic = createComic("Layout Scene Test", "Author L");
+    const page = comic.pages[0];
+    page.panels[0].scene = {
+      action: "Important storyline event",
+      shot: "establishing",
+    };
+
+    // Switch layout from multi-panel to splash (1 panel) - panel 0 must be kept
+    const updated = changePageLayoutPreservingImages(comic, page.id, "splash");
+    assert.equal(updated.pages[0].panels.length, 1);
+    assert.equal(updated.pages[0].panels[0].scene?.action, "Important storyline event");
   });
 });

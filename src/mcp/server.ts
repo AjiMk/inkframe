@@ -648,6 +648,13 @@ server.tool(
   "Build a unified, visually consistent image generation prompt combining background specs, character model sheets, and action description",
   {
     comicId: z.string().describe("ID of the comic"),
+    pageId: z.string().optional().describe("Optional page ID to read panel scene metadata from"),
+    panelIndex: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("Optional 0-based panel index to read scene metadata from"),
     backgroundId: z
       .string()
       .optional()
@@ -658,13 +665,35 @@ server.tool(
       .describe("Array of character IDs present in this panel"),
     actionDescription: z
       .string()
+      .optional()
       .describe("Detailed description of action/scene in this specific panel"),
   },
-  async ({ comicId, backgroundId, characterIds, actionDescription }) => {
+  async ({ comicId, pageId, panelIndex, backgroundId, characterIds, actionDescription }) => {
     const store = loadStore();
     const comic = store.get(comicId);
     if (!comic) {
       return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
+    }
+
+    const page = pageId ? comic.pages.find((p) => p.id === pageId) : undefined;
+    const panel = page && panelIndex !== undefined ? page.panels[panelIndex] : undefined;
+    const scene = panel?.scene;
+
+    const effectiveBackgroundId = backgroundId ?? scene?.backgroundId;
+    const effectiveCharacterIds = characterIds ?? scene?.characterIds;
+    const effectiveAction = actionDescription ?? scene?.action;
+    const effectiveShot = scene?.shot;
+
+    if (!effectiveAction) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: "Action description must be provided explicitly or attached to the panel scene.",
+          },
+        ],
+      };
     }
 
     const ctx = comic.assetContext ?? {};
@@ -674,13 +703,17 @@ server.tool(
       promptParts.push(`[ART STYLE]: ${ctx.styleGuide}`);
     }
 
-    if (backgroundId && ctx.backgrounds?.[backgroundId]) {
-      const bg = ctx.backgrounds[backgroundId];
+    if (effectiveShot) {
+      promptParts.push(`[CAMERA SHOT]: ${effectiveShot}`);
+    }
+
+    if (effectiveBackgroundId && ctx.backgrounds?.[effectiveBackgroundId]) {
+      const bg = ctx.backgrounds[effectiveBackgroundId];
       promptParts.push(`[SETTING (${bg.name})]: ${bg.description}`);
     }
 
-    if (characterIds && characterIds.length > 0 && ctx.characters) {
-      const charSpecs = characterIds
+    if (effectiveCharacterIds && effectiveCharacterIds.length > 0 && ctx.characters) {
+      const charSpecs = effectiveCharacterIds
         .map((id) => ctx.characters?.[id])
         .filter((c): c is NonNullable<typeof c> => Boolean(c))
         .map((c) => `${c.name} (${c.appearance})`)
@@ -691,7 +724,7 @@ server.tool(
       }
     }
 
-    promptParts.push(`[SCENE ACTION]: ${actionDescription}`);
+    promptParts.push(`[SCENE ACTION]: ${effectiveAction}`);
     const compiledPrompt = promptParts.join("\n");
 
     return {
@@ -704,9 +737,12 @@ server.tool(
               compiledPrompt,
               parts: {
                 styleGuide: ctx.styleGuide,
-                background: backgroundId ? ctx.backgrounds?.[backgroundId] : null,
-                characters: characterIds?.map((id) => ctx.characters?.[id]).filter(Boolean),
-                actionDescription,
+                shot: effectiveShot ?? null,
+                background: effectiveBackgroundId ? ctx.backgrounds?.[effectiveBackgroundId] : null,
+                characters: effectiveCharacterIds
+                  ?.map((id) => ctx.characters?.[id])
+                  .filter(Boolean),
+                actionDescription: effectiveAction,
               },
             },
             null,
@@ -718,7 +754,91 @@ server.tool(
   },
 );
 
-// Tool 10: Get Reference Image (Returns visual model sheet as MCP image content)
+// Tool 10: Set Panel Scene (Attach scene continuity metadata to a panel)
+server.tool(
+  "set_panel_scene",
+  "Attach story bible scene continuity metadata (characters, location, camera shot, action) to a panel",
+  {
+    comicId: z.string().describe("ID of the comic"),
+    pageId: z.string().describe("ID of the page containing the panel"),
+    panelIndex: z.number().int().min(0).describe("0-based index of the panel on the page"),
+    characterIds: z
+      .array(z.string())
+      .optional()
+      .describe("IDs of characters appearing in this panel"),
+    backgroundId: z
+      .string()
+      .optional()
+      .describe("ID of the background/location where this panel takes place"),
+    shot: z
+      .enum([
+        "establishing",
+        "wide",
+        "medium",
+        "close-up",
+        "extreme-close-up",
+        "low-angle",
+        "high-angle",
+        "over-shoulder",
+        "dutch",
+      ])
+      .optional()
+      .describe("Camera shot angle/framing"),
+    action: z.string().optional().describe("Description of action happening in this panel"),
+  },
+  async ({ comicId, pageId, panelIndex, characterIds, backgroundId, shot, action }) => {
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
+      const page = comic.pages.find((p) => p.id === pageId);
+      if (!page) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Page "${pageId}" not found in comic "${comicId}".` }],
+        };
+      }
+      if (panelIndex < 0 || panelIndex >= page.panels.length) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Panel index ${panelIndex} is out of bounds (0-${page.panels.length - 1}).`,
+            },
+          ],
+        };
+      }
+
+      const panel = page.panels[panelIndex];
+      const existingScene = panel.scene ?? {};
+      panel.scene = {
+        ...existingScene,
+        ...(characterIds !== undefined && { characterIds }),
+        ...(backgroundId !== undefined && { backgroundId }),
+        ...(shot !== undefined && { shot }),
+        ...(action !== undefined && { action }),
+      };
+
+      comic.updatedAt = Date.now();
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Updated scene metadata for panel ${panelIndex + 1} on page "${pageId}".`,
+          },
+        ],
+      };
+    });
+  },
+);
+
+// Tool 11: Get Reference Image (Returns visual model sheet as MCP image content)
 server.tool(
   "get_reference_image",
   "Fetch the visual reference image for a character model sheet or background location as an MCP image",

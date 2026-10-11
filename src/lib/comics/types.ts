@@ -1,11 +1,5 @@
 export type BubbleKind =
-  | "speech"
-  | "thought"
-  | "shout"
-  | "caption"
-  | "sfx"
-  | "title-banner"
-  | "burst-label";
+  "speech" | "thought" | "shout" | "caption" | "sfx" | "title-banner" | "burst-label";
 
 export type TailDir = "bl" | "br" | "tl" | "tr" | "none";
 
@@ -27,12 +21,7 @@ export type PanelFilter =
   | "dark-knight"
   | "technicolor";
 
-export type CoverTemplateStyle =
-  | "classic"
-  | "action"
-  | "vintage"
-  | "pulp"
-  | "graphic-novel";
+export type CoverTemplateStyle = "classic" | "action" | "vintage" | "pulp" | "graphic-novel";
 
 export interface CoverElementPosition {
   x: number;
@@ -75,11 +64,30 @@ export interface SpeechBubble {
   tail: TailDir;
 }
 
+export type ShotType =
+  | "establishing"
+  | "wide"
+  | "medium"
+  | "close-up"
+  | "extreme-close-up"
+  | "low-angle"
+  | "high-angle"
+  | "over-shoulder"
+  | "dutch";
+
+export interface PanelScene {
+  characterIds?: string[];
+  backgroundId?: string;
+  shot?: ShotType;
+  action?: string;
+}
+
 export interface Panel {
   id: string;
   image: string | null;
   filter: PanelFilter;
   bubbles: SpeechBubble[];
+  scene?: PanelScene;
 }
 
 export interface Page {
@@ -126,5 +134,3 @@ export interface Selection {
   panelId: string | null;
   bubbleId: string | null;
 }
-
-
