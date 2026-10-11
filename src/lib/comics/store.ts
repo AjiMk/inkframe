@@ -7,7 +7,7 @@ import {
   createPage,
   defaultCoverConfig,
 } from "./factory.ts";
-import { deleteMediaRef } from "./media.ts";
+import { deleteMediaRef, pruneMedia } from "./media.ts";
 import type {
   AssetReferenceContext,
   BackgroundReference,
@@ -219,6 +219,8 @@ export const useComicStore = create<ComicState>((set, get) => ({
     writeComics(updatedComics);
     set({ comics: updatedComics, lastSavedAt: Date.now() });
     void get().syncMcpComics();
+    const referenced = collectAllReferencedMedia(get());
+    void pruneMedia(referenced);
   },
 
   syncMcpComics: async () => {
@@ -542,10 +544,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
   },
 
   setCover: (comicId, cover) => {
-    const comics = mapComic(get().comics, comicId, (c) => {
-      if (c.cover && c.cover !== cover) void deleteMediaRef(c.cover);
-      return { ...c, cover };
-    });
+    const comics = mapComic(get().comics, comicId, (c) => ({ ...c, cover }));
     pushState(set, get, comics);
   },
 
@@ -592,8 +591,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
     const comics = mapComic(get().comics, comicId, (c) => {
       const ctx = c.assetContext ?? {};
       if (!ctx.characters || !ctx.characters[charId]) return c;
-      const { [charId]: deleted, ...remaining } = ctx.characters;
-      if (deleted?.imageRef) void deleteMediaRef(deleted.imageRef);
+      const { [charId]: _deleted, ...remaining } = ctx.characters;
       return {
         ...c,
         assetContext: {
@@ -626,8 +624,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
     const comics = mapComic(get().comics, comicId, (c) => {
       const ctx = c.assetContext ?? {};
       if (!ctx.backgrounds || !ctx.backgrounds[bgId]) return c;
-      const { [bgId]: deleted, ...remaining } = ctx.backgrounds;
-      if (deleted?.imageRef) void deleteMediaRef(deleted.imageRef);
+      const { [bgId]: _deleted, ...remaining } = ctx.backgrounds;
       return {
         ...c,
         assetContext: {
@@ -659,4 +656,26 @@ export function getComicMediaRefs(comic: Comic): string[] {
     }
   }
   return Array.from(set);
+}
+
+/**
+ * Gathers every media ref that must be preserved: across all active comics,
+ * and across all historical states in the undo/redo stacks.
+ */
+export function collectAllReferencedMedia(state: {
+  comics: Comic[];
+  past?: Comic[][];
+  future?: Comic[][];
+}): Set<string> {
+  const set = new Set<string>();
+  const addFrom = (list?: Comic[]) => {
+    if (!list) return;
+    for (const c of list) {
+      for (const ref of getComicMediaRefs(c)) set.add(ref);
+    }
+  };
+  addFrom(state.comics);
+  for (const hist of state.past ?? []) addFrom(hist);
+  for (const hist of state.future ?? []) addFrom(hist);
+  return set;
 }

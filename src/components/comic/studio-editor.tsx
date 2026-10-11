@@ -167,7 +167,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "S")) {
         e.preventDefault();
         store.saveNow(comicId);
-        toast.success("Saved changes to local storage & disk!");
+        toast.success("Saved changes to local storage!");
         return;
       }
 
@@ -358,7 +358,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
             size="sm"
             onClick={() => {
               store.saveNow(comicId);
-              toast.success("Saved changes to local storage & disk!");
+              toast.success("Saved changes to local storage!");
             }}
             className="h-8 gap-1.5 text-xs font-semibold text-foreground border-primary/30 hover:bg-primary/10"
             title="Save (Ctrl+S)"
@@ -377,7 +377,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
             <BookOpen className="size-3.5 text-primary" />
             <span>Story Bible</span>
             {assetCount > 0 && (
-              <span className="rounded-full bg-primary/20 text-primary px-1.5 py-0.2 text-[10px] font-bold">
+              <span className="rounded-full bg-primary/20 text-primary px-1.5 py-0.5 text-[10px] font-bold">
                 {assetCount}
               </span>
             )}
@@ -887,7 +887,7 @@ function Inspector({
           <BookOpen className="size-3.5 text-primary shrink-0" />
           <span className="truncate">Story Bible</span>
           {assetCount > 0 && (
-            <span className="rounded-full bg-primary/20 text-primary px-1.5 py-0.2 text-[10px] font-bold">
+            <span className="rounded-full bg-primary/20 text-primary px-1.5 py-0.5 text-[10px] font-bold">
               {assetCount}
             </span>
           )}
