@@ -1,8 +1,59 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { useComicStore, getComicMediaRefs } from "./store.ts";
+import { useComicStore, getComicMediaRefs, collectAllReferencedMedia } from "./store.ts";
 import { createComic } from "./factory.ts";
+import { slugifyReferenceName, makeReferenceId } from "./references.ts";
+import { selectOrphanMediaIds, RECENT_UPLOAD_GRACE_MS } from "./media.ts";
 import type { CharacterReference, BackgroundReference } from "./types.ts";
+
+describe("Reference Slug & ID Generation", () => {
+  it("slugifies simple and accented names into clean ASCII slugs", () => {
+    assert.equal(slugifyReferenceName("Elena Vance"), "elena-vance");
+    assert.equal(slugifyReferenceName("René Descartes"), "rene-descartes");
+    assert.equal(slugifyReferenceName("  Cyber-Punk  Alley #9  "), "cyber-punk-alley-9");
+    assert.equal(slugifyReferenceName("!!!"), "");
+  });
+
+  it("allocates base slug when ID is free", () => {
+    const existing = new Set(["marcus", "sarah"]);
+    assert.equal(makeReferenceId("Elena Vance", existing), "elena-vance");
+  });
+
+  it("increments numeric suffix when base slug collides", () => {
+    const existing = new Set(["elena", "elena-2"]);
+    assert.equal(makeReferenceId("Elena", existing), "elena-3");
+  });
+
+  it("falls back to 'ref' or 'ref-N' when name has no ASCII characters", () => {
+    assert.equal(makeReferenceId("ആനന്ദ്", new Set()), "ref");
+    assert.equal(makeReferenceId("ആനന്ദ്", new Set(["ref"])), "ref-2");
+  });
+});
+
+describe("Orphan Media Selection & Retention", () => {
+  it("filters out stored media that are active or in grace period", () => {
+    const stored = ["media-1", "media-2", "media-3", "media-4"];
+    const referenced = ["idb:media-1", "idb:media-2"];
+    const now = 1_000_000;
+
+    const uploads = new Map<string, number>([
+      ["media-3", now - (RECENT_UPLOAD_GRACE_MS - 5000)], // inside grace period
+      ["media-4", now - (RECENT_UPLOAD_GRACE_MS + 5000)], // expired
+    ]);
+
+    const orphans = selectOrphanMediaIds(stored, referenced, uploads, now);
+    assert.deepEqual(orphans, ["media-4"]);
+  });
+
+  it("marks unreferenced media with no recent upload timestamp as orphans", () => {
+    const stored = ["stale-1", "active-1"];
+    const referenced = ["idb:active-1"];
+    const uploads = new Map<string, number>();
+
+    const orphans = selectOrphanMediaIds(stored, referenced, uploads);
+    assert.deepEqual(orphans, ["stale-1"]);
+  });
+});
 
 describe("Story Bible & Continuity Manager Store Actions", () => {
   it("initializes demo or created comic with assetContext", () => {
@@ -110,5 +161,31 @@ describe("Story Bible & Continuity Manager Store Actions", () => {
 
     assert.ok(mediaRefs.includes("idb:hero_avatar"));
     assert.ok(mediaRefs.includes("idb:hq_backdrop"));
+  });
+
+  it("preserves deleted media in collectAllReferencedMedia if stored in undo history", () => {
+    const store = useComicStore.getState();
+    const comicId = store.create("Undo Preservation Test", "Author U");
+
+    store.upsertCharacter(comicId, {
+      id: "temp_char",
+      name: "Temporary Char",
+      appearance: "Visible initially",
+      imageRef: "idb:temp_portrait_789",
+    });
+
+    // Delete character - comic state no longer has it, but past state does
+    store.deleteCharacter(comicId, "temp_char");
+
+    const state = useComicStore.getState();
+    const currentComic = state.comics.find((c) => c.id === comicId)!;
+    const currentRefs = getComicMediaRefs(currentComic);
+    assert.equal(currentRefs.includes("idb:temp_portrait_789"), false);
+
+    const allPreserved = collectAllReferencedMedia(state);
+    assert.ok(
+      allPreserved.has("idb:temp_portrait_789"),
+      "Media referenced in undo stack must be preserved from pruning",
+    );
   });
 });

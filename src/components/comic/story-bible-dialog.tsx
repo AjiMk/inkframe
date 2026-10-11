@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Sparkles,
   Users,
@@ -22,8 +22,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useComicStore } from "@/lib/comics/store";
-import { compressImage, putMedia, useMediaUrl } from "@/lib/comics/media";
-import { nid } from "@/lib/utils";
+import { compressImage, deleteMediaRef, putMedia, useMediaUrl } from "@/lib/comics/media";
+import { makeReferenceId } from "@/lib/comics/references";
 import type { Comic, CharacterReference, BackgroundReference } from "@/lib/comics/types";
 
 interface Props {
@@ -162,8 +162,20 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
   const [bgImageRef, setBgImageRef] = useState<string | undefined>(undefined);
   const [isUploadingBgImg, setIsUploadingBgImg] = useState(false);
 
+  // Session draft uploads that have not been committed to the store yet
+  const pendingCharUploads = useRef<Set<string>>(new Set());
+  const pendingBgUploads = useRef<Set<string>>(new Set());
+
   // Style guide state
   const [styleGuideText, setStyleGuideText] = useState(context.styleGuide ?? "");
+  const isStyleGuideDirty = (context.styleGuide ?? "").trim() !== styleGuideText.trim();
+
+  // Re-sync style guide whenever the dialog opens or the comic's saved style guide changes
+  useEffect(() => {
+    if (open) {
+      setStyleGuideText(context.styleGuide ?? "");
+    }
+  }, [open, context.styleGuide]);
 
   function handleStartAddChar() {
     setEditingCharId(null);
@@ -184,11 +196,23 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
   }
 
   function handleCancelChar() {
+    for (const ref of pendingCharUploads.current) {
+      void deleteMediaRef(ref);
+    }
+    pendingCharUploads.current.clear();
     setIsAddingChar(false);
     setEditingCharId(null);
     setCharName("");
     setCharRole("");
     setCharAppearance("");
+    setCharImageRef(undefined);
+  }
+
+  function handleRemoveCharImage() {
+    if (charImageRef && pendingCharUploads.current.has(charImageRef)) {
+      void deleteMediaRef(charImageRef);
+      pendingCharUploads.current.delete(charImageRef);
+    }
     setCharImageRef(undefined);
   }
 
@@ -201,6 +225,11 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     try {
       const blob = await compressImage(file, 800, 0.85);
       const ref = await putMedia(blob);
+      for (const oldRef of pendingCharUploads.current) {
+        void deleteMediaRef(oldRef);
+      }
+      pendingCharUploads.current.clear();
+      pendingCharUploads.current.add(ref);
       setCharImageRef(ref);
       toast.success("Character reference portrait attached.");
     } catch (err) {
@@ -216,7 +245,8 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
       toast.error("Character name is required.");
       return;
     }
-    const id = editingCharId || charName.toLowerCase().replace(/[^a-z0-9]/g, "") || nid();
+    const id =
+      editingCharId || makeReferenceId(charName.trim(), Object.keys(context.characters ?? {}));
     const newChar: CharacterReference = {
       id,
       name: charName.trim(),
@@ -224,6 +254,13 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
       appearance: charAppearance.trim() || "Standard comic attire and features.",
       imageRef: charImageRef,
     };
+    if (charImageRef) {
+      pendingCharUploads.current.delete(charImageRef);
+    }
+    for (const ref of pendingCharUploads.current) {
+      void deleteMediaRef(ref);
+    }
+    pendingCharUploads.current.clear();
     store.upsertCharacter(comic.id, newChar);
     toast.success(
       editingCharId ? `Updated "${newChar.name}"` : `Added "${newChar.name}" to Story Bible`,
@@ -255,10 +292,22 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
   }
 
   function handleCancelBg() {
+    for (const ref of pendingBgUploads.current) {
+      void deleteMediaRef(ref);
+    }
+    pendingBgUploads.current.clear();
     setIsAddingBg(false);
     setEditingBgId(null);
     setBgName("");
     setBgDescription("");
+    setBgImageRef(undefined);
+  }
+
+  function handleRemoveBgImage() {
+    if (bgImageRef && pendingBgUploads.current.has(bgImageRef)) {
+      void deleteMediaRef(bgImageRef);
+      pendingBgUploads.current.delete(bgImageRef);
+    }
     setBgImageRef(undefined);
   }
 
@@ -271,6 +320,11 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     try {
       const blob = await compressImage(file, 1200, 0.85);
       const ref = await putMedia(blob);
+      for (const oldRef of pendingBgUploads.current) {
+        void deleteMediaRef(oldRef);
+      }
+      pendingBgUploads.current.clear();
+      pendingBgUploads.current.add(ref);
       setBgImageRef(ref);
       toast.success("Location reference image attached.");
     } catch (err) {
@@ -286,17 +340,41 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
       toast.error("Location name is required.");
       return;
     }
-    const id = editingBgId || bgName.toLowerCase().replace(/[^a-z0-9]/g, "") || nid();
+    const id =
+      editingBgId || makeReferenceId(bgName.trim(), Object.keys(context.backgrounds ?? {}));
     const newBg: BackgroundReference = {
       id,
       name: bgName.trim(),
       description: bgDescription.trim() || "Scenic environment setting.",
       imageRef: bgImageRef,
     };
+    if (bgImageRef) {
+      pendingBgUploads.current.delete(bgImageRef);
+    }
+    for (const ref of pendingBgUploads.current) {
+      void deleteMediaRef(ref);
+    }
+    pendingBgUploads.current.clear();
     store.upsertBackground(comic.id, newBg);
     toast.success(editingBgId ? `Updated "${newBg.name}"` : `Added "${newBg.name}" to Story Bible`);
     handleCancelBg();
   }
+
+  // Clean up uncommitted draft uploads if the dialog closes
+  useEffect(() => {
+    if (!open) {
+      for (const ref of pendingCharUploads.current) {
+        void deleteMediaRef(ref);
+      }
+      pendingCharUploads.current.clear();
+      for (const ref of pendingBgUploads.current) {
+        void deleteMediaRef(ref);
+      }
+      pendingBgUploads.current.clear();
+      handleCancelChar();
+      handleCancelBg();
+    }
+  }, [open]);
 
   function handleDeleteBg(bg: BackgroundReference) {
     store.deleteBackground(comic.id, bg.id);
@@ -359,14 +437,14 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
               <TabsTrigger value="characters" className="text-xs font-semibold gap-1.5">
                 <Users className="size-3.5" />
                 <span>Characters</span>
-                <span className="ml-1 rounded-full bg-primary/20 text-primary px-1.5 py-0.2 text-[10px] font-bold">
+                <span className="ml-1 rounded-full bg-primary/20 text-primary px-1.5 py-0.5 text-[10px] font-bold">
                   {characters.length}
                 </span>
               </TabsTrigger>
               <TabsTrigger value="locations" className="text-xs font-semibold gap-1.5">
                 <MapPin className="size-3.5" />
                 <span>Locations</span>
-                <span className="ml-1 rounded-full bg-primary/20 text-primary px-1.5 py-0.2 text-[10px] font-bold">
+                <span className="ml-1 rounded-full bg-primary/20 text-primary px-1.5 py-0.5 text-[10px] font-bold">
                   {backgrounds.length}
                 </span>
               </TabsTrigger>
@@ -519,7 +597,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                         {charImageRef && (
                           <button
                             type="button"
-                            onClick={() => setCharImageRef(undefined)}
+                            onClick={handleRemoveCharImage}
                             className="text-[11px] text-destructive hover:underline text-left w-fit"
                           >
                             Remove portrait reference
@@ -597,7 +675,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                               {char.name}
                             </h4>
                             {char.role && (
-                              <span className="rounded-full bg-primary/10 border border-primary/20 text-primary px-2 py-0.2 text-[10px] font-semibold shrink-0">
+                              <span className="rounded-full bg-primary/10 border border-primary/20 text-primary px-2 py-0.5 text-[10px] font-semibold shrink-0">
                                 {char.role}
                               </span>
                             )}
@@ -768,7 +846,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                         {bgImageRef && (
                           <button
                             type="button"
-                            onClick={() => setBgImageRef(undefined)}
+                            onClick={handleRemoveBgImage}
                             className="text-[11px] text-destructive hover:underline text-left w-fit"
                           >
                             Remove backdrop reference
@@ -890,11 +968,23 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                   rows={4}
                   className="text-xs font-mono resize-none leading-relaxed"
                 />
-                <div className="flex justify-end">
+                <div className="flex items-center justify-between">
+                  {isStyleGuideDirty ? (
+                    <span className="text-xs text-amber-500 font-medium flex items-center gap-1.5">
+                      <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Unsaved style guide changes
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Check className="size-3 text-emerald-500" />
+                      Saved
+                    </span>
+                  )}
                   <Button
                     type="button"
                     size="sm"
                     onClick={handleSaveStyleGuide}
+                    disabled={!isStyleGuideDirty}
                     className="h-8 gap-1.5 text-xs font-semibold"
                   >
                     <Check className="size-3.5" />

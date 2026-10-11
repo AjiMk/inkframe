@@ -4,6 +4,14 @@ import { nid } from "../utils.ts";
 const DB_NAME = "inkframe";
 const STORE = "media";
 
+/**
+ * Uploads made during this session, keyed by IndexedDB id with their creation
+ * time. Pruning skips recent uploads so an image that is attached in an open
+ * form (but not yet saved to a comic) is never deleted underneath the user.
+ */
+const recentUploads = new Map<string, number>();
+export const RECENT_UPLOAD_GRACE_MS = 10 * 60 * 1000;
+
 function openDb(): Promise<IDBDatabase> {
   if (typeof indexedDB === "undefined") {
     return Promise.reject(new Error("indexedDB is unavailable in this environment"));
@@ -38,7 +46,58 @@ export async function putMedia(blob: Blob): Promise<string> {
     tx.onerror = () => reject(tx.error);
   });
   db.close();
+  recentUploads.set(id, Date.now());
   return `idb:${id}`;
+}
+
+/** Lists every media id currently stored in IndexedDB. */
+export async function listMediaIds(): Promise<string[]> {
+  if (typeof indexedDB === "undefined") return [];
+  const db = await openDb();
+  const keys = await new Promise<IDBValidKey[]>((resolve, reject) => {
+    const tx = db.transaction(STORE, "readonly");
+    const req = tx.objectStore(STORE).getAllKeys();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  db.close();
+  return keys.map(String);
+}
+
+/**
+ * Picks which stored media ids are safe to delete: not referenced by any
+ * `idb:` ref and not uploaded within the grace period.
+ */
+export function selectOrphanMediaIds(
+  storedIds: Iterable<string>,
+  referencedRefs: Iterable<string>,
+  uploadedAt: ReadonlyMap<string, number> = recentUploads,
+  now: number = Date.now(),
+  graceMs: number = RECENT_UPLOAD_GRACE_MS,
+): string[] {
+  const referenced = new Set<string>();
+  for (const ref of referencedRefs) {
+    if (ref.startsWith("idb:")) referenced.add(ref.slice(4));
+  }
+  const orphans: string[] = [];
+  for (const id of storedIds) {
+    if (referenced.has(id)) continue;
+    const created = uploadedAt.get(id);
+    if (created !== undefined && now - created < graceMs) continue;
+    orphans.push(id);
+  }
+  return orphans;
+}
+
+/** Deletes stored media that nothing references. Returns how many were removed. */
+export async function pruneMedia(referencedRefs: Iterable<string>): Promise<number> {
+  if (typeof indexedDB === "undefined") return 0;
+  const orphans = selectOrphanMediaIds(await listMediaIds(), referencedRefs);
+  for (const id of orphans) {
+    await deleteMedia(id);
+    recentUploads.delete(id);
+  }
+  return orphans.length;
 }
 
 export async function getMedia(id: string): Promise<Blob | null> {
