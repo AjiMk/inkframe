@@ -17,6 +17,7 @@ import {
   atomicWriteJsonSync,
   DEFAULT_STORAGE_PATH,
 } from "../lib/comics/sync-node.ts";
+import { buildPanelPrompt } from "../lib/comics/prompt-builder.ts";
 import type {
   Comic,
   PageLayoutId,
@@ -703,6 +704,10 @@ server.tool(
       .min(0)
       .optional()
       .describe("Optional 0-based panel index to read scene metadata from"),
+    target: z
+      .enum(["generic", "midjourney", "flux-sd"])
+      .optional()
+      .describe("Target generator format: generic, midjourney, or flux-sd (defaults to generic)"),
     backgroundId: z
       .string()
       .optional()
@@ -715,24 +720,52 @@ server.tool(
       .string()
       .optional()
       .describe("Detailed description of action/scene in this specific panel"),
+    shot: z
+      .enum([
+        "establishing",
+        "wide",
+        "medium",
+        "close-up",
+        "extreme-close-up",
+        "low-angle",
+        "high-angle",
+        "over-shoulder",
+        "dutch",
+      ])
+      .optional()
+      .describe("Camera shot angle/framing"),
+    outfitByCharacter: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe("Map of character ID to specific outfit ID"),
   },
-  async ({ comicId, pageId, panelIndex, backgroundId, characterIds, actionDescription }) => {
+  async ({
+    comicId,
+    pageId,
+    panelIndex,
+    target,
+    backgroundId,
+    characterIds,
+    actionDescription,
+    shot,
+    outfitByCharacter,
+  }) => {
     const store = loadStore();
     const comic = store.get(comicId);
     if (!comic) {
       return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
     }
 
-    const page = pageId ? comic.pages.find((p) => p.id === pageId) : undefined;
-    const panel = page && panelIndex !== undefined ? page.panels[panelIndex] : undefined;
-    const scene = panel?.scene;
+    const result = buildPanelPrompt(comic, pageId, panelIndex, {
+      target: target ?? "generic",
+      backgroundId,
+      characterIds,
+      actionDescription,
+      shot,
+      outfitByCharacter,
+    });
 
-    const effectiveBackgroundId = backgroundId ?? scene?.backgroundId;
-    const effectiveCharacterIds = characterIds ?? scene?.characterIds;
-    const effectiveAction = actionDescription ?? scene?.action;
-    const effectiveShot = scene?.shot;
-
-    if (!effectiveAction) {
+    if (!result.parts.actionDescription) {
       return {
         isError: true,
         content: [
@@ -744,58 +777,11 @@ server.tool(
       };
     }
 
-    const ctx = comic.assetContext ?? {};
-    const promptParts: string[] = [];
-
-    if (ctx.styleGuide) {
-      promptParts.push(`[ART STYLE]: ${ctx.styleGuide}`);
-    }
-
-    if (effectiveShot) {
-      promptParts.push(`[CAMERA SHOT]: ${effectiveShot}`);
-    }
-
-    if (effectiveBackgroundId && ctx.backgrounds?.[effectiveBackgroundId]) {
-      const bg = ctx.backgrounds[effectiveBackgroundId];
-      promptParts.push(`[SETTING (${bg.name})]: ${bg.description}`);
-    }
-
-    if (effectiveCharacterIds && effectiveCharacterIds.length > 0 && ctx.characters) {
-      const charSpecs = effectiveCharacterIds
-        .map((id) => ctx.characters?.[id])
-        .filter((c): c is NonNullable<typeof c> => Boolean(c))
-        .map((c) => `${c.name} (${c.appearance})`)
-        .join("; ");
-
-      if (charSpecs) {
-        promptParts.push(`[CHARACTERS]: ${charSpecs}`);
-      }
-    }
-
-    promptParts.push(`[SCENE ACTION]: ${effectiveAction}`);
-    const compiledPrompt = promptParts.join("\n");
-
     return {
       content: [
         {
           type: "text",
-          text: JSON.stringify(
-            {
-              comicId,
-              compiledPrompt,
-              parts: {
-                styleGuide: ctx.styleGuide,
-                shot: effectiveShot ?? null,
-                background: effectiveBackgroundId ? ctx.backgrounds?.[effectiveBackgroundId] : null,
-                characters: effectiveCharacterIds
-                  ?.map((id) => ctx.characters?.[id])
-                  .filter(Boolean),
-                actionDescription: effectiveAction,
-              },
-            },
-            null,
-            2,
-          ),
+          text: JSON.stringify(result, null, 2),
         },
       ],
     };
