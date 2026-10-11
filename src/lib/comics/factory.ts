@@ -77,6 +77,18 @@ export function fitPanelsToLayout(page: Page, layout: PageLayoutId): Page {
   return { ...page, layout, panels };
 }
 
+function isPanelActive(p: Panel): boolean {
+  return Boolean(
+    p.image ||
+    p.bubbles.length > 0 ||
+    (p.scene &&
+      (p.scene.action ||
+        (p.scene.characterIds && p.scene.characterIds.length > 0) ||
+        p.scene.backgroundId ||
+        p.scene.shot)),
+  );
+}
+
 export function changePageLayoutPreservingImages(
   comic: Comic,
   pageId: string,
@@ -107,9 +119,7 @@ export function changePageLayoutPreservingImages(
       panels: keptPanels,
     };
 
-    const activeOverflow = overflowPanels.filter(
-      (p) => p.image || p.bubbles.length > 0,
-    );
+    const activeOverflow = overflowPanels.filter(isPanelActive);
 
     if (activeOverflow.length > 0) {
       const createdPages: Page[] = [];
@@ -156,7 +166,7 @@ export function changePageLayoutPreservingImages(
 
       while (pI < nextPagePanels.length && additionalPanels.length < needed) {
         const p = nextPagePanels[pI];
-        if (p.image || p.bubbles.length > 0) {
+        if (isPanelActive(p)) {
           additionalPanels.push(p);
           nextPagePanels.splice(pI, 1);
         } else {
@@ -164,25 +174,18 @@ export function changePageLayoutPreservingImages(
         }
       }
 
-      const hasRemainingContent = nextPagePanels.some(
-        (p) => p.image || p.bubbles.length > 0,
-      );
+      const hasRemainingContent = nextPagePanels.some(isPanelActive);
 
       if (!hasRemainingContent) {
         newPages.splice(pIdx, 1);
       } else {
-        const remainingActiveCount = nextPagePanels.filter(
-          (p) => p.image || p.bubbles.length > 0,
-        ).length;
+        const remainingActiveCount = nextPagePanels.filter(isPanelActive).length;
         let bestLayout: PageLayoutId = "splash";
         if (remainingActiveCount >= 4) bestLayout = "four-grid";
         else if (remainingActiveCount === 3) bestLayout = "three-strip";
         else if (remainingActiveCount === 2) bestLayout = "two-v";
 
-        newPages[pIdx] = fitPanelsToLayout(
-          { ...nextPage, panels: nextPagePanels },
-          bestLayout,
-        );
+        newPages[pIdx] = fitPanelsToLayout({ ...nextPage, panels: nextPagePanels }, bestLayout);
         pIdx++;
       }
     }
@@ -201,10 +204,7 @@ export function changePageLayoutPreservingImages(
   return { ...comic, pages: newPages };
 }
 
-export function createBubble(
-  kind: BubbleKind = "speech",
-  text?: string,
-): SpeechBubble {
+export function createBubble(kind: BubbleKind = "speech", text?: string): SpeechBubble {
   const presets: Record<
     BubbleKind,
     { text: string; x: number; y: number; w: number; tail: TailDir }

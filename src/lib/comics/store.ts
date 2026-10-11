@@ -18,6 +18,7 @@ import type {
   CoverConfig,
   PageLayoutId,
   PanelFilter,
+  PanelScene,
   SpeechBubble,
 } from "./types.ts";
 
@@ -135,6 +136,12 @@ interface ComicState {
   setLayout: (comicId: string, pageId: string, layout: PageLayoutId) => void;
   setPanelImage: (comicId: string, pageId: string, panelId: string, image: string | null) => void;
   setPanelFilter: (comicId: string, pageId: string, panelId: string, filter: PanelFilter) => void;
+  setPanelScene: (
+    comicId: string,
+    pageId: string,
+    panelId: string,
+    patch: Partial<PanelScene> | null,
+  ) => void;
   addBubble: (comicId: string, pageId: string, panelId: string, kind: BubbleKind) => string;
   updateBubble: (
     comicId: string,
@@ -468,6 +475,12 @@ export const useComicStore = create<ComicState>((set, get) => ({
           ...panel,
           id: crypto.randomUUID(),
           bubbles: panel.bubbles.map((b) => ({ ...b, id: crypto.randomUUID() })),
+          scene: panel.scene
+            ? {
+                ...panel.scene,
+                characterIds: panel.scene.characterIds ? [...panel.scene.characterIds] : undefined,
+              }
+            : undefined,
         })),
       };
       const pages = [...c.pages];
@@ -557,6 +570,34 @@ export const useComicStore = create<ComicState>((set, get) => ({
               panels: p.panels.map((panel) =>
                 panel.id === panelId ? { ...panel, filter } : panel,
               ),
+            }
+          : p,
+      ),
+    }));
+    pushState(set, get, comics);
+  },
+
+  setPanelScene: (comicId, pageId, panelId, patch) => {
+    const comics = mapComic(get().comics, comicId, (c) => ({
+      ...c,
+      pages: c.pages.map((p) =>
+        p.id === pageId
+          ? {
+              ...p,
+              panels: p.panels.map((panel) => {
+                if (panel.id !== panelId) return panel;
+                if (patch === null) {
+                  const { scene: _scene, ...rest } = panel;
+                  return rest;
+                }
+                return {
+                  ...panel,
+                  scene: {
+                    ...(panel.scene ?? {}),
+                    ...patch,
+                  },
+                };
+              }),
             }
           : p,
       ),
@@ -678,8 +719,23 @@ export const useComicStore = create<ComicState>((set, get) => ({
       const ctx = c.assetContext ?? {};
       if (!ctx.characters || !ctx.characters[charId]) return c;
       const { [charId]: _deleted, ...remaining } = ctx.characters;
+      const pages = c.pages.map((page) => ({
+        ...page,
+        panels: page.panels.map((panel) => {
+          if (!panel.scene?.characterIds?.includes(charId)) return panel;
+          const remainingCharIds = panel.scene.characterIds.filter((id) => id !== charId);
+          return {
+            ...panel,
+            scene: {
+              ...panel.scene,
+              characterIds: remainingCharIds,
+            },
+          };
+        }),
+      }));
       return {
         ...c,
+        pages,
         assetContext: {
           ...ctx,
           characters: remaining,
@@ -711,8 +767,20 @@ export const useComicStore = create<ComicState>((set, get) => ({
       const ctx = c.assetContext ?? {};
       if (!ctx.backgrounds || !ctx.backgrounds[bgId]) return c;
       const { [bgId]: _deleted, ...remaining } = ctx.backgrounds;
+      const pages = c.pages.map((page) => ({
+        ...page,
+        panels: page.panels.map((panel) => {
+          if (panel.scene?.backgroundId !== bgId) return panel;
+          const { backgroundId: _bg, ...remainingScene } = panel.scene;
+          return {
+            ...panel,
+            scene: remainingScene,
+          };
+        }),
+      }));
       return {
         ...c,
+        pages,
         assetContext: {
           ...ctx,
           backgrounds: remaining,

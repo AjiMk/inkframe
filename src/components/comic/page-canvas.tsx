@@ -2,7 +2,12 @@ import { ImagePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AREA_NAMES, LAYOUTS } from "@/lib/comics/layouts";
 import { useMediaUrl } from "@/lib/comics/media";
-import type { Page, Panel, SpeechBubble as SpeechBubbleData } from "@/lib/comics/types";
+import type {
+  CharacterReference,
+  Page,
+  Panel,
+  SpeechBubble as SpeechBubbleData,
+} from "@/lib/comics/types";
 import { SpeechBubble } from "./speech-bubble";
 
 export interface RevealState {
@@ -18,6 +23,7 @@ interface PageCanvasProps {
   selectedPanelId?: string | null;
   selectedBubbleId?: string | null;
   reveal?: RevealState;
+  characters?: Record<string, CharacterReference>;
   onSelectPanel?: (panelId: string) => void;
   onSelectBubble?: (panelId: string, bubbleId: string) => void;
   onDoubleClickBubble?: (panelId: string, bubbleId: string) => void;
@@ -34,6 +40,7 @@ export function PageCanvas({
   selectedPanelId,
   selectedBubbleId,
   reveal,
+  characters,
   onSelectPanel,
   onSelectBubble,
   onDoubleClickBubble,
@@ -69,6 +76,7 @@ export function PageCanvas({
             panel={panel}
             area={AREA_NAMES[i] ?? "a"}
             mode={mode}
+            characters={characters}
             selected={selectedPanelId === panel.id}
             selectedBubbleId={selectedBubbleId}
             reveal={reveal}
@@ -89,6 +97,7 @@ function PanelFrame({
   panel,
   area,
   mode,
+  characters,
   selected,
   selectedBubbleId,
   reveal,
@@ -102,6 +111,7 @@ function PanelFrame({
   panel: Panel;
   area: string;
   mode: "edit" | "read" | "thumb";
+  characters?: Record<string, CharacterReference>;
   selected: boolean;
   selectedBubbleId?: string | null;
   reveal?: RevealState;
@@ -163,10 +173,36 @@ function PanelFrame({
         <span className="screentone-dot pointer-events-none absolute inset-0" />
       ) : panel.filter === "cyber-neon" ? (
         <span className="scanlines-overlay pointer-events-none absolute inset-0" />
-      ) : panel.filter === "vintage" || panel.filter === "golden-pulp" || panel.filter === "sepia" ? (
+      ) : panel.filter === "vintage" ||
+        panel.filter === "golden-pulp" ||
+        panel.filter === "sepia" ? (
         <span className="vintage-grain pointer-events-none absolute inset-0" />
       ) : panel.filter === "anaglyph-3d" ? (
         <span className="anaglyph-split pointer-events-none absolute inset-0" />
+      ) : null}
+      {mode === "edit" && panel.scene && (panel.scene.characterIds?.length || panel.scene.shot) ? (
+        <div className="pointer-events-none absolute left-1.5 top-1.5 z-20 flex max-w-[85%] flex-wrap items-center gap-1">
+          {panel.scene.shot ? (
+            <span className="rounded bg-black/75 px-1 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-white shadow-xs backdrop-blur-xs">
+              {panel.scene.shot}
+            </span>
+          ) : null}
+          {panel.scene.characterIds?.map((charId) => {
+            const char = characters?.[charId];
+            const initial = char?.name
+              ? char.name.charAt(0).toUpperCase()
+              : charId.charAt(0).toUpperCase();
+            return (
+              <span
+                key={charId}
+                title={char?.name ?? charId}
+                className="flex size-4.5 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground shadow-xs ring-1 ring-background/50"
+              >
+                {initial}
+              </span>
+            );
+          })}
+        </div>
       ) : null}
       {bubbles.map((bubble) => (
         <SpeechBubble

@@ -31,6 +31,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { exportComicToPdf } from "@/lib/comics/pdf-export";
 import {
   AlertDialog,
@@ -46,7 +48,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { FILTERS } from "@/lib/comics/factory";
 import { compressImage, putMedia } from "@/lib/comics/media";
 import { getComicMediaRefs, useComicStore } from "@/lib/comics/store";
-import type { BubbleKind, PageLayoutId, Panel } from "@/lib/comics/types";
+import type {
+  AssetReferenceContext,
+  BubbleKind,
+  PageLayoutId,
+  Panel,
+  PanelScene,
+  ShotType,
+} from "@/lib/comics/types";
 import { LayoutPicker } from "./layout-picker";
 import { PageCanvas } from "./page-canvas";
 import { VideoCaptureDialog } from "./video-capture-dialog";
@@ -264,6 +273,8 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       }}
       onClearImage={() => store.setPanelImage(comicId, page.id, panel.id, null)}
       onFilter={(filter) => store.setPanelFilter(comicId, page.id, panel.id, filter)}
+      assetContext={comic.assetContext}
+      onUpdateScene={(patch) => store.setPanelScene(comicId, page.id, panel.id, patch)}
     />
   );
 
@@ -589,6 +600,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
                   <PageCanvas
                     page={page}
                     mode="edit"
+                    characters={comic.assetContext?.characters}
                     className="h-full w-full aspect-auto"
                     selectedPanelId={panel.id}
                     selectedBubbleId={bubbleId}
@@ -796,6 +808,18 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   );
 }
 
+const SHOT_TYPES: { id: ShotType; label: string }[] = [
+  { id: "establishing", label: "Est." },
+  { id: "wide", label: "Wide" },
+  { id: "medium", label: "Medium" },
+  { id: "close-up", label: "Close-up" },
+  { id: "extreme-close-up", label: "Extreme CU" },
+  { id: "low-angle", label: "Low Angle" },
+  { id: "high-angle", label: "High Angle" },
+  { id: "over-shoulder", label: "Over Shoulder" },
+  { id: "dutch", label: "Dutch" },
+];
+
 function Inspector({
   comicTitle,
   comicAuthor,
@@ -813,6 +837,8 @@ function Inspector({
   onPickLibrary,
   onClearImage,
   onFilter,
+  assetContext,
+  onUpdateScene,
 }: {
   comicTitle: string;
   comicAuthor: string;
@@ -830,8 +856,19 @@ function Inspector({
   onPickLibrary: () => void;
   onClearImage: () => void;
   onFilter: (filter: Panel["filter"]) => void;
+  assetContext?: AssetReferenceContext;
+  onUpdateScene: (patch: Partial<PanelScene>) => void;
 }) {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  const characterList = useMemo(
+    () => Object.values(assetContext?.characters ?? {}),
+    [assetContext?.characters],
+  );
+  const backgroundList = useMemo(
+    () => Object.values(assetContext?.backgrounds ?? {}),
+    [assetContext?.backgrounds],
+  );
 
   const visibleFilters = useMemo(() => {
     if (filtersExpanded) return FILTERS;
@@ -995,6 +1032,123 @@ function Inspector({
             </>
           )}
         </Button>
+      </section>
+
+      <Separator className="shrink-0" />
+
+      <section className="shrink-0 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Scene & Continuity
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+            onClick={onOpenStoryBible}
+          >
+            <BookOpen className="size-3 mr-1" />
+            Story Bible
+          </Button>
+        </div>
+
+        {/* Characters in panel */}
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Characters in panel</Label>
+          {characterList.length === 0 ? (
+            <p className="text-[11px] text-muted-foreground/80 italic">
+              No characters in Story Bible yet.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {characterList.map((c) => {
+                const selected = panel.scene?.characterIds?.includes(c.id);
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      const current = panel.scene?.characterIds ?? [];
+                      const next = selected
+                        ? current.filter((id) => id !== c.id)
+                        : [...current, c.id];
+                      onUpdateScene({ characterIds: next });
+                    }}
+                    className={cn(
+                      "h-6 px-2 rounded-full border text-[11px] font-medium transition-colors flex items-center gap-1",
+                      selected
+                        ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs"
+                        : "border-border bg-card text-foreground hover:bg-secondary",
+                    )}
+                  >
+                    <span>{c.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Location */}
+        <div className="space-y-1">
+          <Label htmlFor="panel-scene-location" className="text-[11px] text-muted-foreground">
+            Location
+          </Label>
+          <select
+            id="panel-scene-location"
+            value={panel.scene?.backgroundId ?? ""}
+            onChange={(e) => onUpdateScene({ backgroundId: e.target.value || undefined })}
+            className="h-8 w-full rounded-md border border-input bg-card px-2.5 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <option value="">No location set</option>
+            {backgroundList.map((bg) => (
+              <option key={bg.id} value={bg.id}>
+                {bg.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Shot type */}
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Camera shot</Label>
+          <div className="grid grid-cols-3 gap-1">
+            {SHOT_TYPES.map(({ id, label }) => {
+              const selected = panel.scene?.shot === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onUpdateScene({ shot: selected ? undefined : id })}
+                  className={cn(
+                    "h-6 px-1 rounded border text-[10px] font-medium truncate transition-colors",
+                    selected
+                      ? "border-primary bg-primary/15 text-primary font-bold shadow-xs ring-1 ring-primary/30"
+                      : "border-border bg-card text-muted-foreground hover:text-foreground hover:border-foreground/30",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Action description */}
+        <div className="space-y-1">
+          <Label htmlFor="panel-scene-action" className="text-[11px] text-muted-foreground">
+            Action description
+          </Label>
+          <Textarea
+            id="panel-scene-action"
+            placeholder="What happens in this panel? e.g. Elena draws her blaster as the shadows converge..."
+            value={panel.scene?.action ?? ""}
+            onChange={(e) => onUpdateScene({ action: e.target.value })}
+            className="min-h-16 text-xs resize-none"
+            rows={2}
+          />
+        </div>
       </section>
 
       <Separator className="shrink-0" />
