@@ -50,11 +50,44 @@
     },
     "assetContext": {
       "styleGuide": "Cel-shaded anime, night city sidewalk, bold ink and flat color. Adult woman in a navy business suit. Fictional. No gore.",
-      "backgrounds": {},
-      "characters": {}
+      "backgrounds": {
+        "sidewalk": {
+          "id": "sidewalk",
+          "name": "Midnight Sidewalk",
+          "description": "Rain-slicked empty city sidewalk outside glass office tower, streetlights reflecting on wet asphalt, deserted crosswalk, midnight fog.",
+          "imageRef": "url:/demo/p1.jpg"
+        },
+        "alley": {
+          "id": "alley",
+          "name": "Side Alley",
+          "description": "Narrow, damp brick alleyway branching off the main street, flickering neon signage, dark puddles and overhead drain pipes.",
+          "imageRef": "url:/demo/p4.jpg"
+        }
+      },
+      "characters": {
+        "elena": {
+          "id": "elena",
+          "name": "Elena",
+          "role": "Protagonist",
+          "appearance": "Adult woman in late 20s, navy tailored business suit, white collared shirt, dark brown bob hairstyle, carrying a leather briefcase, weary late-shift expression.",
+          "imageRef": "url:/demo/cover.jpg",
+          "invariants": [
+            "Navy tailored business suit",
+            "Dark brown bob haircut",
+            "Leather briefcase"
+          ],
+          "traits": {
+            "face": "Weary, observant eyes, pale complexion",
+            "hair": "Dark brown chin-length bob",
+            "build": "Slender, professional posture",
+            "age": "Late 20s"
+          },
+          "voice": "Internal monologue, measured, tense, quickening under fear"
+        }
+      }
     },
     "createdAt": 1790939054903,
-    "updatedAt": 1790951673970,
+    "updatedAt": 1791734099259,
     "pages": [
       {
         "id": "d-p1",
@@ -90,9 +123,18 @@
                 "x": 38,
                 "y": 37.91641963109354,
                 "w": 62,
-                "tail": "bl"
+                "tail": "bl",
+                "speakerId": "elena"
               }
-            ]
+            ],
+            "scene": {
+              "characterIds": [
+                "elena"
+              ],
+              "backgroundId": "sidewalk",
+              "shot": "establishing",
+              "action": "Elena steps out through the heavy glass doors of the dark office tower onto the deserted midnight sidewalk."
+            }
           }
         ]
       },
@@ -130,9 +172,18 @@
                 "x": 33.75323090402728,
                 "y": 33.147603754940704,
                 "w": 64,
-                "tail": "bl"
+                "tail": "bl",
+                "speakerId": "elena"
               }
-            ]
+            ],
+            "scene": {
+              "characterIds": [
+                "elena"
+              ],
+              "backgroundId": "sidewalk",
+              "shot": "wide",
+              "action": "Elena walks four empty city blocks under solitary streetlights, clutching her briefcase as signals stay green for no traffic."
+            }
           }
         ]
       },
@@ -170,9 +221,18 @@
                 "x": 35.52996213662108,
                 "y": 28.07308135704875,
                 "w": 64,
-                "tail": "bl"
+                "tail": "bl",
+                "speakerId": "elena"
               }
-            ]
+            ],
+            "scene": {
+              "characterIds": [
+                "elena"
+              ],
+              "backgroundId": "sidewalk",
+              "shot": "medium",
+              "action": "Elena slows down near an overhead dripping pipe, listening to the rhythmic splash of water on concrete."
+            }
           }
         ]
       },
@@ -219,7 +279,8 @@
                 "x": 1.8694495728635356,
                 "y": 7.710371376811597,
                 "w": 46,
-                "tail": "bl"
+                "tail": "bl",
+                "speakerId": "elena"
               },
               {
                 "id": "d-b13",
@@ -228,9 +289,18 @@
                 "x": 2.950840191507338,
                 "y": 14.071352108036894,
                 "w": 64,
-                "tail": "bl"
+                "tail": "bl",
+                "speakerId": "elena"
               }
-            ]
+            ],
+            "scene": {
+              "characterIds": [
+                "elena"
+              ],
+              "backgroundId": "alley",
+              "shot": "medium",
+              "action": "Elena turns off the main sidewalk into the shadows of a side street, following a faint child-like cry."
+            }
           }
         ]
       },
@@ -268,9 +338,18 @@
                 "x": 5.457521043902744,
                 "y": 25.668601778656125,
                 "w": 68,
-                "tail": "bl"
+                "tail": "bl",
+                "speakerId": "elena"
               }
-            ]
+            ],
+            "scene": {
+              "characterIds": [
+                "elena"
+              ],
+              "backgroundId": "alley",
+              "shot": "close-up",
+              "action": "Elena crouches near an abandoned toy left alone on the rain-soaked pavement with no child in sight."
+            }
           }
         ]
       },
@@ -308,9 +387,18 @@
                 "x": 20.134274180930625,
                 "y": 24.174551218708828,
                 "w": 48,
-                "tail": "bl"
+                "tail": "bl",
+                "speakerId": "elena"
               }
-            ]
+            ],
+            "scene": {
+              "characterIds": [
+                "elena"
+              ],
+              "backgroundId": "alley",
+              "shot": "dutch",
+              "action": "Streetlights and window signs suddenly extinguish across the entire city block, plunging Elena into absolute darkness."
+            }
           }
         ]
       },
@@ -339,9 +427,18 @@
                 "x": 0.7731013549457089,
                 "y": 44.96156538208169,
                 "w": 72,
-                "tail": "bl"
+                "tail": "bl",
+                "speakerId": "elena"
               }
-            ]
+            ],
+            "scene": {
+              "characterIds": [
+                "elena"
+              ],
+              "backgroundId": "alley",
+              "shot": "close-up",
+              "action": "Elena freezes in fear as silence settles over the blacked-out alleyway."
+            }
           }
         ]
       }
