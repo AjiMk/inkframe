@@ -8,6 +8,7 @@ import {
   defaultCoverConfig,
 } from "./factory.ts";
 import { deleteMediaRef, pruneMedia } from "./media.ts";
+import { mergeComics } from "./sync.ts";
 import type {
   AssetReferenceContext,
   BackgroundReference,
@@ -154,6 +155,30 @@ interface ComicState {
 
 const MAX_HISTORY = 30;
 
+let devSyncTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function scheduleDevSync(comics: Comic[]) {
+  if (typeof window === "undefined") return;
+  if (devSyncTimer) clearTimeout(devSyncTimer);
+  devSyncTimer = setTimeout(() => {
+    void pushComicsToDevSync(comics);
+  }, 800);
+}
+
+export async function pushComicsToDevSync(comics: Comic[]): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const deletedIds = Array.from(readDeletedIds());
+    await fetch("/__inkframe/comics", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comics, deletedIds }),
+    });
+  } catch {
+    // Dev sync endpoint unreachable in production / offline, ignore
+  }
+}
+
 function pushState(set: any, get: any, newComics: Comic[]) {
   const past = get().past || [];
   const current = get().comics;
@@ -166,6 +191,7 @@ function pushState(set: any, get: any, newComics: Comic[]) {
     canRedo: false,
     lastSavedAt: Date.now(),
   });
+  scheduleDevSync(newComics);
 }
 
 export const useComicStore = create<ComicState>((set, get) => ({
@@ -218,6 +244,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
     const updatedComics = comicId ? comics.map((c) => (c.id === comicId ? touch(c) : c)) : comics;
     writeComics(updatedComics);
     set({ comics: updatedComics, lastSavedAt: Date.now() });
+    void pushComicsToDevSync(updatedComics);
     void get().syncMcpComics();
     const referenced = collectAllReferencedMedia(get());
     void pruneMedia(referenced);
@@ -226,43 +253,31 @@ export const useComicStore = create<ComicState>((set, get) => ({
   syncMcpComics: async () => {
     if (typeof window === "undefined") return;
     try {
-      const res = await fetch("/mcp_comics.json", { cache: "no-store" });
+      let res = await fetch("/__inkframe/comics", { cache: "no-store" });
+      if (!res.ok) {
+        res = await fetch("/mcp_comics.json", { cache: "no-store" });
+      }
       if (!res.ok) return;
-      const mcpComics = (await res.json()) as Comic[];
-      if (!Array.isArray(mcpComics) || mcpComics.length === 0) return;
+
+      const data = await res.json();
+      const mcpComics: Comic[] = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.comics)
+          ? data.comics
+          : [];
+      if (mcpComics.length === 0) return;
 
       const deletedIds = readDeletedIds();
-      const localComics = readComics();
+      if (data && Array.isArray(data.deletedIds)) {
+        for (const id of data.deletedIds) deletedIds.add(id);
+      }
+
       const current = get().comics;
-      const map = new Map<string, Comic>();
+      const { merged, changed } = mergeComics(current, mcpComics, deletedIds);
 
-      for (const c of localComics) {
-        if (!deletedIds.has(c.id)) map.set(c.id, c);
-      }
-      for (const c of current) {
-        if (!deletedIds.has(c.id)) map.set(c.id, c);
-      }
-
-      let changed = false;
-      for (const mcpC of mcpComics) {
-        if (deletedIds.has(mcpC.id)) continue;
-
-        const existing = map.get(mcpC.id);
-        const mcpTime = mcpC.updatedAt ?? 0;
-        const existingTime = existing?.updatedAt ?? 0;
-
-        if (!existing || mcpTime > existingTime) {
-          if (!existing || JSON.stringify(existing) !== JSON.stringify(mcpC)) {
-            map.set(mcpC.id, mcpC);
-            changed = true;
-          }
-        }
-      }
-
-      if (changed || map.size > current.length) {
-        const updated = Array.from(map.values());
-        writeComics(updated);
-        set({ comics: updated });
+      if (changed) {
+        writeComics(merged);
+        set({ comics: merged });
       }
     } catch {
       // ignore network errors
