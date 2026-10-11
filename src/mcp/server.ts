@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
@@ -109,16 +111,43 @@ server.resource(
     const store = loadStore();
     const id = String(comicId ?? "");
     const comic = id ? store.get(id) : null;
-    const assetContext = comic?.assetContext ?? {
+    const rawContext = comic?.assetContext ?? {
       styleGuide: "Default clean comic book style",
       backgrounds: {},
       characters: {},
     };
+
+    const characters = Object.fromEntries(
+      Object.entries(rawContext.characters ?? {}).map(([cId, c]) => [
+        cId,
+        {
+          ...c,
+          hasImage: Boolean(c.imageRef),
+        },
+      ]),
+    );
+
+    const backgrounds = Object.fromEntries(
+      Object.entries(rawContext.backgrounds ?? {}).map(([bId, b]) => [
+        bId,
+        {
+          ...b,
+          hasImage: Boolean(b.imageRef),
+        },
+      ]),
+    );
+
+    const enrichedContext = {
+      ...rawContext,
+      characters,
+      backgrounds,
+    };
+
     return {
       contents: [
         {
           uri: uri.href,
-          text: JSON.stringify(assetContext, null, 2),
+          text: JSON.stringify(enrichedContext, null, 2),
           mimeType: "application/json",
         },
       ],
@@ -685,6 +714,155 @@ server.tool(
           ),
         },
       ],
+    };
+  },
+);
+
+// Tool 10: Get Reference Image (Returns visual model sheet as MCP image content)
+server.tool(
+  "get_reference_image",
+  "Fetch the visual reference image for a character model sheet or background location as an MCP image",
+  {
+    comicId: z.string().describe("ID of the comic"),
+    kind: z
+      .enum(["character", "background"])
+      .describe("Whether retrieving a character portrait or background location image"),
+    id: z
+      .string()
+      .describe("Identifier of the character or background (e.g. 'elena' or 'neon_alley')"),
+  },
+  async ({ comicId, kind, id }) => {
+    const store = loadStore();
+    const comic = store.get(comicId);
+    if (!comic) {
+      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
+    }
+
+    const ctx = comic.assetContext ?? {};
+    const ref = kind === "character" ? ctx.characters?.[id] : ctx.backgrounds?.[id];
+    if (!ref) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `${kind === "character" ? "Character" : "Background"} reference "${id}" not found in comic "${comic.title}".`,
+          },
+        ],
+      };
+    }
+
+    const imageRef = ref.imageRef;
+    if (!imageRef) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `No reference image attached to ${kind} "${ref.name}" (ID: ${id}).`,
+          },
+        ],
+      };
+    }
+
+    const mimeMap: Record<string, string> = {
+      ".webp": "image/webp",
+      ".png": "image/png",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".gif": "image/gif",
+      ".svg": "image/svg+xml",
+    };
+
+    // 1. asset: scheme (stored on disk in .inkframe/assets/)
+    if (imageRef.startsWith("asset:")) {
+      const assetId = imageRef.slice(6);
+      const assetsDir = path.resolve(process.cwd(), ".inkframe/assets");
+      if (fs.existsSync(assetsDir)) {
+        const files = fs.readdirSync(assetsDir);
+        const matched = files.find((f) => f === assetId || f.startsWith(`${assetId}.`));
+        if (matched) {
+          const filePath = path.join(assetsDir, matched);
+          const buffer = fs.readFileSync(filePath);
+          const ext = path.extname(matched).toLowerCase();
+          const mime = mimeMap[ext] ?? "image/webp";
+          return {
+            content: [
+              {
+                type: "image",
+                data: buffer.toString("base64"),
+                mimeType: mime,
+              },
+            ],
+          };
+        }
+      }
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Asset file "${assetId}" was not found in .inkframe/assets directory.`,
+          },
+        ],
+      };
+    }
+
+    // 2. data: URI scheme
+    if (imageRef.startsWith("data:")) {
+      const match = imageRef.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        return {
+          content: [
+            {
+              type: "image",
+              data: match[2],
+              mimeType: match[1],
+            },
+          ],
+        };
+      }
+    }
+
+    // 3. url: scheme pointing to public/ demo assets
+    if (imageRef.startsWith("url:")) {
+      const publicPath = path.resolve(
+        process.cwd(),
+        "public",
+        imageRef.slice(4).replace(/^\//, ""),
+      );
+      if (fs.existsSync(publicPath)) {
+        const buffer = fs.readFileSync(publicPath);
+        const ext = path.extname(publicPath).toLowerCase();
+        const mime = mimeMap[ext] ?? "image/jpeg";
+        return {
+          content: [
+            {
+              type: "image",
+              data: buffer.toString("base64"),
+              mimeType: mime,
+            },
+          ],
+        };
+      }
+    }
+
+    // 4. idb: scheme (in browser IndexedDB only)
+    if (imageRef.startsWith("idb:")) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Reference image "${imageRef}" is stored in local browser IndexedDB only. Open the Story Bible in the web editor while running npm run dev to sync reference images with the MCP server.`,
+          },
+        ],
+      };
+    }
+
+    return {
+      isError: true,
+      content: [{ type: "text", text: `Unsupported image reference: "${imageRef}".` }],
     };
   },
 );

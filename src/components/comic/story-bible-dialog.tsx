@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useComicStore } from "@/lib/comics/store";
-import { compressImage, deleteMediaRef, putMedia, useMediaUrl } from "@/lib/comics/media";
+import { compressImage, deleteMediaRef, putReferenceMedia, useMediaUrl } from "@/lib/comics/media";
 import { makeReferenceId } from "@/lib/comics/references";
 import type { Comic, CharacterReference, BackgroundReference } from "@/lib/comics/types";
 
@@ -224,7 +224,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setIsUploadingCharImg(true);
     try {
       const blob = await compressImage(file, 800, 0.85);
-      const ref = await putMedia(blob);
+      const ref = await putReferenceMedia(blob);
       for (const oldRef of pendingCharUploads.current) {
         void deleteMediaRef(oldRef);
       }
@@ -319,7 +319,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setIsUploadingBgImg(true);
     try {
       const blob = await compressImage(file, 1200, 0.85);
-      const ref = await putMedia(blob);
+      const ref = await putReferenceMedia(blob);
       for (const oldRef of pendingBgUploads.current) {
         void deleteMediaRef(oldRef);
       }
