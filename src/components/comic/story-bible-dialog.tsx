@@ -15,6 +15,10 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  CheckCircle2,
+  ShieldAlert,
+  AlertTriangle,
+  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useComicStore } from "@/lib/comics/store";
 import { compressImage, deleteMediaRef, putReferenceMedia, useMediaUrl } from "@/lib/comics/media";
 import { makeReferenceId } from "@/lib/comics/references";
+import { checkContinuity } from "@/lib/comics/continuity";
 import type { Comic, CharacterReference, BackgroundReference } from "@/lib/comics/types";
 
 interface Props {
@@ -145,7 +150,18 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
   const characters = Object.values(context.characters ?? {});
   const backgrounds = Object.values(context.backgrounds ?? {});
 
-  const [activeTab, setActiveTab] = useState<"characters" | "locations" | "style">("characters");
+  const [activeTab, setActiveTab] = useState<"characters" | "locations" | "style" | "continuity">(
+    "characters",
+  );
+  const [continuityFilter, setContinuityFilter] = useState<"all" | "error" | "warning" | "info">(
+    "all",
+  );
+
+  const continuityReport = checkContinuity(comic);
+  const filteredIssues =
+    continuityFilter === "all"
+      ? continuityReport.issues
+      : continuityReport.issues.filter((i) => i.severity === continuityFilter);
 
   // Character editing state
   const [editingCharId, setEditingCharId] = useState<string | null>(null);
@@ -517,7 +533,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
             onValueChange={(v) => setActiveTab(v as typeof activeTab)}
             className="w-full flex flex-col h-full"
           >
-            <TabsList className="grid grid-cols-3 w-full mb-4 shrink-0 bg-secondary/70">
+            <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-4 shrink-0 bg-secondary/70">
               <TabsTrigger value="characters" className="text-xs font-semibold gap-1.5">
                 <Users className="size-3.5" />
                 <span>Characters</span>
@@ -534,7 +550,24 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
               </TabsTrigger>
               <TabsTrigger value="style" className="text-xs font-semibold gap-1.5">
                 <Palette className="size-3.5" />
-                <span>Art Style Guide</span>
+                <span>Style Guide</span>
+              </TabsTrigger>
+              <TabsTrigger value="continuity" className="text-xs font-semibold gap-1.5">
+                {continuityReport.issueCount.errors > 0 ? (
+                  <ShieldAlert className="size-3.5 text-destructive" />
+                ) : (
+                  <CheckCircle2 className="size-3.5 text-primary" />
+                )}
+                <span>Continuity</span>
+                {continuityReport.issueCount.errors > 0 ? (
+                  <span className="ml-1 rounded-full bg-destructive/20 text-destructive px-1.5 py-0.5 text-[10px] font-bold">
+                    {continuityReport.issueCount.errors}
+                  </span>
+                ) : continuityReport.issueCount.warnings > 0 ? (
+                  <span className="ml-1 rounded-full bg-amber-500/20 text-amber-500 px-1.5 py-0.5 text-[10px] font-bold">
+                    {continuityReport.issueCount.warnings}
+                  </span>
+                ) : null}
               </TabsTrigger>
             </TabsList>
 
@@ -1315,6 +1348,218 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                   {compiledSample}
                 </pre>
               </div>
+            </TabsContent>
+
+            {/* CONTINUITY TAB */}
+            <TabsContent value="continuity" className="flex-1 space-y-4 outline-none">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Continuity & Consistency Audit
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Automated scan verifying character invariants, panel continuity links, and asset
+                    integrity.
+                  </p>
+                </div>
+              </div>
+
+              {/* Metrics overview */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div
+                  className={`p-3 rounded-lg border flex flex-col justify-between ${
+                    continuityReport.issueCount.errors > 0
+                      ? "border-destructive/40 bg-destructive/5"
+                      : continuityReport.issueCount.warnings > 0
+                        ? "border-amber-500/40 bg-amber-500/5"
+                        : "border-primary/40 bg-primary/5"
+                  }`}
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Audit Status
+                  </span>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    {continuityReport.issueCount.errors > 0 ? (
+                      <>
+                        <ShieldAlert className="size-4 text-destructive" />
+                        <span className="text-xs font-bold text-destructive">
+                          {continuityReport.issueCount.errors} Error
+                          {continuityReport.issueCount.errors > 1 ? "s" : ""}
+                        </span>
+                      </>
+                    ) : continuityReport.issueCount.warnings > 0 ? (
+                      <>
+                        <AlertTriangle className="size-4 text-amber-500" />
+                        <span className="text-xs font-bold text-amber-500">
+                          {continuityReport.issueCount.warnings} Warning
+                          {continuityReport.issueCount.warnings > 1 ? "s" : ""}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="size-4 text-primary" />
+                        <span className="text-xs font-bold text-primary">All Clear</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg border border-border bg-card flex flex-col justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Panel Coverage
+                  </span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="text-lg font-bold font-display text-foreground">
+                      {continuityReport.stats.panelsWithScene}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      / {continuityReport.stats.totalPanels} panels
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg border border-border bg-card flex flex-col justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Characters Cast
+                  </span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="text-lg font-bold font-display text-foreground">
+                      {continuityReport.stats.usedCharacters}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      / {continuityReport.stats.totalCharacters} active
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-lg border border-border bg-card flex flex-col justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Locations Used
+                  </span>
+                  <div className="mt-1 flex items-baseline gap-1">
+                    <span className="text-lg font-bold font-display text-foreground">
+                      {continuityReport.stats.usedBackgrounds}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      / {continuityReport.stats.totalBackgrounds} active
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter Chips */}
+              <div className="flex items-center gap-1.5 pt-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={continuityFilter === "all" ? "default" : "outline"}
+                  onClick={() => setContinuityFilter("all")}
+                  className="h-7 text-[11px] px-2.5 font-semibold"
+                >
+                  All ({continuityReport.issues.length})
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={continuityFilter === "error" ? "destructive" : "outline"}
+                  onClick={() => setContinuityFilter("error")}
+                  disabled={continuityReport.issueCount.errors === 0}
+                  className="h-7 text-[11px] px-2.5 font-semibold"
+                >
+                  Errors ({continuityReport.issueCount.errors})
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={continuityFilter === "warning" ? "secondary" : "outline"}
+                  onClick={() => setContinuityFilter("warning")}
+                  disabled={continuityReport.issueCount.warnings === 0}
+                  className="h-7 text-[11px] px-2.5 font-semibold"
+                >
+                  Warnings ({continuityReport.issueCount.warnings})
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={continuityFilter === "info" ? "secondary" : "outline"}
+                  onClick={() => setContinuityFilter("info")}
+                  disabled={continuityReport.issueCount.infos === 0}
+                  className="h-7 text-[11px] px-2.5 font-semibold"
+                >
+                  Notes ({continuityReport.issueCount.infos})
+                </Button>
+              </div>
+
+              {/* Issues list */}
+              {filteredIssues.length === 0 ? (
+                <div className="rounded-lg border border-border/60 bg-secondary/30 p-8 text-center space-y-2">
+                  <div className="mx-auto size-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <CheckCircle2 className="size-5" />
+                  </div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    No Issues Found
+                  </h4>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    {continuityFilter === "all"
+                      ? "All continuity checks passed! Your comic story bible and panel scenes are completely synchronized."
+                      : `No ${continuityFilter} items detected.`}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1">
+                  {filteredIssues.map((issue) => (
+                    <div
+                      key={issue.id}
+                      className={`rounded-lg border p-3 transition-colors ${
+                        issue.severity === "error"
+                          ? "border-destructive/30 bg-destructive/5"
+                          : issue.severity === "warning"
+                            ? "border-amber-500/30 bg-amber-500/5"
+                            : "border-border bg-card"
+                      }`}
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="mt-0.5 shrink-0">
+                          {issue.severity === "error" ? (
+                            <ShieldAlert className="size-4 text-destructive" />
+                          ) : issue.severity === "warning" ? (
+                            <AlertTriangle className="size-4 text-amber-500" />
+                          ) : (
+                            <Info className="size-4 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${
+                                issue.severity === "error"
+                                  ? "bg-destructive/20 text-destructive"
+                                  : issue.severity === "warning"
+                                    ? "bg-amber-500/20 text-amber-500"
+                                    : "bg-primary/20 text-primary"
+                              }`}
+                            >
+                              {issue.severity}
+                            </span>
+                            <span className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {issue.type}
+                            </span>
+                          </div>
+                          <p className="text-xs font-medium text-foreground leading-relaxed">
+                            {issue.message}
+                          </p>
+                          {issue.suggestion && (
+                            <p className="text-[11px] text-muted-foreground bg-background/60 p-2 rounded border border-border/40 mt-1.5">
+                              <span className="font-semibold text-foreground/80">Suggestion: </span>
+                              {issue.suggestion}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
