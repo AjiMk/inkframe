@@ -1,5 +1,12 @@
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
+import {
+  readdirSync,
+  existsSync,
+  mkdirSync,
+  unlinkSync,
+  createReadStream,
+  createWriteStream,
+} from "node:fs";
+import { join, extname, resolve } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -175,12 +182,112 @@ function inkframeSyncPlugin(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         const rawUrl = req.url ?? "";
         const pathOnly = rawUrl.split("?", 1)[0] ?? "";
+        const method = (req.method ?? "GET").toUpperCase();
+
+        const assetPrefix = "/__inkframe/assets/";
+        if (pathOnly.startsWith(assetPrefix)) {
+          const assetId = pathOnly.slice(assetPrefix.length);
+          if (!assetId || assetId.includes("..") || assetId.includes("/")) {
+            res.statusCode = 400;
+            res.end("Invalid asset ID");
+            return;
+          }
+
+          const assetsDir = resolve(process.cwd(), ".inkframe/assets");
+
+          try {
+            if (method === "GET") {
+              if (!existsSync(assetsDir)) {
+                res.statusCode = 404;
+                res.end("Not Found");
+                return;
+              }
+              const files = readdirSync(assetsDir);
+              const matched = files.find((f) => f === assetId || f.startsWith(`${assetId}.`));
+              if (!matched) {
+                res.statusCode = 404;
+                res.end("Not Found");
+                return;
+              }
+              const filePath = join(assetsDir, matched);
+              const ext = extname(matched).toLowerCase();
+              const mimeMap: Record<string, string> = {
+                ".webp": "image/webp",
+                ".png": "image/png",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".gif": "image/gif",
+                ".svg": "image/svg+xml",
+              };
+              res.statusCode = 200;
+              res.setHeader("content-type", mimeMap[ext] ?? "image/webp");
+              res.setHeader("cache-control", "public, max-age=31536000, immutable");
+              createReadStream(filePath).pipe(res);
+              return;
+            }
+
+            if (method === "PUT") {
+              mkdirSync(assetsDir, { recursive: true });
+              const contentType = String(req.headers["content-type"] ?? "image/webp");
+              const extMap: Record<string, string> = {
+                "image/webp": ".webp",
+                "image/png": ".png",
+                "image/jpeg": ".jpg",
+                "image/jpg": ".jpg",
+                "image/gif": ".gif",
+                "image/svg+xml": ".svg",
+              };
+              const ext = extMap[contentType.toLowerCase()] ?? ".webp";
+              const filePath = join(assetsDir, `${assetId}${ext}`);
+              const ws = createWriteStream(filePath);
+              req.pipe(ws);
+              ws.on("finish", () => {
+                res.statusCode = 200;
+                res.setHeader("content-type", "application/json; charset=utf-8");
+                res.end(JSON.stringify({ ok: true, id: assetId, path: `asset:${assetId}` }));
+              });
+              ws.on("error", (err) => {
+                console.error("[inkframe-sync] Asset write error:", err);
+                if (!res.headersSent) {
+                  res.statusCode = 500;
+                  res.end("Write failed");
+                }
+              });
+              return;
+            }
+
+            if (method === "DELETE") {
+              if (existsSync(assetsDir)) {
+                const files = readdirSync(assetsDir);
+                for (const f of files) {
+                  if (f === assetId || f.startsWith(`${assetId}.`)) {
+                    unlinkSync(join(assetsDir, f));
+                  }
+                }
+              }
+              res.statusCode = 200;
+              res.setHeader("content-type", "application/json; charset=utf-8");
+              res.end(JSON.stringify({ ok: true }));
+              return;
+            }
+
+            res.statusCode = 405;
+            res.end("Method Not Allowed");
+            return;
+          } catch (err) {
+            console.error("[inkframe-sync] Asset handler error:", err);
+            if (!res.headersSent) {
+              res.statusCode = 500;
+              res.end("Internal Error");
+            }
+            return;
+          }
+        }
+
         if (pathOnly !== "/__inkframe/comics") {
           next();
           return;
         }
-
-        const method = (req.method ?? "GET").toUpperCase();
 
         try {
           if (method === "GET") {

@@ -36,6 +36,51 @@ export function publicSrc(ref: string): string {
   return ref.slice(4);
 }
 
+export function isAssetRef(ref: string): boolean {
+  return ref.startsWith("asset:");
+}
+
+export function assetSrc(ref: string): string {
+  return `/__inkframe/assets/${ref.slice(6)}`;
+}
+
+export async function uploadAssetToDev(id: string, blob: Blob): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  try {
+    const res = await fetch(`/__inkframe/assets/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": blob.type || "image/webp" },
+      body: blob,
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteDevAsset(id: string): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    await fetch(`/__inkframe/assets/${id}`, { method: "DELETE" });
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * Puts reference media into IndexedDB (for reliable offline local storage)
+ * and attempts uploading to the dev server to produce an `asset:` ref for MCP.
+ */
+export async function putReferenceMedia(blob: Blob): Promise<string> {
+  const idbRef = await putMedia(blob);
+  const id = idbRef.slice(4);
+  const uploaded = await uploadAssetToDev(id, blob);
+  if (uploaded) {
+    return `asset:${id}`;
+  }
+  return idbRef;
+}
+
 export async function putMedia(blob: Blob): Promise<string> {
   const id = nid();
   const db = await openDb();
@@ -78,6 +123,7 @@ export function selectOrphanMediaIds(
   const referenced = new Set<string>();
   for (const ref of referencedRefs) {
     if (ref.startsWith("idb:")) referenced.add(ref.slice(4));
+    if (ref.startsWith("asset:")) referenced.add(ref.slice(6));
   }
   const orphans: string[] = [];
   for (const id of storedIds) {
@@ -124,12 +170,22 @@ export async function deleteMedia(id: string): Promise<void> {
 }
 
 export async function deleteMediaRef(ref: string | null): Promise<void> {
-  if (typeof indexedDB === "undefined" || !ref?.startsWith("idb:")) return;
+  if (!ref) return;
+  if (ref.startsWith("asset:")) {
+    const id = ref.slice(6);
+    void deleteDevAsset(id);
+    if (typeof indexedDB !== "undefined") {
+      await deleteMedia(id);
+    }
+    return;
+  }
+  if (typeof indexedDB === "undefined" || !ref.startsWith("idb:")) return;
   await deleteMedia(ref.slice(4));
 }
 
 export async function resolveMediaUrl(ref: string): Promise<string> {
   if (isUrlRef(ref)) return publicSrc(ref);
+  if (isAssetRef(ref)) return assetSrc(ref);
   if (!ref.startsWith("idb:")) return ref;
   const blob = await getMedia(ref.slice(4));
   if (!blob) throw new Error("Missing media");
@@ -172,6 +228,7 @@ export async function compressImage(
 export function useMediaUrl(ref: string | null | undefined): string | null {
   const [url, setUrl] = useState<string | null>(() => {
     if (ref && isUrlRef(ref)) return publicSrc(ref);
+    if (ref && isAssetRef(ref)) return assetSrc(ref);
     return null;
   });
 
@@ -182,6 +239,10 @@ export function useMediaUrl(ref: string | null | undefined): string | null {
     }
     if (isUrlRef(ref)) {
       setUrl(publicSrc(ref));
+      return;
+    }
+    if (isAssetRef(ref)) {
+      setUrl(assetSrc(ref));
       return;
     }
     if (!ref.startsWith("idb:")) {

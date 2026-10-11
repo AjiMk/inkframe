@@ -16,6 +16,7 @@ screenshots
 
 # Ignore user uploads and temporary media
 public/uploads/
+.inkframe/
 
 # Allow bundled demo comic images and documentation screenshots
 !public/demo/

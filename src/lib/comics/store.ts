@@ -7,7 +7,7 @@ import {
   createPage,
   defaultCoverConfig,
 } from "./factory.ts";
-import { deleteMediaRef, pruneMedia } from "./media.ts";
+import { deleteMediaRef, pruneMedia, getMedia, uploadAssetToDev } from "./media.ts";
 import { mergeComics } from "./sync.ts";
 import type {
   AssetReferenceContext,
@@ -179,6 +179,69 @@ export async function pushComicsToDevSync(comics: Comic[]): Promise<void> {
   }
 }
 
+async function migrateReferencesToAssets(comics: Comic[]): Promise<Comic[] | null> {
+  let changed = false;
+  const updatedComics: Comic[] = [];
+
+  for (const c of comics) {
+    let comicChanged = false;
+    let newAssetContext = c.assetContext;
+
+    if (newAssetContext?.characters) {
+      let charsChanged = false;
+      const updatedChars = { ...newAssetContext.characters };
+      for (const [id, char] of Object.entries(updatedChars)) {
+        if (char.imageRef?.startsWith("idb:")) {
+          const mediaId = char.imageRef.slice(4);
+          const blob = await getMedia(mediaId);
+          if (blob) {
+            const ok = await uploadAssetToDev(mediaId, blob);
+            if (ok) {
+              updatedChars[id] = { ...char, imageRef: `asset:${mediaId}` };
+              charsChanged = true;
+            }
+          }
+        }
+      }
+      if (charsChanged) {
+        newAssetContext = { ...newAssetContext, characters: updatedChars };
+        comicChanged = true;
+      }
+    }
+
+    if (newAssetContext?.backgrounds) {
+      let bgsChanged = false;
+      const updatedBgs = { ...newAssetContext.backgrounds };
+      for (const [id, bg] of Object.entries(updatedBgs)) {
+        if (bg.imageRef?.startsWith("idb:")) {
+          const mediaId = bg.imageRef.slice(4);
+          const blob = await getMedia(mediaId);
+          if (blob) {
+            const ok = await uploadAssetToDev(mediaId, blob);
+            if (ok) {
+              updatedBgs[id] = { ...bg, imageRef: `asset:${mediaId}` };
+              bgsChanged = true;
+            }
+          }
+        }
+      }
+      if (bgsChanged) {
+        newAssetContext = { ...newAssetContext, backgrounds: updatedBgs };
+        comicChanged = true;
+      }
+    }
+
+    if (comicChanged) {
+      updatedComics.push({ ...c, assetContext: newAssetContext, updatedAt: Date.now() });
+      changed = true;
+    } else {
+      updatedComics.push(c);
+    }
+  }
+
+  return changed ? updatedComics : null;
+}
+
 function pushState(set: any, get: any, newComics: Comic[]) {
   const past = get().past || [];
   const current = get().comics;
@@ -288,6 +351,14 @@ export const useComicStore = create<ComicState>((set, get) => ({
     if (get().hydrated || typeof window === "undefined") return;
     set({ comics: readComics(), hydrated: true });
     void get().syncMcpComics();
+    void (async () => {
+      const migrated = await migrateReferencesToAssets(get().comics);
+      if (migrated) {
+        writeComics(migrated);
+        set({ comics: migrated });
+        void pushComicsToDevSync(migrated);
+      }
+    })();
     window.addEventListener("focus", () => void get().syncMcpComics());
     setInterval(() => void get().syncMcpComics(), 2000);
   },

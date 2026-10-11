@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { useComicStore, getComicMediaRefs, collectAllReferencedMedia } from "./store.ts";
 import { createComic } from "./factory.ts";
 import { slugifyReferenceName, makeReferenceId } from "./references.ts";
-import { selectOrphanMediaIds, RECENT_UPLOAD_GRACE_MS } from "./media.ts";
+import { selectOrphanMediaIds, RECENT_UPLOAD_GRACE_MS, isAssetRef, assetSrc } from "./media.ts";
 import type { CharacterReference, BackgroundReference } from "./types.ts";
 
 describe("Reference Slug & ID Generation", () => {
@@ -52,6 +52,19 @@ describe("Orphan Media Selection & Retention", () => {
 
     const orphans = selectOrphanMediaIds(stored, referenced, uploads);
     assert.deepEqual(orphans, ["stale-1"]);
+  });
+
+  it("recognizes asset: scheme and preserves active assets from orphan list", () => {
+    assert.equal(isAssetRef("asset:portrait-123"), true);
+    assert.equal(isAssetRef("idb:portrait-123"), false);
+    assert.equal(assetSrc("asset:portrait-123"), "/__inkframe/assets/portrait-123");
+
+    const stored = ["asset-kept", "orphan-del"];
+    const referenced = ["asset:asset-kept"];
+    const uploads = new Map<string, number>();
+
+    const orphans = selectOrphanMediaIds(stored, referenced, uploads);
+    assert.deepEqual(orphans, ["orphan-del"]);
   });
 });
 
