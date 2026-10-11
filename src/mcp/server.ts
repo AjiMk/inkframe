@@ -18,6 +18,11 @@ import {
   DEFAULT_STORAGE_PATH,
 } from "../lib/comics/sync-node.ts";
 import { buildPanelPrompt } from "../lib/comics/prompt-builder.ts";
+import {
+  checkContinuity,
+  deleteCharacterFromComic,
+  deleteBackgroundFromComic,
+} from "../lib/comics/continuity.ts";
 import type {
   Comic,
   PageLayoutId,
@@ -1031,6 +1036,174 @@ server.tool(
     return {
       isError: true,
       content: [{ type: "text", text: `Unsupported image reference: "${imageRef}".` }],
+    };
+  },
+);
+
+// Tool 12: List References (Short overview of Story Bible assets)
+server.tool(
+  "list_references",
+  "List Story Bible character model sheets, locations, and art style guide with IDs and visual status",
+  {
+    comicId: z.string().describe("ID of the comic"),
+  },
+  async ({ comicId }) => {
+    const store = loadStore();
+    const comic = store.get(comicId);
+    if (!comic) {
+      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
+    }
+
+    const ctx = comic.assetContext ?? {};
+    const characters = Object.entries(ctx.characters ?? {}).map(([id, c]) => ({
+      id,
+      name: c.name,
+      role: c.role ?? null,
+      appearance: c.appearance,
+      hasImage: Boolean(c.imageRef),
+      invariantsCount: c.invariants?.length ?? 0,
+      hasVoice: Boolean(c.voice),
+      traits: c.traits ?? null,
+    }));
+
+    const backgrounds = Object.entries(ctx.backgrounds ?? {}).map(([id, b]) => ({
+      id,
+      name: b.name,
+      description: b.description,
+      hasImage: Boolean(b.imageRef),
+    }));
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              comicId,
+              title: comic.title,
+              styleGuide: ctx.styleGuide ?? null,
+              characters,
+              backgrounds,
+            },
+            null,
+            2,
+          ),
+        },
+      ],
+    };
+  },
+);
+
+// Tool 13: Delete Character (Removes model sheet and cascades cleanup to panel scenes and bubbles)
+server.tool(
+  "delete_character",
+  "Delete a character model sheet from the Story Bible and cascade cleanup to panel scenes and dialogue bubbles",
+  {
+    comicId: z.string().describe("ID of the comic"),
+    characterId: z.string().describe("Identifier of the character to delete (e.g. 'elena')"),
+  },
+  async ({ comicId, characterId }) => {
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
+      if (!comic.assetContext?.characters?.[characterId]) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Character "${characterId}" not found in comic "${comic.title}".`,
+            },
+          ],
+        };
+      }
+
+      const updatedComic = deleteCharacterFromComic(comic, characterId);
+      store.set(comicId, updatedComic);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Deleted character "${characterId}" and cleaned up references across all panels and bubbles.`,
+          },
+        ],
+      };
+    });
+  },
+);
+
+// Tool 14: Delete Background (Removes background and cascades cleanup to panel scenes)
+server.tool(
+  "delete_background",
+  "Delete a background reference from the Story Bible and cascade cleanup to panel scenes",
+  {
+    comicId: z.string().describe("ID of the comic"),
+    backgroundId: z.string().describe("Identifier of the background to delete (e.g. 'neon-alley')"),
+  },
+  async ({ comicId, backgroundId }) => {
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
+      if (!comic.assetContext?.backgrounds?.[backgroundId]) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Background "${backgroundId}" not found in comic "${comic.title}".`,
+            },
+          ],
+        };
+      }
+
+      const updatedComic = deleteBackgroundFromComic(comic, backgroundId);
+      store.set(comicId, updatedComic);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Deleted background "${backgroundId}" and cleaned up references across all panel scenes.`,
+          },
+        ],
+      };
+    });
+  },
+);
+
+// Tool 15: Check Continuity (Comprehensive continuity and consistency audit)
+server.tool(
+  "check_continuity",
+  "Audit comic continuity: checks for missing references, orphaned dialogue speakers, image panels lacking scenes, and character consistency",
+  {
+    comicId: z.string().describe("ID of the comic to audit"),
+  },
+  async ({ comicId }) => {
+    const store = loadStore();
+    const comic = store.get(comicId);
+    if (!comic) {
+      return { isError: true, content: [{ type: "text", text: `Comic "${comicId}" not found.` }] };
+    }
+
+    const report = checkContinuity(comic);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(report, null, 2),
+        },
+      ],
     };
   },
 );

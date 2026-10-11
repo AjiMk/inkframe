@@ -6,23 +6,24 @@ It serves as a local-first web application and AI-assisted studio that turns pho
 
 ## Interface Showcase
 
-| Studio Canvas & Panel Editor | Immersive Comic Reader |
-| :---: | :---: |
+|              Studio Canvas & Panel Editor              |                Immersive Comic Reader                |
+| :----------------------------------------------------: | :--------------------------------------------------: |
 | ![Studio Editor](public/screenshots/studio-editor.png) | ![Comic Reader](public/screenshots/comic-reader.png) |
 
-| Project Library & Workspace Gallery |
-| :---: |
+|           Project Library & Workspace Gallery           |
+| :-----------------------------------------------------: |
 | ![Project Library](public/screenshots/library-view.png) |
 
 ---
 
 ## About & Vision
 
-Inkframe started as a personal passion project with a simple goal: to lower the barrier to comic creation and experiment with AI-driven narrative tools. 
+Inkframe started as a personal passion project with a simple goal: to lower the barrier to comic creation and experiment with AI-driven narrative tools.
 
 By integrating a native **Model Context Protocol (MCP) server**, Inkframe allows AI assistants (like Claude, Cursor, and Antigravity) to act as creative partners—manipulating panel layouts, inserting dialogue, and generating panel prompts directly inside your workspace.
 
 ### Core Goals & Future Roadmap
+
 - **Design & Layout Enhancements**: Continuously elevate canvas aesthetics, UI typography, dynamic panel grid systems, and custom speech bubble styling.
 - **Expanded Creation Tools**: Introduce richer color grading, screentone generators, asset libraries, and character reference management.
 - **Multi-Format Export Engine**: Move beyond PDF export to support:
@@ -35,32 +36,38 @@ By integrating a native **Model Context Protocol (MCP) server**, Inkframe allows
 ## Features
 
 ### 1. Studio Canvas & Panel Editor
+
 - **Dynamic Layout Templates**: Standard layout presets including Splash, Stack, Split, Strip, Grid, Spotlight, and Wide Top/Bottom.
 - **Drag & Drop Media Staging**: Direct drag-and-drop mapping of imported imagery onto panel slots.
 - **Speech Bubble & Dialogue Engine**: Insert and style Speech, Thought, Shout, and Caption balloons with interactive tail placement controls.
 - **Real-Time Visual Filters**: Authentic ink filters including Noir, Wash, Halftone, Newsprint, and Screentone.
 
 ### 2. Cover Designer & Branding
+
 - **Custom Comic Covers**: Control over issue titles, subtitles, issue numbering, taglines, publisher branding, and pricing overlays.
 - **Live Visual Preview**: High-DPI preview stage for cover layout templates and styling.
 
 ### 3. Video Frame Capture & Extraction
+
 - **Timeline Scrubbing**: Scrub through custom video uploads or demo media to select exact freeze-frames.
 - **Automated Interval Sampling**: Automatically extract video frames at defined time intervals (e.g., 1 frame every 5s, 10s, or 15s).
 
 ### 4. Model Context Protocol (MCP) Server
+
 - **AI-Driven Authoring**: Built-in MCP server enabling AI models to inspect project states, add pages, update covers, and inject dialogue.
 - **Tool Suite**: Standardized tool interface covering page generation, filter applications, prompt engineering, and character context setting.
 
 ### 5. Reader Modes & Export
+
 - **Guided Focus Reader**: Sequential panel-by-panel reading experience with smooth focus zoom and pan transitions.
 - **3D Flipbook Reader**: Interactive 3D page-turning presentation for full-page comic reading.
 - **Multi-Format Export**: PDF export with upcoming support for CBZ, PNG/JPEG image packages, and JSON template schemas.
 
 ### 6. Local-First Storage
+
 - **Browser Persistence**: Powered by PGlite (PostgreSQL compiled to WebAssembly), IndexedDB, and localStorage fallback.
 - **Page Management**: Sidebar thumbnail drag-and-drop page reordering.
-- **Bundled Sample Comic**: Pre-loaded with the demo graphic novel *"Last One Out"*.
+- **Bundled Sample Comic**: Pre-loaded with the demo graphic novel _"Last One Out"_.
 
 ---
 
@@ -107,17 +114,17 @@ flowchart TD
 
 ## Tech Stack
 
-| Component | Technology | Role |
-| :--- | :--- | :--- |
-| **Framework** | React 19 | Client rendering library |
-| **Routing** | TanStack Router & TanStack Start | Type-safe file-based routing |
-| **Build & Server** | Vite 8 & Nitro | Development server and bundler engine |
-| **Styling** | Tailwind CSS v4 & tw-animate-css | CSS framework and animations |
-| **UI Components** | Radix UI & Lucide Icons | Accessible headless components and UI icons |
-| **State Management** | Zustand 5 | Central state management store |
-| **Database & Auth** | PGlite & Better Auth | WASM PostgreSQL browser database |
-| **AI Protocol** | @modelcontextprotocol/sdk | Model Context Protocol API layer |
-| **Export Engines** | jsPDF & HTML2Canvas | PDF rendering and canvas capture |
+| Component            | Technology                       | Role                                        |
+| :------------------- | :------------------------------- | :------------------------------------------ |
+| **Framework**        | React 19                         | Client rendering library                    |
+| **Routing**          | TanStack Router & TanStack Start | Type-safe file-based routing                |
+| **Build & Server**   | Vite 8 & Nitro                   | Development server and bundler engine       |
+| **Styling**          | Tailwind CSS v4 & tw-animate-css | CSS framework and animations                |
+| **UI Components**    | Radix UI & Lucide Icons          | Accessible headless components and UI icons |
+| **State Management** | Zustand 5                        | Central state management store              |
+| **Database & Auth**  | PGlite & Better Auth             | WASM PostgreSQL browser database            |
+| **AI Protocol**      | @modelcontextprotocol/sdk        | Model Context Protocol API layer            |
+| **Export Engines**   | jsPDF & HTML2Canvas              | PDF rendering and canvas capture            |
 
 ---
 
@@ -155,20 +162,20 @@ The application will be accessible at `http://localhost:8080`.
 
 ## NPM Scripts Reference
 
-| Script | Command | Description |
-| :--- | :--- | :--- |
-| `dev` | `npm run dev` | Starts Vite development server at `http://0.0.0.0:8080` |
-| `build` | `npm run build` | Builds production bundle and executes database migrations |
-| `build:dev` | `npm run build:dev` | Builds bundle in development mode |
-| `preview` | `npm run preview` | Previews the production build locally |
-| `preview:restart` | `npm run preview:restart` | Restarts the background preview process |
-| `preview:stop` | `npm run preview:stop` | Stops the background preview process |
-| `typecheck` | `npm run typecheck` | Executes TypeScript type checking (`tsc --noEmit`) |
-| `mcp` | `npm run mcp` | Launches the Model Context Protocol stdio server |
-| `test` | `npm run test` | Runs internal test suites |
-| `lint` | `npm run lint` | Runs ESLint across the workspace |
-| `format` | `npm run format` | Runs Prettier to format source files |
-| `check:auth` | `npm run check:auth` | Checks authentication invariants |
+| Script            | Command                   | Description                                               |
+| :---------------- | :------------------------ | :-------------------------------------------------------- |
+| `dev`             | `npm run dev`             | Starts Vite development server at `http://0.0.0.0:8080`   |
+| `build`           | `npm run build`           | Builds production bundle and executes database migrations |
+| `build:dev`       | `npm run build:dev`       | Builds bundle in development mode                         |
+| `preview`         | `npm run preview`         | Previews the production build locally                     |
+| `preview:restart` | `npm run preview:restart` | Restarts the background preview process                   |
+| `preview:stop`    | `npm run preview:stop`    | Stops the background preview process                      |
+| `typecheck`       | `npm run typecheck`       | Executes TypeScript type checking (`tsc --noEmit`)        |
+| `mcp`             | `npm run mcp`             | Launches the Model Context Protocol stdio server          |
+| `test`            | `npm run test`            | Runs internal test suites                                 |
+| `lint`            | `npm run lint`            | Runs ESLint across the workspace                          |
+| `format`          | `npm run format`          | Runs Prettier to format source files                      |
+| `check:auth`      | `npm run check:auth`      | Checks authentication invariants                          |
 
 ---
 
@@ -190,18 +197,24 @@ To connect Inkframe with AI tools such as Claude Desktop, Cursor, or Antigravity
 
 ### MCP Tool Manifest
 
-| Tool | Action | Details |
-| :--- | :--- | :--- |
-| `list_comics` | List Workspace Comics | Returns array of all comics in the current workspace. |
-| `create_comic` | Create New Project | Instantiates a new comic with metadata (title, author). |
-| `get_comic` | Get Comic Details | Returns complete comic object including pages, layouts, and dialogue. |
-| `add_page` | Add Page | Appends a new page with a target panel layout. |
-| `set_page_layout` | Change Layout | Updates layout template for a designated page. |
-| `add_dialogue` | Inject Dialogue | Adds Speech, Thought, Shout, or Caption bubbles into a panel. |
-| `update_cover_config` | Edit Cover Specs | Modifies title, subtitle, tagline, issue number, and price styling. |
-| `apply_panel_filter` | Apply Visual FX | Sets filters (Noir, Wash, Halftone, Newsprint) for a panel. |
-| `set_comic_references` | Set Reference Context | Sets character and background image references for AI continuity. |
-| `get_panel_prompt` | Prompt Engineering | Constructs detailed AI image generation prompts for panel scenes. |
+| Tool                   | Action                       | Details                                                                                               |
+| :--------------------- | :--------------------------- | :---------------------------------------------------------------------------------------------------- |
+| `list_comics`          | List Workspace Comics        | Returns array of all comics in the current workspace.                                                 |
+| `create_comic`         | Create New Project           | Instantiates a new comic with metadata (title, author).                                               |
+| `get_comic`            | Get Comic Details            | Returns complete comic object including pages, layouts, and dialogue.                                 |
+| `add_page`             | Add Page                     | Appends a new page with a target panel layout.                                                        |
+| `set_page_layout`      | Change Layout                | Updates layout template for a designated page.                                                        |
+| `add_dialogue`         | Inject Dialogue              | Adds Speech, Thought, Shout, or Caption bubbles into a panel with optional speaker link.              |
+| `update_cover_config`  | Edit Cover Specs             | Modifies title, subtitle, tagline, issue number, and price styling.                                   |
+| `apply_panel_filter`   | Apply Visual FX              | Sets filters (Noir, Wash, Halftone, Newsprint) for a panel.                                           |
+| `set_comic_references` | Set Reference Context        | Sets character model sheets (with traits, invariants, palette) and background locations.              |
+| `get_panel_prompt`     | Prompt Engineering           | Constructs multi-target (Generic, Midjourney, Flux/SD) AI image generation prompts for panel scenes.  |
+| `set_panel_scene`      | Attach Scene Metadata        | Links characters, location, camera shot, and action description to a specific panel.                  |
+| `get_reference_image`  | Fetch Reference Media        | Returns character portraits or background reference images as base64 MCP image content.               |
+| `list_references`      | List Story Bible Assets      | Returns an overview of all character sheets, locations, and art style guide in a comic.               |
+| `delete_character`     | Delete Character Reference   | Deletes a character sheet and cascades removal to panel scenes and dialogue bubbles.                  |
+| `delete_background`    | Delete Location Reference    | Deletes a background reference and cascades removal to panel scenes.                                  |
+| `check_continuity`     | Audit Continuity & Integrity | Audits comic for broken references, missing invariants, image panels lacking scenes, and consistency. |
 
 ---
 
@@ -241,14 +254,14 @@ Contributions, feature ideas, and bug reports are welcome! As a hobby project, c
 
 Inkframe uses a Trunk-Based / GitHub-Flow model. Create short-lived branches off `main`:
 
-| Prefix | Branch Purpose | Example |
-| :--- | :--- | :--- |
-| `feat/` | New features or UI enhancements | `feat/cbz-export-engine` |
-| `fix/` | Bug resolutions | `fix/canvas-dialogue-tail` |
-| `refactor/` | Code cleanup without functional changes | `refactor/layout-picker` |
-| `docs/` | Documentation additions | `docs/mcp-setup` |
-| `release/` | Version releases | `release/v1.1.0` |
-| `hotfix/` | Critical hotfixes targeting main | `hotfix/editor-crash` |
+| Prefix      | Branch Purpose                          | Example                    |
+| :---------- | :-------------------------------------- | :------------------------- |
+| `feat/`     | New features or UI enhancements         | `feat/cbz-export-engine`   |
+| `fix/`      | Bug resolutions                         | `fix/canvas-dialogue-tail` |
+| `refactor/` | Code cleanup without functional changes | `refactor/layout-picker`   |
+| `docs/`     | Documentation additions                 | `docs/mcp-setup`           |
+| `release/`  | Version releases                        | `release/v1.1.0`           |
+| `hotfix/`   | Critical hotfixes targeting main        | `hotfix/editor-crash`      |
 
 ### 2. Conventional Commit Standards
 
@@ -259,6 +272,7 @@ Commit messages must follow the [Conventional Commits](https://www.conventionalc
 ```
 
 Common types:
+
 - `feat`: A new feature (e.g., `feat(export): add CBZ archive builder`)
 - `fix`: A bug fix (e.g., `fix(mcp): resolve dialogue placement offset`)
 - `docs`: Documentation updates

@@ -9,6 +9,7 @@ import {
 } from "./factory.ts";
 import { deleteMediaRef, pruneMedia, getMedia, uploadAssetToDev } from "./media.ts";
 import { mergeComics } from "./sync.ts";
+import { deleteCharacterFromComic, deleteBackgroundFromComic } from "./continuity.ts";
 import type {
   AssetReferenceContext,
   BackgroundReference,
@@ -715,44 +716,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
   },
 
   deleteCharacter: (comicId, charId) => {
-    const comics = mapComic(get().comics, comicId, (c) => {
-      const ctx = c.assetContext ?? {};
-      if (!ctx.characters || !ctx.characters[charId]) return c;
-      const { [charId]: _deleted, ...remaining } = ctx.characters;
-      const pages = c.pages.map((page) => ({
-        ...page,
-        panels: page.panels.map((panel) => {
-          let updatedPanel = panel;
-          if (panel.scene?.characterIds?.includes(charId)) {
-            const remainingCharIds = panel.scene.characterIds.filter((id) => id !== charId);
-            updatedPanel = {
-              ...updatedPanel,
-              scene: {
-                ...updatedPanel.scene,
-                characterIds: remainingCharIds,
-              },
-            };
-          }
-          if (panel.bubbles.some((b) => b.speakerId === charId)) {
-            updatedPanel = {
-              ...updatedPanel,
-              bubbles: updatedPanel.bubbles.map((b) =>
-                b.speakerId === charId ? { ...b, speakerId: undefined } : b,
-              ),
-            };
-          }
-          return updatedPanel;
-        }),
-      }));
-      return {
-        ...c,
-        pages,
-        assetContext: {
-          ...ctx,
-          characters: remaining,
-        },
-      };
-    });
+    const comics = mapComic(get().comics, comicId, (c) => deleteCharacterFromComic(c, charId));
     pushState(set, get, comics);
   },
 
@@ -774,30 +738,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
   },
 
   deleteBackground: (comicId, bgId) => {
-    const comics = mapComic(get().comics, comicId, (c) => {
-      const ctx = c.assetContext ?? {};
-      if (!ctx.backgrounds || !ctx.backgrounds[bgId]) return c;
-      const { [bgId]: _deleted, ...remaining } = ctx.backgrounds;
-      const pages = c.pages.map((page) => ({
-        ...page,
-        panels: page.panels.map((panel) => {
-          if (panel.scene?.backgroundId !== bgId) return panel;
-          const { backgroundId: _bg, ...remainingScene } = panel.scene;
-          return {
-            ...panel,
-            scene: remainingScene,
-          };
-        }),
-      }));
-      return {
-        ...c,
-        pages,
-        assetContext: {
-          ...ctx,
-          backgrounds: remaining,
-        },
-      };
-    });
+    const comics = mapComic(get().comics, comicId, (c) => deleteBackgroundFromComic(c, bgId));
     pushState(set, get, comics);
   },
 }));
