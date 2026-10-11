@@ -52,20 +52,30 @@ By integrating a native **Model Context Protocol (MCP) server**, Inkframe allows
 - **Timeline Scrubbing**: Scrub through custom video uploads or demo media to select exact freeze-frames.
 - **Automated Interval Sampling**: Automatically extract video frames at defined time intervals (e.g., 1 frame every 5s, 10s, or 15s).
 
-### 4. Model Context Protocol (MCP) Server
+### 4. Story Bible & AI Continuity Manager
+
+- **Character Model Sheets**: Store character portraits, physical traits (face, hair, build, age), signature color palettes with live swatches, immutable invariants (scars, eyes), and dialogue voice notes.
+- **Background & Location Vault**: Maintain recurring environments with reference imagery and prompt descriptions.
+- **Master Art Style Guide**: Define and enforce consistent visual aesthetics (Anime Cel, Noir, Bronze Age, Screentone) with live prompt preview.
+- **Scene Continuity & Framing**: Link cast rosters, locations, and camera angles (`close-up`, `establishing`, `wide`, `dutch`) directly to panel slots.
+- **AI Prompt Copilot**: Compile generation prompts tailored for Generic, Midjourney v6 (`--ar`, `--cref`), and Flux / SDXL based on layout aspect ratios.
+- **Automated Continuity Auditor**: Real-time project scan detecting missing references, unassigned panels, missing model sheet invariants, and speaker mismatches.
+
+### 5. Model Context Protocol (MCP) Server
 
 - **AI-Driven Authoring**: Built-in MCP server enabling AI models to inspect project states, add pages, update covers, and inject dialogue.
-- **Tool Suite**: Standardized tool interface covering page generation, filter applications, prompt engineering, and character context setting.
+- **Tool Suite**: Standardized 16-tool interface covering page generation, visual filters, multi-target prompt engineering, and character continuity.
 
-### 5. Reader Modes & Export
+### 6. Reader Modes & Export
 
 - **Guided Focus Reader**: Sequential panel-by-panel reading experience with smooth focus zoom and pan transitions.
 - **3D Flipbook Reader**: Interactive 3D page-turning presentation for full-page comic reading.
 - **Multi-Format Export**: PDF export with upcoming support for CBZ, PNG/JPEG image packages, and JSON template schemas.
 
-### 6. Local-First Storage
+### 7. Local-First Storage & Two-Way Sync
 
 - **Browser Persistence**: Powered by PGlite (PostgreSQL compiled to WebAssembly), IndexedDB, and localStorage fallback.
+- **Two-Way Dev Sync**: Automated synchronization between browser storage and the MCP server filesystem (`.inkframe/` and `mcp_comics.json`).
 - **Page Management**: Sidebar thumbnail drag-and-drop page reordering.
 - **Bundled Sample Comic**: Pre-loaded with the demo graphic novel _"Last One Out"_.
 
