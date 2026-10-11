@@ -4,7 +4,6 @@ import {
   ArrowDownUp,
   ArrowLeft,
   BookOpen,
-  Check,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -18,7 +17,6 @@ import {
   Captions,
   Plus,
   Redo2,
-  RotateCcw,
   Save,
   Sparkles,
   Trash2,
@@ -33,7 +31,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { exportComicToPdf } from "@/lib/comics/pdf-export";
 import {
   AlertDialog,
@@ -45,22 +42,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { FILTERS } from "@/lib/comics/factory";
 import { compressImage, putMedia } from "@/lib/comics/media";
 import { getComicMediaRefs, useComicStore } from "@/lib/comics/store";
-import type { BubbleKind, PageLayoutId, Panel, TailDir } from "@/lib/comics/types";
+import type { BubbleKind, PageLayoutId, Panel } from "@/lib/comics/types";
 import { LayoutPicker } from "./layout-picker";
 import { PageCanvas } from "./page-canvas";
 import { VideoCaptureDialog } from "./video-capture-dialog";
 import { CoverCanvas } from "./cover-canvas";
 import { CoverDesignerDialog } from "./cover-designer-dialog";
 import { DialogueEditorDialog } from "./dialogue-editor-dialog";
+import { StoryBibleDialog } from "./story-bible-dialog";
 
 export function StudioEditor({ comicId }: { comicId: string }) {
   const navigate = useNavigate();
@@ -78,11 +71,18 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   const [draggedPageIndex, setDraggedPageIndex] = useState<number | null>(null);
   const [dragOverPageIndex, setDragOverPageIndex] = useState<number | null>(null);
   const [coverDesignerOpen, setCoverDesignerOpen] = useState(false);
+  const [storyBibleOpen, setStoryBibleOpen] = useState(false);
   const [dialogueEditorOpen, setDialogueEditorOpen] = useState(false);
   const [isCoverSelected, setIsCoverSelected] = useState(false);
   const [mediaTab, setMediaTab] = useState<"video" | "library">("video");
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
+
+  const assetCount = useMemo(() => {
+    const chars = Object.keys(comic?.assetContext?.characters ?? {}).length;
+    const bgs = Object.keys(comic?.assetContext?.backgrounds ?? {}).length;
+    return chars + bgs;
+  }, [comic?.assetContext]);
 
   async function handleExportPdf() {
     if (!comic) return;
@@ -131,9 +131,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       const target = e.target as HTMLElement | null;
       if (
         target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
+        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
       ) {
         return;
       }
@@ -243,7 +241,8 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       comicAuthor={comic.author}
       onRename={(title, author) => store.rename(comicId, title, author)}
       onOpenCoverDesigner={() => setCoverDesignerOpen(true)}
-      onOpenDialogueModal={() => setDialogueEditorOpen(true)}
+      onOpenStoryBible={() => setStoryBibleOpen(true)}
+      assetCount={assetCount}
       layout={page.layout}
       onLayout={(layout) => {
         store.setLayout(comicId, page.id, layout);
@@ -265,15 +264,6 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       }}
       onClearImage={() => store.setPanelImage(comicId, page.id, panel.id, null)}
       onFilter={(filter) => store.setPanelFilter(comicId, page.id, panel.id, filter)}
-      onBubblePatch={(patch) => {
-        if (!bubble) return;
-        store.updateBubble(comicId, page.id, panel.id, bubble.id, patch);
-      }}
-      onDeleteBubble={() => {
-        if (!bubble) return;
-        store.removeBubble(comicId, page.id, panel.id, bubble.id);
-        setBubbleId(null);
-      }}
     />
   );
 
@@ -375,6 +365,22 @@ export function StudioEditor({ comicId }: { comicId: string }) {
           >
             <Save className="size-3.5 text-primary" />
             <span>Save</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setStoryBibleOpen(true)}
+            className="h-8 gap-1.5 text-xs font-semibold text-foreground border-border hover:bg-accent"
+            title="Story Bible: Character & Location Continuity"
+          >
+            <BookOpen className="size-3.5 text-primary" />
+            <span>Story Bible</span>
+            {assetCount > 0 && (
+              <span className="rounded-full bg-primary/20 text-primary px-1.5 py-0.2 text-[10px] font-bold">
+                {assetCount}
+              </span>
+            )}
           </Button>
           <Button
             type="button"
@@ -522,9 +528,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
                     p.id === page.id && !isCoverSelected
                       ? "border-primary ring-2 ring-primary/20"
                       : "border-border hover:border-foreground/30"
-                  } ${
-                    draggedPageIndex === i ? "opacity-40 scale-95" : ""
-                  } ${
+                  } ${draggedPageIndex === i ? "opacity-40 scale-95" : ""} ${
                     dragOverPageIndex === i && draggedPageIndex !== i
                       ? "ring-2 ring-primary border-primary bg-primary/5 scale-[1.02]"
                       : ""
@@ -571,11 +575,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
               >
                 {isCoverSelected ? (
                   <div className="relative h-full w-full flex flex-col items-center justify-center">
-                    <CoverCanvas
-                      comic={comic}
-                      mode="edit"
-                      className="h-full w-full aspect-auto"
-                    />
+                    <CoverCanvas comic={comic} mode="edit" className="h-full w-full aspect-auto" />
                     <Button
                       type="button"
                       size="sm"
@@ -633,9 +633,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
                   setBubbleId(null);
                 }}
                 className={`size-9 rounded-full text-sm font-medium ${
-                  p.id === page.id
-                    ? "bg-foreground text-paper"
-                    : "bg-secondary text-foreground"
+                  p.id === page.id ? "bg-foreground text-paper" : "bg-secondary text-foreground"
                 }`}
               >
                 {i + 1}
@@ -756,6 +754,8 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         comic={comic}
       />
 
+      <StoryBibleDialog open={storyBibleOpen} onOpenChange={setStoryBibleOpen} comic={comic} />
+
       <DialogueEditorDialog
         open={dialogueEditorOpen}
         onOpenChange={setDialogueEditorOpen}
@@ -801,7 +801,8 @@ function Inspector({
   comicAuthor,
   onRename,
   onOpenCoverDesigner,
-  onOpenDialogueModal,
+  onOpenStoryBible,
+  assetCount,
   layout,
   onLayout,
   panel,
@@ -812,14 +813,13 @@ function Inspector({
   onPickLibrary,
   onClearImage,
   onFilter,
-  onBubblePatch,
-  onDeleteBubble,
 }: {
   comicTitle: string;
   comicAuthor: string;
   onRename: (title: string, author: string) => void;
   onOpenCoverDesigner: () => void;
-  onOpenDialogueModal: () => void;
+  onOpenStoryBible: () => void;
+  assetCount: number;
   layout: Parameters<typeof LayoutPicker>[0]["value"];
   onLayout: Parameters<typeof LayoutPicker>[0]["onChange"];
   panel: Panel;
@@ -830,12 +830,6 @@ function Inspector({
   onPickLibrary: () => void;
   onClearImage: () => void;
   onFilter: (filter: Panel["filter"]) => void;
-  onBubblePatch: (patch: {
-    text?: string;
-    kind?: BubbleKind;
-    tail?: TailDir;
-  }) => void;
-  onDeleteBubble: () => void;
 }) {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
@@ -872,23 +866,38 @@ function Inspector({
         </div>
       </section>
 
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={onOpenCoverDesigner}
-        className="w-full text-xs font-bold gap-1.5 border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
-      >
-        <Sparkles className="size-3.5" />
-        Open Cover Page Designer
-      </Button>
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onOpenCoverDesigner}
+          className="text-xs font-bold gap-1.5 border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+        >
+          <Sparkles className="size-3.5 shrink-0" />
+          <span className="truncate">Cover Page</span>
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onOpenStoryBible}
+          className="text-xs font-bold gap-1.5 border border-border bg-card text-foreground hover:bg-accent"
+        >
+          <BookOpen className="size-3.5 text-primary shrink-0" />
+          <span className="truncate">Story Bible</span>
+          {assetCount > 0 && (
+            <span className="rounded-full bg-primary/20 text-primary px-1.5 py-0.2 text-[10px] font-bold">
+              {assetCount}
+            </span>
+          )}
+        </Button>
+      </div>
 
       <Separator className="shrink-0" />
 
       <section className="shrink-0 space-y-2">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Layout
-        </p>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Layout</p>
         <LayoutPicker value={layout} onChange={onLayout} />
       </section>
 
@@ -899,33 +908,56 @@ function Inspector({
           Selected panel
         </p>
         <div className="grid grid-cols-3 gap-1.5">
-          <Button type="button" variant="outline" size="sm" className="px-1.5 text-xs" onClick={onPickPhoto}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="px-1.5 text-xs"
+            onClick={onPickPhoto}
+          >
             <ImagePlus className="size-3.5" />
             Photo
           </Button>
-          <Button type="button" variant="outline" size="sm" className="px-1.5 text-xs" onClick={onPickLibrary}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="px-1.5 text-xs"
+            onClick={onPickLibrary}
+          >
             <Images className="size-3.5" />
             Library
           </Button>
-          <Button type="button" variant="outline" size="sm" className="px-1.5 text-xs" onClick={onPickVideo}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="px-1.5 text-xs"
+            onClick={onPickVideo}
+          >
             <Video className="size-3.5" />
             Video
           </Button>
         </div>
         {panel.image ? (
           <div className="flex flex-col gap-1.5">
-            <Button type="button" variant="ghost" className="w-full text-xs h-7 text-muted-foreground" onClick={onClearImage}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-xs h-7 text-muted-foreground"
+              onClick={onClearImage}
+            >
               Remove image
             </Button>
           </div>
         ) : null}
 
         <div className="flex items-center justify-between pt-1">
-          <p className="text-[11px] font-semibold text-muted-foreground uppercase">
-            Comic Filters
-          </p>
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase">Comic Filters</p>
           <span className="text-[10px] text-muted-foreground font-medium">
-            {panel.filter !== "none" ? `Active: ${FILTERS.find(f => f.id === panel.filter)?.label}` : "16 styles"}
+            {panel.filter !== "none"
+              ? `Active: ${FILTERS.find((f) => f.id === panel.filter)?.label}`
+              : "16 styles"}
           </span>
         </div>
         <div className="grid grid-cols-2 gap-1 transition-all duration-200 ease-out">

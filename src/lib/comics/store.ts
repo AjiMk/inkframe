@@ -1,22 +1,24 @@
 import { create } from "zustand";
-import { createDemoComic } from "./demo";
+import { createDemoComic } from "./demo.ts";
 import {
   changePageLayoutPreservingImages,
   createBubble,
   createComic,
   createPage,
   defaultCoverConfig,
-  fitPanelsToLayout,
-} from "./factory";
-import { deleteMediaRef } from "./media";
+} from "./factory.ts";
+import { deleteMediaRef } from "./media.ts";
 import type {
+  AssetReferenceContext,
+  BackgroundReference,
   BubbleKind,
+  CharacterReference,
   Comic,
   CoverConfig,
   PageLayoutId,
   PanelFilter,
   SpeechBubble,
-} from "./types";
+} from "./types.ts";
 
 const KEY = "inkframe.comics.v1";
 const BACKUP_KEY = "inkframe.comics.v1.backup";
@@ -143,6 +145,11 @@ interface ComicState {
   removeBubble: (comicId: string, pageId: string, panelId: string, bubbleId: string) => void;
   setCover: (comicId: string, cover: string | null) => void;
   setCoverConfig: (comicId: string, patch: Partial<CoverConfig>) => void;
+  updateAssetContext: (comicId: string, patch: Partial<AssetReferenceContext>) => void;
+  upsertCharacter: (comicId: string, char: CharacterReference) => void;
+  deleteCharacter: (comicId: string, charId: string) => void;
+  upsertBackground: (comicId: string, bg: BackgroundReference) => void;
+  deleteBackground: (comicId: string, bgId: string) => void;
 }
 
 const MAX_HISTORY = 30;
@@ -208,9 +215,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
 
   saveNow: (comicId?: string) => {
     const comics = get().comics;
-    const updatedComics = comicId
-      ? comics.map((c) => (c.id === comicId ? touch(c) : c))
-      : comics;
+    const updatedComics = comicId ? comics.map((c) => (c.id === comicId ? touch(c) : c)) : comics;
     writeComics(updatedComics);
     set({ comics: updatedComics, lastSavedAt: Date.now() });
     void get().syncMcpComics();
@@ -275,7 +280,8 @@ export const useComicStore = create<ComicState>((set, get) => ({
       const parsed = JSON.parse(rawJson);
       const items = Array.isArray(parsed) ? parsed : [parsed];
       const valid = items.filter(
-        (c) => c && typeof c === "object" && typeof c.id === "string" && typeof c.title === "string",
+        (c) =>
+          c && typeof c === "object" && typeof c.id === "string" && typeof c.title === "string",
       );
       if (valid.length === 0) return false;
 
@@ -479,9 +485,7 @@ export const useComicStore = create<ComicState>((set, get) => ({
           ? {
               ...p,
               panels: p.panels.map((panel) =>
-                panel.id === panelId
-                  ? { ...panel, bubbles: [...panel.bubbles, bubble] }
-                  : panel,
+                panel.id === panelId ? { ...panel, bubbles: [...panel.bubbles, bubble] } : panel,
               ),
             }
           : p,
@@ -555,6 +559,85 @@ export const useComicStore = create<ComicState>((set, get) => ({
     }));
     pushState(set, get, comics);
   },
+
+  updateAssetContext: (comicId, patch) => {
+    const comics = mapComic(get().comics, comicId, (c) => ({
+      ...c,
+      assetContext: {
+        ...(c.assetContext ?? {}),
+        ...patch,
+      },
+    }));
+    pushState(set, get, comics);
+  },
+
+  upsertCharacter: (comicId, char) => {
+    const comics = mapComic(get().comics, comicId, (c) => {
+      const ctx = c.assetContext ?? {};
+      return {
+        ...c,
+        assetContext: {
+          ...ctx,
+          characters: {
+            ...(ctx.characters ?? {}),
+            [char.id]: char,
+          },
+        },
+      };
+    });
+    pushState(set, get, comics);
+  },
+
+  deleteCharacter: (comicId, charId) => {
+    const comics = mapComic(get().comics, comicId, (c) => {
+      const ctx = c.assetContext ?? {};
+      if (!ctx.characters || !ctx.characters[charId]) return c;
+      const { [charId]: deleted, ...remaining } = ctx.characters;
+      if (deleted?.imageRef) void deleteMediaRef(deleted.imageRef);
+      return {
+        ...c,
+        assetContext: {
+          ...ctx,
+          characters: remaining,
+        },
+      };
+    });
+    pushState(set, get, comics);
+  },
+
+  upsertBackground: (comicId, bg) => {
+    const comics = mapComic(get().comics, comicId, (c) => {
+      const ctx = c.assetContext ?? {};
+      return {
+        ...c,
+        assetContext: {
+          ...ctx,
+          backgrounds: {
+            ...(ctx.backgrounds ?? {}),
+            [bg.id]: bg,
+          },
+        },
+      };
+    });
+    pushState(set, get, comics);
+  },
+
+  deleteBackground: (comicId, bgId) => {
+    const comics = mapComic(get().comics, comicId, (c) => {
+      const ctx = c.assetContext ?? {};
+      if (!ctx.backgrounds || !ctx.backgrounds[bgId]) return c;
+      const { [bgId]: deleted, ...remaining } = ctx.backgrounds;
+      if (deleted?.imageRef) void deleteMediaRef(deleted.imageRef);
+      return {
+        ...c,
+        assetContext: {
+          ...ctx,
+          backgrounds: remaining,
+        },
+      };
+    });
+    pushState(set, get, comics);
+  },
 }));
 
 export function getComicMediaRefs(comic: Comic): string[] {
@@ -565,6 +648,15 @@ export function getComicMediaRefs(comic: Comic): string[] {
       if (panel.image) set.add(panel.image);
     }
   }
+  if (comic.assetContext?.characters) {
+    for (const char of Object.values(comic.assetContext.characters)) {
+      if (char.imageRef) set.add(char.imageRef);
+    }
+  }
+  if (comic.assetContext?.backgrounds) {
+    for (const bg of Object.values(comic.assetContext.backgrounds)) {
+      if (bg.imageRef) set.add(bg.imageRef);
+    }
+  }
   return Array.from(set);
 }
-

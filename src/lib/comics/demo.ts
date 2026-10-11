@@ -1,5 +1,5 @@
-import { defaultCoverConfig } from "./factory";
-import type { Comic, Page, Panel, SpeechBubble } from "./types";
+import { defaultCoverConfig } from "./factory.ts";
+import type { Comic, Page, Panel, SpeechBubble } from "./types.ts";
 
 const DEMO_ID = "demo-night-bus-42";
 
@@ -15,11 +15,7 @@ function bubble(
   return { id, text, kind, x, y, w, tail };
 }
 
-function panel(
-  id: string,
-  image: string,
-  bubbles: SpeechBubble[],
-): Panel {
+function panel(id: string, image: string, bubbles: SpeechBubble[]): Panel {
   return { id, image: `url:${image}`, filter: "none", bubbles };
 }
 
@@ -45,8 +41,25 @@ export function createDemoComic(): Comic {
     assetContext: {
       styleGuide:
         "Cel-shaded anime, night city sidewalk, bold ink and flat color. Adult woman in a navy business suit. Fictional. No gore.",
-      backgrounds: {},
-      characters: {},
+      backgrounds: {
+        sidewalk: {
+          id: "sidewalk",
+          name: "Midnight Sidewalk",
+          description:
+            "Rain-slicked empty city sidewalk outside glass office tower, streetlights reflecting on wet asphalt, deserted crosswalk, midnight fog.",
+          imageRef: "url:/demo/p1.jpg",
+        },
+      },
+      characters: {
+        elena: {
+          id: "elena",
+          name: "Elena",
+          role: "Protagonist",
+          appearance:
+            "Adult woman in late 20s, navy tailored business suit, white collared shirt, dark brown bob hairstyle, carrying a leather briefcase, weary late-shift expression.",
+          imageRef: "url:/demo/cover.jpg",
+        },
+      },
     },
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -62,15 +75,7 @@ export function createDemoComic(): Comic {
             94,
             "none",
           ),
-          bubble(
-            "d-b2",
-            "Lobby dark. Door locks behind her.",
-            "caption",
-            4,
-            30,
-            58,
-            "none",
-          ),
+          bubble("d-b2", "Lobby dark. Door locks behind her.", "caption", 4, 30, 58, "none"),
           bubble("d-b3", "Bag. Keys. Subway. Home.", "thought", 38, 37.9164, 62, "bl"),
         ]),
       ]),
@@ -108,15 +113,7 @@ export function createDemoComic(): Comic {
             94,
             "none",
           ),
-          bubble(
-            "d-b8",
-            "Pipe overhead. Water on concrete.",
-            "caption",
-            2.3806,
-            8.091,
-            62,
-            "none",
-          ),
+          bubble("d-b8", "Pipe overhead. Water on concrete.", "caption", 2.3806, 8.091, 62, "none"),
           bubble("d-b9", "Just a leak. Keep walking.", "thought", 35.53, 28.073, 64, "bl"),
         ]),
       ]),
@@ -165,15 +162,7 @@ export function createDemoComic(): Comic {
             62,
             "none",
           ),
-          bubble(
-            "d-b16",
-            "Where are you? Who left this?",
-            "thought",
-            5.4575,
-            25.6686,
-            68,
-            "bl",
-          ),
+          bubble("d-b16", "Where are you? Who left this?", "thought", 5.4575, 25.6686, 68, "bl"),
         ]),
       ]),
       page("d-p6", "splash", [
@@ -202,15 +191,7 @@ export function createDemoComic(): Comic {
             70,
             "none",
           ),
-          bubble(
-            "d-b21",
-            "It was behind me the whole time.",
-            "thought",
-            0.7731,
-            44.9616,
-            72,
-            "bl",
-          ),
+          bubble("d-b21", "It was behind me the whole time.", "thought", 0.7731, 44.9616, 72, "bl"),
         ]),
       ]),
     ],

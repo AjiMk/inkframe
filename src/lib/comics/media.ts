@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { nid } from "@/lib/utils";
+import { nid } from "../utils.ts";
 
 const DB_NAME = "inkframe";
 const STORE = "media";
 
 function openDb(): Promise<IDBDatabase> {
+  if (typeof indexedDB === "undefined") {
+    return Promise.reject(new Error("indexedDB is unavailable in this environment"));
+  }
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, 1);
     req.onupgradeneeded = () => {
@@ -62,7 +65,7 @@ export async function deleteMedia(id: string): Promise<void> {
 }
 
 export async function deleteMediaRef(ref: string | null): Promise<void> {
-  if (!ref?.startsWith("idb:")) return;
+  if (typeof indexedDB === "undefined" || !ref?.startsWith("idb:")) return;
   await deleteMedia(ref.slice(4));
 }
 
