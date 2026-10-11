@@ -62,6 +62,7 @@ export interface SpeechBubble {
   w: number;
   kind: BubbleKind;
   tail: TailDir;
+  speakerId?: string;
 }
 
 export type ShotType =
@@ -80,6 +81,7 @@ export interface PanelScene {
   backgroundId?: string;
   shot?: ShotType;
   action?: string;
+  outfitByCharacter?: Record<string, string>;
 }
 
 export interface Panel {
@@ -103,11 +105,31 @@ export interface BackgroundReference {
   imageRef?: string;
 }
 
+export interface CharacterOutfit {
+  id: string;
+  label: string;
+  description: string;
+}
+
+export interface CharacterTraits {
+  face?: string;
+  hair?: string;
+  build?: string;
+  age?: string;
+}
+
 export interface CharacterReference {
   id: string;
   name: string;
   role?: string;
   appearance: string;
+  aliases?: string[];
+  traits?: CharacterTraits;
+  signatureOutfit?: string;
+  palette?: string[];
+  invariants?: string[];
+  outfits?: CharacterOutfit[];
+  voice?: string;
   imageRef?: string;
 }
 

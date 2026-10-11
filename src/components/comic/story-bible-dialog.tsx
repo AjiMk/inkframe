@@ -13,6 +13,8 @@ import {
   Copy,
   BookOpen,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -153,6 +155,16 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
   const [charAppearance, setCharAppearance] = useState("");
   const [charImageRef, setCharImageRef] = useState<string | undefined>(undefined);
   const [isUploadingCharImg, setIsUploadingCharImg] = useState(false);
+  const [charAliases, setCharAliases] = useState("");
+  const [charTraitFace, setCharTraitFace] = useState("");
+  const [charTraitHair, setCharTraitHair] = useState("");
+  const [charTraitBuild, setCharTraitBuild] = useState("");
+  const [charTraitAge, setCharTraitAge] = useState("");
+  const [charSignatureOutfit, setCharSignatureOutfit] = useState("");
+  const [charPalette, setCharPalette] = useState("");
+  const [charInvariants, setCharInvariants] = useState("");
+  const [charVoice, setCharVoice] = useState("");
+  const [charAdvancedOpen, setCharAdvancedOpen] = useState(false);
 
   // Location editing state
   const [editingBgId, setEditingBgId] = useState<string | null>(null);
@@ -183,6 +195,16 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setCharRole("");
     setCharAppearance("");
     setCharImageRef(undefined);
+    setCharAliases("");
+    setCharTraitFace("");
+    setCharTraitHair("");
+    setCharTraitBuild("");
+    setCharTraitAge("");
+    setCharSignatureOutfit("");
+    setCharPalette("");
+    setCharInvariants("");
+    setCharVoice("");
+    setCharAdvancedOpen(false);
     setIsAddingChar(true);
   }
 
@@ -193,6 +215,25 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setCharRole(char.role ?? "");
     setCharAppearance(char.appearance);
     setCharImageRef(char.imageRef);
+    setCharAliases(char.aliases ? char.aliases.join(", ") : "");
+    setCharTraitFace(char.traits?.face ?? "");
+    setCharTraitHair(char.traits?.hair ?? "");
+    setCharTraitBuild(char.traits?.build ?? "");
+    setCharTraitAge(char.traits?.age ?? "");
+    setCharSignatureOutfit(char.signatureOutfit ?? "");
+    setCharPalette(char.palette ? char.palette.join(", ") : "");
+    setCharInvariants(char.invariants ? char.invariants.join("\n") : "");
+    setCharVoice(char.voice ?? "");
+    setCharAdvancedOpen(
+      Boolean(
+        char.aliases?.length ||
+        char.traits ||
+        char.signatureOutfit ||
+        char.palette?.length ||
+        char.invariants?.length ||
+        char.voice,
+      ),
+    );
   }
 
   function handleCancelChar() {
@@ -206,6 +247,16 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setCharRole("");
     setCharAppearance("");
     setCharImageRef(undefined);
+    setCharAliases("");
+    setCharTraitFace("");
+    setCharTraitHair("");
+    setCharTraitBuild("");
+    setCharTraitAge("");
+    setCharSignatureOutfit("");
+    setCharPalette("");
+    setCharInvariants("");
+    setCharVoice("");
+    setCharAdvancedOpen(false);
   }
 
   function handleRemoveCharImage() {
@@ -247,11 +298,44 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     }
     const id =
       editingCharId || makeReferenceId(charName.trim(), Object.keys(context.characters ?? {}));
+
+    const aliases = charAliases
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const hasTraits = Boolean(
+      charTraitFace.trim() || charTraitHair.trim() || charTraitBuild.trim() || charTraitAge.trim(),
+    );
+    const traits = hasTraits
+      ? {
+          face: charTraitFace.trim() || undefined,
+          hair: charTraitHair.trim() || undefined,
+          build: charTraitBuild.trim() || undefined,
+          age: charTraitAge.trim() || undefined,
+        }
+      : undefined;
+    const signatureOutfit = charSignatureOutfit.trim() || undefined;
+    const palette = charPalette
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const invariants = charInvariants
+      .split(/[\n,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const voice = charVoice.trim() || undefined;
+
     const newChar: CharacterReference = {
       id,
       name: charName.trim(),
       role: charRole.trim() || undefined,
       appearance: charAppearance.trim() || "Standard comic attire and features.",
+      aliases: aliases.length > 0 ? aliases : undefined,
+      traits,
+      signatureOutfit,
+      palette: palette.length > 0 ? palette : undefined,
+      invariants: invariants.length > 0 ? invariants : undefined,
+      voice,
       imageRef: charImageRef,
     };
     if (charImageRef) {
@@ -566,6 +650,157 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                     </div>
                   </div>
 
+                  {/* Advanced Structured Traits Accordion */}
+                  <div className="rounded-md border border-border bg-card/60 p-2.5 space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setCharAdvancedOpen((prev) => !prev)}
+                      className="flex w-full items-center justify-between text-xs font-semibold text-foreground hover:text-primary transition-colors"
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="size-3.5 text-primary" />
+                        Structured Details (AI Model Sheet & Consistency)
+                      </span>
+                      {charAdvancedOpen ? (
+                        <ChevronUp className="size-3.5 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="size-3.5 text-muted-foreground" />
+                      )}
+                    </button>
+
+                    {charAdvancedOpen && (
+                      <div className="space-y-3 pt-2 border-t border-border/60">
+                        <div className="space-y-1">
+                          <Label
+                            htmlFor="char-aliases"
+                            className="text-[11px] text-muted-foreground"
+                          >
+                            Aliases / Nicknames (comma-separated)
+                          </Label>
+                          <Input
+                            id="char-aliases"
+                            value={charAliases}
+                            onChange={(e) => setCharAliases(e.target.value)}
+                            placeholder="e.g. Vance, Det. Vance, Number Two"
+                            className="h-7 text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground">
+                            Physical Traits
+                          </Label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <Input
+                              value={charTraitAge}
+                              onChange={(e) => setCharTraitAge(e.target.value)}
+                              placeholder="Age: Late 30s"
+                              className="h-7 text-xs"
+                            />
+                            <Input
+                              value={charTraitBuild}
+                              onChange={(e) => setCharTraitBuild(e.target.value)}
+                              placeholder="Build: Athletic"
+                              className="h-7 text-xs"
+                            />
+                            <Input
+                              value={charTraitFace}
+                              onChange={(e) => setCharTraitFace(e.target.value)}
+                              placeholder="Face: Sharp jaw"
+                              className="h-7 text-xs"
+                            />
+                            <Input
+                              value={charTraitHair}
+                              onChange={(e) => setCharTraitHair(e.target.value)}
+                              placeholder="Hair: Black bob"
+                              className="h-7 text-xs"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor="char-sig-outfit"
+                              className="text-[11px] text-muted-foreground"
+                            >
+                              Signature Outfit
+                            </Label>
+                            <Input
+                              id="char-sig-outfit"
+                              value={charSignatureOutfit}
+                              onChange={(e) => setCharSignatureOutfit(e.target.value)}
+                              placeholder="e.g. Navy tailored coat, high boots"
+                              className="h-7 text-xs"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor="char-palette"
+                              className="text-[11px] text-muted-foreground"
+                            >
+                              Color Palette (hex codes)
+                            </Label>
+                            <Input
+                              id="char-palette"
+                              value={charPalette}
+                              onChange={(e) => setCharPalette(e.target.value)}
+                              placeholder="#1e293b, #d97706, #3b82f6"
+                              className="h-7 text-xs"
+                            />
+                            {charPalette.trim() && (
+                              <div className="flex items-center gap-1 pt-0.5">
+                                {charPalette
+                                  .split(",")
+                                  .map((s) => s.trim())
+                                  .filter((c) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c))
+                                  .map((c, i) => (
+                                    <span
+                                      key={i}
+                                      className="size-3.5 rounded-full border border-border shadow-2xs"
+                                      style={{ backgroundColor: c }}
+                                      title={c}
+                                    />
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label
+                            htmlFor="char-invariants"
+                            className="text-[11px] text-muted-foreground"
+                          >
+                            Permanent Invariants (Must never change across panels)
+                          </Label>
+                          <Textarea
+                            id="char-invariants"
+                            value={charInvariants}
+                            onChange={(e) => setCharInvariants(e.target.value)}
+                            placeholder="e.g. Diagonal scar over left eyebrow, silver cybernetic eye on right side, antique mechanical pocket watch"
+                            rows={2}
+                            className="text-xs resize-none"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label htmlFor="char-voice" className="text-[11px] text-muted-foreground">
+                            Speech Mannerisms & Voice
+                          </Label>
+                          <Input
+                            id="char-voice"
+                            value={charVoice}
+                            onChange={(e) => setCharVoice(e.target.value)}
+                            placeholder="e.g. Terse, cynical, speaks in fragments, avoids contractions"
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Reference Image Upload */}
                   <div className="space-y-1">
                     <Label className="text-xs">Reference Portrait Image (Optional)</Label>
@@ -683,6 +918,35 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                           <p className="text-xs text-muted-foreground line-clamp-3 leading-relaxed">
                             {char.appearance}
                           </p>
+                          {char.palette && char.palette.length > 0 && (
+                            <div className="flex items-center gap-1 pt-1">
+                              <span className="text-[10px] text-muted-foreground font-semibold">
+                                Palette:
+                              </span>
+                              <div className="flex items-center gap-1">
+                                {char.palette.map((color, i) => (
+                                  <span
+                                    key={i}
+                                    className="size-3 rounded-full border border-border/80 shadow-2xs"
+                                    style={{ backgroundColor: color }}
+                                    title={color}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {char.invariants && char.invariants.length > 0 && (
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              {char.invariants.map((inv, i) => (
+                                <span
+                                  key={i}
+                                  className="rounded bg-secondary/80 border border-border px-1.5 py-0.5 text-[9px] text-muted-foreground font-medium"
+                                >
+                                  ✦ {inv}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
 

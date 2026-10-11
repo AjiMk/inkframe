@@ -289,4 +289,97 @@ describe("Story Bible & Continuity Manager Store Actions", () => {
     assert.equal(updated.pages[0].panels.length, 1);
     assert.equal(updated.pages[0].panels[0].scene?.action, "Important storyline event");
   });
+
+  it("stores and retrieves structured character sheets with traits, palette, invariants, and voice", () => {
+    const store = useComicStore.getState();
+    const comicId = store.create("Structured Sheet Test", "Author T");
+
+    const fullChar: CharacterReference = {
+      id: "elena_vance",
+      name: "Elena Vance",
+      role: "Lead Operative",
+      appearance: "Late 20s cyber investigator",
+      aliases: ["Vance", "The Courier"],
+      traits: {
+        face: "Sharp cheekbones, subtle lip scar",
+        hair: "Asymmetrical silver-streaked bob",
+        build: "Athletic runner",
+        age: "28",
+      },
+      signatureOutfit: "Charcoal trench with high collar and neon lining",
+      palette: ["#0f172a", "#38bdf8", "#f43f5e"],
+      invariants: [
+        "Right eye is a cyan cybernetic optic",
+        "Never parts with antique brass chronometer",
+      ],
+      outfits: [
+        {
+          id: "stealth",
+          label: "Stealth Suit",
+          description: "Matte black compression gear",
+        },
+      ],
+      voice: "Dry, clipped, uses deadpan humor, avoids slang",
+    };
+
+    store.upsertCharacter(comicId, fullChar);
+
+    const saved = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    const retrieved = saved.assetContext?.characters?.["elena_vance"];
+    assert.ok(retrieved);
+    assert.deepEqual(retrieved.aliases, ["Vance", "The Courier"]);
+    assert.equal(retrieved.traits?.hair, "Asymmetrical silver-streaked bob");
+    assert.deepEqual(retrieved.palette, ["#0f172a", "#38bdf8", "#f43f5e"]);
+    assert.equal(retrieved.invariants?.length, 2);
+    assert.equal(retrieved.voice, "Dry, clipped, uses deadpan humor, avoids slang");
+  });
+
+  it("links speech bubbles to character speakers and clears speakerId on character deletion", () => {
+    const store = useComicStore.getState();
+    const comicId = store.create("Dialogue Link Test", "Author D");
+
+    store.upsertCharacter(comicId, {
+      id: "dr_marcus",
+      name: "Dr. Marcus",
+      appearance: "Elderly cybernetics engineer",
+    });
+
+    const comic = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    const pageId = comic.pages[0].id;
+    const panelId = comic.pages[0].panels[0].id;
+
+    const bubbleId = store.addBubble(comicId, pageId, panelId, "speech");
+    store.updateBubble(comicId, pageId, panelId, bubbleId, {
+      text: "The telemetry doesn't lie.",
+      speakerId: "dr_marcus",
+    });
+
+    let updated = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    let b = updated.pages[0].panels[0].bubbles.find((item) => item.id === bubbleId)!;
+    assert.equal(b.speakerId, "dr_marcus");
+
+    // Deleting Dr. Marcus should cascade and clear speakerId on the bubble
+    store.deleteCharacter(comicId, "dr_marcus");
+
+    updated = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    b = updated.pages[0].panels[0].bubbles.find((item) => item.id === bubbleId)!;
+    assert.equal(b.speakerId, undefined);
+  });
+
+  it("persists outfitByCharacter in panel scene metadata", () => {
+    const store = useComicStore.getState();
+    const comicId = store.create("Panel Outfit Test", "Author O");
+    const comic = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    const pageId = comic.pages[0].id;
+    const panelId = comic.pages[0].panels[0].id;
+
+    store.setPanelScene(comicId, pageId, panelId, {
+      characterIds: ["char_a"],
+      outfitByCharacter: { char_a: "stealth_suit" },
+    });
+
+    const updated = useComicStore.getState().comics.find((c) => c.id === comicId)!;
+    const panel = updated.pages[0].panels.find((p) => p.id === panelId)!;
+    assert.equal(panel.scene?.outfitByCharacter?.["char_a"], "stealth_suit");
+  });
 });
