@@ -79,3 +79,26 @@ export const LAYOUTS: Record<PageLayoutId, LayoutDef> = {
 export const LAYOUT_LIST = Object.values(LAYOUTS);
 
 export const AREA_NAMES = ["a", "b", "c", "d"] as const;
+
+export function panelAspectRatio(layoutId: PageLayoutId, panelIndex: number): string {
+  switch (layoutId) {
+    case "splash":
+      return "2:3";
+    case "two-v":
+      return "4:3";
+    case "two-h":
+      return "1:3";
+    case "three-strip":
+      return "2:1";
+    case "four-grid":
+      return "2:3";
+    case "wide-then-two":
+      return panelIndex === 0 ? "16:9" : "3:4";
+    case "two-then-wide":
+      return panelIndex === 2 ? "16:9" : "3:4";
+    case "spotlight":
+      return panelIndex === 0 ? "9:16" : "1:1";
+    default:
+      return "1:1";
+  }
+}

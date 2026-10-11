@@ -25,6 +25,7 @@ import {
   Zap,
   Award,
   Bookmark,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,7 @@ import { CoverCanvas } from "./cover-canvas";
 import { CoverDesignerDialog } from "./cover-designer-dialog";
 import { DialogueEditorDialog } from "./dialogue-editor-dialog";
 import { StoryBibleDialog } from "./story-bible-dialog";
+import { PromptCopilotDialog } from "./prompt-copilot-dialog";
 
 export function StudioEditor({ comicId }: { comicId: string }) {
   const navigate = useNavigate();
@@ -82,6 +84,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
   const [coverDesignerOpen, setCoverDesignerOpen] = useState(false);
   const [storyBibleOpen, setStoryBibleOpen] = useState(false);
   const [dialogueEditorOpen, setDialogueEditorOpen] = useState(false);
+  const [promptCopilotOpen, setPromptCopilotOpen] = useState(false);
   const [isCoverSelected, setIsCoverSelected] = useState(false);
   const [mediaTab, setMediaTab] = useState<"video" | "library">("video");
   const [isExportingPdf, setIsExportingPdf] = useState(false);
@@ -275,6 +278,7 @@ export function StudioEditor({ comicId }: { comicId: string }) {
       onFilter={(filter) => store.setPanelFilter(comicId, page.id, panel.id, filter)}
       assetContext={comic.assetContext}
       onUpdateScene={(patch) => store.setPanelScene(comicId, page.id, panel.id, patch)}
+      onOpenPromptCopilot={() => setPromptCopilotOpen(true)}
     />
   );
 
@@ -783,6 +787,18 @@ export function StudioEditor({ comicId }: { comicId: string }) {
         }}
       />
 
+      <PromptCopilotDialog
+        open={promptCopilotOpen}
+        onOpenChange={setPromptCopilotOpen}
+        comic={comic}
+        pageId={page.id}
+        panelIndex={Math.max(
+          0,
+          page.panels.findIndex((p) => p.id === panel.id),
+        )}
+        panel={panel}
+      />
+
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -839,6 +855,7 @@ function Inspector({
   onFilter,
   assetContext,
   onUpdateScene,
+  onOpenPromptCopilot,
 }: {
   comicTitle: string;
   comicAuthor: string;
@@ -858,6 +875,7 @@ function Inspector({
   onFilter: (filter: Panel["filter"]) => void;
   assetContext?: AssetReferenceContext;
   onUpdateScene: (patch: Partial<PanelScene>) => void;
+  onOpenPromptCopilot: () => void;
 }) {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
@@ -1149,6 +1167,17 @@ function Inspector({
             rows={2}
           />
         </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={onOpenPromptCopilot}
+          className="h-8 w-full text-xs font-bold gap-1.5 border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-all shadow-xs"
+        >
+          <Wand2 className="size-3.5 shrink-0" />
+          <span>AI Prompt Copilot</span>
+        </Button>
       </section>
 
       <Separator className="shrink-0" />
