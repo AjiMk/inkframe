@@ -722,15 +722,26 @@ export const useComicStore = create<ComicState>((set, get) => ({
       const pages = c.pages.map((page) => ({
         ...page,
         panels: page.panels.map((panel) => {
-          if (!panel.scene?.characterIds?.includes(charId)) return panel;
-          const remainingCharIds = panel.scene.characterIds.filter((id) => id !== charId);
-          return {
-            ...panel,
-            scene: {
-              ...panel.scene,
-              characterIds: remainingCharIds,
-            },
-          };
+          let updatedPanel = panel;
+          if (panel.scene?.characterIds?.includes(charId)) {
+            const remainingCharIds = panel.scene.characterIds.filter((id) => id !== charId);
+            updatedPanel = {
+              ...updatedPanel,
+              scene: {
+                ...updatedPanel.scene,
+                characterIds: remainingCharIds,
+              },
+            };
+          }
+          if (panel.bubbles.some((b) => b.speakerId === charId)) {
+            updatedPanel = {
+              ...updatedPanel,
+              bubbles: updatedPanel.bubbles.map((b) =>
+                b.speakerId === charId ? { ...b, speakerId: undefined } : b,
+              ),
+            };
+          }
+          return updatedPanel;
         }),
       }));
       return {

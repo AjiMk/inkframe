@@ -1,4 +1,15 @@
-import { MessageCircle, Cloud, Megaphone, Captions, Zap, Bookmark, Award, Trash2 } from "lucide-react";
+import { useMemo } from "react";
+import {
+  MessageCircle,
+  Cloud,
+  Megaphone,
+  Captions,
+  Zap,
+  Bookmark,
+  Award,
+  Trash2,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,13 +35,38 @@ interface Props {
 }
 
 const KINDS: { id: BubbleKind; label: string; icon: typeof MessageCircle; desc: string }[] = [
-  { id: "speech", label: "Speech Balloon", icon: MessageCircle, desc: "Standard character dialogue bubble with tail" },
-  { id: "thought", label: "Thought Cloud", icon: Cloud, desc: "Pondering thought bubble with cloud dots" },
+  {
+    id: "speech",
+    label: "Speech Balloon",
+    icon: MessageCircle,
+    desc: "Standard character dialogue bubble with tail",
+  },
+  {
+    id: "thought",
+    label: "Thought Cloud",
+    icon: Cloud,
+    desc: "Pondering thought bubble with cloud dots",
+  },
   { id: "shout", label: "Shout Burst", icon: Megaphone, desc: "Jagged loud shout explosion" },
-  { id: "caption", label: "Narrative Caption", icon: Captions, desc: "Top or bottom rectangular narrative box" },
+  {
+    id: "caption",
+    label: "Narrative Caption",
+    icon: Captions,
+    desc: "Top or bottom rectangular narrative box",
+  },
   { id: "sfx", label: "Action SFX", icon: Zap, desc: "Bold 3D angled action sound effect text" },
-  { id: "title-banner", label: "Scene Banner", icon: Bookmark, desc: "Yellow comic chapter / scene headline banner" },
-  { id: "burst-label", label: "Starburst Badge", icon: Award, desc: "Action starburst badge for callouts" },
+  {
+    id: "title-banner",
+    label: "Scene Banner",
+    icon: Bookmark,
+    desc: "Yellow comic chapter / scene headline banner",
+  },
+  {
+    id: "burst-label",
+    label: "Starburst Badge",
+    icon: Award,
+    desc: "Action starburst badge for callouts",
+  },
 ];
 
 const TAILS: { id: TailDir; label: string }[] = [
@@ -64,6 +100,33 @@ export function DialogueEditorDialog({
   onDelete,
 }: Props) {
   const store = useComicStore();
+  const comic = useComicStore((s) => s.comics.find((c) => c.id === comicId));
+  const page = comic?.pages.find((p) => p.id === pageId);
+  const panel = page?.panels.find((p) => p.id === panelId);
+
+  const allCharacters = useMemo(
+    () => Object.values(comic?.assetContext?.characters ?? {}),
+    [comic?.assetContext?.characters],
+  );
+
+  const panelCharIds = useMemo(
+    () => new Set(panel?.scene?.characterIds ?? []),
+    [panel?.scene?.characterIds],
+  );
+
+  const sortedCharacters = useMemo(() => {
+    return [...allCharacters].sort((a, b) => {
+      const aInPanel = panelCharIds.has(a.id);
+      const bInPanel = panelCharIds.has(b.id);
+      if (aInPanel && !bInPanel) return -1;
+      if (!aInPanel && bInPanel) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [allCharacters, panelCharIds]);
+
+  const currentSpeaker = bubble?.speakerId
+    ? comic?.assetContext?.characters?.[bubble.speakerId]
+    : null;
 
   if (!bubble) return null;
 
@@ -96,6 +159,43 @@ export function DialogueEditorDialog({
             </div>
           </div>
 
+          {/* Speaker Selection */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label
+                htmlFor="bubble-speaker"
+                className="text-xs font-semibold flex items-center gap-1.5"
+              >
+                <User className="size-3.5 text-primary" />
+                Speaker Character
+              </Label>
+              {currentSpeaker?.voice && (
+                <span
+                  className="text-[10px] text-muted-foreground truncate max-w-[220px]"
+                  title={currentSpeaker.voice}
+                >
+                  Voice: {currentSpeaker.voice}
+                </span>
+              )}
+            </div>
+            <select
+              id="bubble-speaker"
+              value={bubble.speakerId ?? ""}
+              onChange={(e) => update({ speakerId: e.target.value || undefined })}
+              className="h-8 w-full rounded-md border border-input bg-card px-2.5 py-1 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <option value="">Unassigned / Narrative voice</option>
+              {sortedCharacters.map((c) => {
+                const inPanel = panelCharIds.has(c.id);
+                return (
+                  <option key={c.id} value={c.id}>
+                    {c.name} {inPanel ? "(In this panel)" : ""} {c.role ? `• ${c.role}` : ""}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
           {/* Dialogue Text Input & Quick Preset Chips */}
           <div className="space-y-2">
             <Label htmlFor="bubble-modal-text" className="text-xs font-semibold">
@@ -108,7 +208,7 @@ export function DialogueEditorDialog({
               placeholder="Type dialogue or sound effect text..."
               className="min-h-20 text-sm font-medium"
             />
-            
+
             <div className="flex flex-wrap gap-1 pt-1">
               <span className="text-[10px] text-muted-foreground font-semibold uppercase mr-1 flex items-center">
                 Presets:
@@ -144,12 +244,16 @@ export function DialogueEditorDialog({
                         : "border-border bg-card hover:border-foreground/30"
                     }`}
                   >
-                    <div className={`p-1.5 rounded-md shrink-0 ${selected ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}>
+                    <div
+                      className={`p-1.5 rounded-md shrink-0 ${selected ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"}`}
+                    >
                       <Icon className="size-4" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-xs text-foreground truncate">{k.label}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight line-clamp-1">{k.desc}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight line-clamp-1">
+                        {k.desc}
+                      </p>
                     </div>
                   </button>
                 );
@@ -159,30 +263,30 @@ export function DialogueEditorDialog({
 
           {/* Tail Direction Selection (Only for Speech and Thought) */}
           {bubble.kind !== "caption" &&
-          bubble.kind !== "shout" &&
-          bubble.kind !== "sfx" &&
-          bubble.kind !== "title-banner" &&
-          bubble.kind !== "burst-label" && (
-            <div className="space-y-2">
-              <Label className="text-xs font-semibold">Tail Pointer Direction</Label>
-              <div className="grid grid-cols-5 gap-1.5">
-                {TAILS.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => update({ tail: t.id })}
-                    className={`py-1.5 px-1 rounded-md border text-[11px] font-medium text-center truncate ${
-                      bubble.tail === t.id
-                        ? "border-primary bg-primary text-primary-foreground font-bold"
-                        : "border-border bg-card hover:border-foreground/30"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
-                ))}
+            bubble.kind !== "shout" &&
+            bubble.kind !== "sfx" &&
+            bubble.kind !== "title-banner" &&
+            bubble.kind !== "burst-label" && (
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">Tail Pointer Direction</Label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {TAILS.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => update({ tail: t.id })}
+                      className={`py-1.5 px-1 rounded-md border text-[11px] font-medium text-center truncate ${
+                        bubble.tail === t.id
+                          ? "border-primary bg-primary text-primary-foreground font-bold"
+                          : "border-border bg-card hover:border-foreground/30"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
 
         {/* Modal Footer Actions */}

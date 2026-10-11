@@ -391,8 +391,9 @@ server.tool(
       .enum(["speech", "thought", "shout", "caption", "sfx", "title-banner", "burst-label"])
       .describe("Style / type of dialogue element"),
     text: z.string().optional().describe("Text content for the dialogue element"),
+    speakerId: z.string().optional().describe("ID of the character speaking this line"),
   },
-  async ({ comicId, pageId, panelIndex, kind, text }) => {
+  async ({ comicId, pageId, panelIndex, kind, text, speakerId }) => {
     return mutateStore((store) => {
       const comic = store.get(comicId);
       if (!comic) {
@@ -413,7 +414,25 @@ server.tool(
         };
       }
 
+      if (speakerId) {
+        const char = comic.assetContext?.characters?.[speakerId];
+        if (!char) {
+          return {
+            isError: true,
+            content: [
+              {
+                type: "text",
+                text: `Speaker character "${speakerId}" not found in comic characters.`,
+              },
+            ],
+          };
+        }
+      }
+
       const bubble = createBubble(kind as BubbleKind, text);
+      if (speakerId) {
+        bubble.speakerId = speakerId;
+      }
       panel.bubbles.push(bubble);
       comic.updatedAt = Date.now();
 
@@ -421,7 +440,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `Added ${kind} bubble ("${bubble.text}") to Panel ${panelIndex + 1} on Page ${pageId}.`,
+            text: `Added ${kind} bubble ("${bubble.text}")${speakerId ? ` spoken by "${speakerId}"` : ""} to Panel ${panelIndex + 1} on Page ${pageId}.`,
           },
         ],
       };
@@ -586,7 +605,36 @@ server.tool(
           role: z.string().optional().describe("Role in story"),
           appearance: z
             .string()
-            .describe("Detailed model sheet (age, height, complexion, hairstyle, clothing)"),
+            .describe(
+              "Detailed model sheet summary (age, height, complexion, hairstyle, clothing)",
+            ),
+          aliases: z.array(z.string()).optional().describe("Known aliases or alternate names"),
+          traits: z
+            .object({
+              face: z.string().optional(),
+              hair: z.string().optional(),
+              build: z.string().optional(),
+              age: z.string().optional(),
+            })
+            .optional()
+            .describe("Structured physical traits"),
+          signatureOutfit: z.string().optional().describe("Default signature attire"),
+          palette: z.array(z.string()).optional().describe("Hex color palette (e.g. ['#1e293b'])"),
+          invariants: z
+            .array(z.string())
+            .optional()
+            .describe("Permanent visual rules that never change (e.g. 'scar over left eyebrow')"),
+          outfits: z
+            .array(
+              z.object({
+                id: z.string(),
+                label: z.string(),
+                description: z.string(),
+              }),
+            )
+            .optional()
+            .describe("Known wardrobe outfits"),
+          voice: z.string().optional().describe("Speech habits and dialogue style"),
           imageRef: z.string().optional().describe("Optional character sheet reference image"),
         }),
       )
@@ -785,8 +833,21 @@ server.tool(
       .optional()
       .describe("Camera shot angle/framing"),
     action: z.string().optional().describe("Description of action happening in this panel"),
+    outfitByCharacter: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe("Map of characterId to outfitId for this panel"),
   },
-  async ({ comicId, pageId, panelIndex, characterIds, backgroundId, shot, action }) => {
+  async ({
+    comicId,
+    pageId,
+    panelIndex,
+    characterIds,
+    backgroundId,
+    shot,
+    action,
+    outfitByCharacter,
+  }) => {
     return mutateStore((store) => {
       const comic = store.get(comicId);
       if (!comic) {
@@ -822,6 +883,7 @@ server.tool(
         ...(backgroundId !== undefined && { backgroundId }),
         ...(shot !== undefined && { shot }),
         ...(action !== undefined && { action }),
+        ...(outfitByCharacter !== undefined && { outfitByCharacter }),
       };
 
       comic.updatedAt = Date.now();
