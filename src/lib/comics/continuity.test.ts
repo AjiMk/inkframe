@@ -6,6 +6,7 @@ import {
   deleteBackgroundFromComic,
 } from "./continuity.ts";
 import { createComic, createPage } from "./factory.ts";
+import { createDemoComic } from "./demo.ts";
 import type { Comic } from "./types.ts";
 
 function createFullyConsistentComic(): Comic {
@@ -246,5 +247,69 @@ describe("Story Bible Cascading Deletion Helpers", () => {
     // characters remain untouched
     assert.ok(updated.assetContext?.characters?.elena);
     assert.ok(updated.pages[0].panels[0].scene?.characterIds?.includes("elena"));
+  });
+
+  it("deleteBackgroundFromComic clears scene to undefined if background was the only scene property", () => {
+    const comic = createComic("Test Comic", "Test Author");
+    comic.assetContext = {
+      backgrounds: {
+        alley: { id: "alley", name: "Alley", description: "Dark alley" },
+      },
+    };
+    const p = createPage("splash");
+    p.panels[0].scene = { backgroundId: "alley" };
+    comic.pages = [p];
+
+    const updated = deleteBackgroundFromComic(comic, "alley");
+    assert.equal(updated.pages[0].panels[0].scene, undefined);
+  });
+});
+
+describe("Demo Comic & Outfit Continuity Audits", () => {
+  it("createDemoComic passes continuity audit with zero errors, zero warnings, and 100% panel coverage", () => {
+    const demo = createDemoComic();
+    const report = checkContinuity(demo);
+
+    assert.equal(report.passed, true);
+    assert.equal(report.issueCount.errors, 0);
+    assert.equal(report.issueCount.warnings, 0);
+    assert.equal(report.issueCount.infos, 0);
+    assert.equal(report.stats.totalPages, 7);
+    assert.equal(report.stats.totalPanels, 7);
+    assert.equal(report.stats.panelsWithScene, 7);
+    assert.equal(report.stats.panelsWithImage, 7);
+    assert.equal(report.stats.totalCharacters, 1);
+    assert.equal(report.stats.usedCharacters, 1);
+    assert.equal(report.stats.totalBackgrounds, 2);
+    assert.equal(report.stats.usedBackgrounds, 2);
+  });
+
+  it("flags error when scene outfit references unknown character and warning for unknown outfit on character", () => {
+    const comic = createFullyConsistentComic();
+    comic.assetContext!.characters!.elena.outfits = [
+      { id: "detective-coat", label: "Detective Coat", description: "Dark trench coat" },
+    ];
+
+    // Reference unknown character in outfitByCharacter
+    comic.pages[0].panels[0].scene!.outfitByCharacter = {
+      ghost_agent: "stealth-suit",
+    };
+    let report = checkContinuity(comic);
+    const missingCharOutfit = report.issues.find(
+      (i) => i.id.includes("missing-outfit-char") && i.characterId === "ghost_agent",
+    );
+    assert.ok(missingCharOutfit);
+    assert.equal(missingCharOutfit.severity, "error");
+
+    // Reference unknown outfit for known character
+    comic.pages[0].panels[0].scene!.outfitByCharacter = {
+      elena: "ballroom-gown",
+    };
+    report = checkContinuity(comic);
+    const unknownOutfit = report.issues.find(
+      (i) => i.id.includes("unknown-outfit") && i.characterId === "elena",
+    );
+    assert.ok(unknownOutfit);
+    assert.equal(unknownOutfit.severity, "warning");
   });
 });

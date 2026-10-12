@@ -3,8 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, FileDown, Loader2, Pause, Play, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { coverRef } from "@/lib/comics/factory";
-import { useMediaUrl } from "@/lib/comics/media";
+
 import { exportComicToPdf } from "@/lib/comics/pdf-export";
 import { useComicStore } from "@/lib/comics/store";
 import type { Comic } from "@/lib/comics/types";
@@ -13,7 +12,13 @@ import { CoverCanvas } from "./cover-canvas";
 
 type Beat =
   | { type: "title" }
-  | { type: "panel"; pageIndex: number; panelId: string; bubbleIds: string[]; activeBubbleId?: string }
+  | {
+      type: "panel";
+      pageIndex: number;
+      panelId: string;
+      bubbleIds: string[];
+      activeBubbleId?: string;
+    }
   | { type: "page"; pageIndex: number }
   | { type: "end" };
 
@@ -45,10 +50,7 @@ export function ComicReader({ comicId }: { comicId: string }) {
     }
   }
 
-  const beats = useMemo(
-    () => (comic ? buildBeats(comic, mode) : []),
-    [comic, mode],
-  );
+  const beats = useMemo(() => (comic ? buildBeats(comic, mode) : []), [comic, mode]);
   const beat = beats[index] ?? beats[0];
 
   useEffect(() => {
@@ -114,8 +116,7 @@ export function ComicReader({ comicId }: { comicId: string }) {
     );
   }
 
-  const pageIndex =
-    beat.type === "panel" || beat.type === "page" ? beat.pageIndex : 0;
+  const pageIndex = beat.type === "panel" || beat.type === "page" ? beat.pageIndex : 0;
   const page = comic.pages[pageIndex];
   const reveal: RevealState | undefined =
     beat.type === "panel"
@@ -154,9 +155,7 @@ export function ComicReader({ comicId }: { comicId: string }) {
           <X />
         </Button>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-lg leading-none tracking-wide">
-            {comic.title}
-          </p>
+          <p className="truncate font-display text-lg leading-none tracking-wide">{comic.title}</p>
           <p className="truncate text-xs text-paper/60">
             {comic.author}
             {beat.type === "page" || beat.type === "panel"

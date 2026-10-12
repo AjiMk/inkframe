@@ -555,6 +555,8 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
               <TabsTrigger value="continuity" className="text-xs font-semibold gap-1.5">
                 {continuityReport.issueCount.errors > 0 ? (
                   <ShieldAlert className="size-3.5 text-destructive" />
+                ) : continuityReport.issueCount.warnings > 0 ? (
+                  <AlertTriangle className="size-3.5 text-amber-500" />
                 ) : (
                   <CheckCircle2 className="size-3.5 text-primary" />
                 )}
@@ -1554,6 +1556,53 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                               {issue.suggestion}
                             </p>
                           )}
+                          {issue.type === "missing-style-guide" && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              className="h-6 text-[10px] px-2 font-semibold mt-1"
+                              onClick={() => setActiveTab("style")}
+                            >
+                              Open Style Guide
+                            </Button>
+                          )}
+                          {issue.characterId &&
+                            characters.some((c) => c.id === issue.characterId) && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[10px] px-2 font-semibold mt-1"
+                                onClick={() => {
+                                  const char = characters.find((c) => c.id === issue.characterId);
+                                  if (char) {
+                                    setActiveTab("characters");
+                                    handleEditChar(char);
+                                  }
+                                }}
+                              >
+                                Edit Character Sheet
+                              </Button>
+                            )}
+                          {issue.backgroundId &&
+                            backgrounds.some((b) => b.id === issue.backgroundId) && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-[10px] px-2 font-semibold mt-1"
+                                onClick={() => {
+                                  const bg = backgrounds.find((b) => b.id === issue.backgroundId);
+                                  if (bg) {
+                                    setActiveTab("locations");
+                                    handleEditBg(bg);
+                                  }
+                                }}
+                              >
+                                Edit Location
+                              </Button>
+                            )}
                         </div>
                       </div>
                     </div>

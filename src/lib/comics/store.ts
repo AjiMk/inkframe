@@ -425,9 +425,8 @@ export const useComicStore = create<ComicState>((set, get) => ({
     recordDeletedId(id);
     const target = get().comics.find((c) => c.id === id);
     if (target) {
-      void deleteMediaRef(target.cover);
-      for (const page of target.pages) {
-        for (const panel of page.panels) void deleteMediaRef(panel.image);
+      for (const ref of getComicMediaRefs(target)) {
+        void deleteMediaRef(ref);
       }
     }
     const comics = get().comics.filter((c) => c.id !== id);
@@ -435,6 +434,8 @@ export const useComicStore = create<ComicState>((set, get) => ({
     const future = (get().future || []).map((list) => list.filter((c) => c.id !== id));
     writeComics(comics);
     set({ comics, past, future });
+    const referenced = collectAllReferencedMedia({ comics, past, future });
+    void pruneMedia(referenced);
   },
 
   addPage: (comicId, layout = "splash") => {

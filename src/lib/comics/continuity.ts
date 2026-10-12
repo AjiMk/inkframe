@@ -196,6 +196,46 @@ export function checkContinuity(comic: Comic): ContinuityReport {
         }
       }
 
+      // Check scene outfit assignments
+      if (scene?.outfitByCharacter) {
+        for (const [charId, outfitId] of Object.entries(scene.outfitByCharacter)) {
+          if (!characterKeys.has(charId)) {
+            issues.push({
+              id: `missing-outfit-char-${page.id}-${panel.id}-${charId}`,
+              type: "missing-character-ref",
+              severity: "error",
+              pageId: page.id,
+              pageIndex,
+              panelId: panel.id,
+              panelIndex,
+              characterId: charId,
+              message: `Page ${pageIndex + 1}, Panel ${panelIndex + 1}: Scene outfit references unknown character "${charId}".`,
+              suggestion: `Add character "${charId}" to the Story Bible or remove the outfit assignment.`,
+            });
+          } else {
+            const char = characters[charId];
+            if (
+              char?.outfits &&
+              char.outfits.length > 0 &&
+              !char.outfits.some((o) => o.id === outfitId)
+            ) {
+              issues.push({
+                id: `unknown-outfit-${page.id}-${panel.id}-${charId}-${outfitId}`,
+                type: "missing-character-invariants",
+                severity: "warning",
+                pageId: page.id,
+                pageIndex,
+                panelId: panel.id,
+                panelIndex,
+                characterId: charId,
+                message: `Page ${pageIndex + 1}, Panel ${panelIndex + 1}: Character "${char.name}" has outfit ID "${outfitId}" which does not match any wardrobe outfit in their sheet.`,
+                suggestion: `Update the panel outfit or add "${outfitId}" to "${char.name}"'s wardrobe outfits.`,
+              });
+            }
+          }
+        }
+      }
+
       // Check speech bubbles
       for (const bubble of panel.bubbles) {
         if (bubble.speakerId) {
@@ -314,16 +354,26 @@ export function deleteCharacterFromComic(comic: Comic, characterId: string): Com
         let remainingOutfits = panel.scene.outfitByCharacter;
         if (remainingOutfits && characterId in remainingOutfits) {
           const { [characterId]: _outfit, ...restOutfits } = remainingOutfits;
-          remainingOutfits = restOutfits;
+          remainingOutfits = Object.keys(restOutfits).length > 0 ? restOutfits : undefined;
         }
+
+        const nextScene = {
+          ...panel.scene,
+          characterIds: remainingCharIds?.length ? remainingCharIds : undefined,
+          outfitByCharacter: remainingOutfits,
+        };
+
+        const hasSceneContent = Boolean(
+          nextScene.action?.trim() ||
+          nextScene.characterIds?.length ||
+          nextScene.backgroundId ||
+          nextScene.shot ||
+          (nextScene.outfitByCharacter && Object.keys(nextScene.outfitByCharacter).length > 0),
+        );
 
         updatedPanel = {
           ...updatedPanel,
-          scene: {
-            ...panel.scene,
-            characterIds: remainingCharIds,
-            outfitByCharacter: remainingOutfits,
-          },
+          scene: hasSceneContent ? nextScene : undefined,
         };
       }
 
@@ -370,9 +420,16 @@ export function deleteBackgroundFromComic(comic: Comic, backgroundId: string): C
         return panel;
       }
       const { backgroundId: _bg, ...remainingScene } = panel.scene;
+      const hasSceneContent = Boolean(
+        remainingScene.action?.trim() ||
+        remainingScene.characterIds?.length ||
+        remainingScene.shot ||
+        (remainingScene.outfitByCharacter &&
+          Object.keys(remainingScene.outfitByCharacter).length > 0),
+      );
       return {
         ...panel,
-        scene: remainingScene,
+        scene: hasSceneContent ? remainingScene : undefined,
       };
     }),
   }));
