@@ -23,8 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { coverRef } from "@/lib/comics/factory";
-import { useMediaUrl } from "@/lib/comics/media";
+
 import { exportComicToPdf } from "@/lib/comics/pdf-export";
 import { useComicStore } from "@/lib/comics/store";
 import type { Comic } from "@/lib/comics/types";
@@ -69,7 +68,8 @@ export function LibraryView() {
   }
 
   function handleExport() {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(comics, null, 2));
+    const dataStr =
+      "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(comics, null, 2));
     const dlAnchorElem = document.createElement("a");
     dlAnchorElem.setAttribute("href", dataStr);
     dlAnchorElem.setAttribute("download", "inkframe-comics-backup.json");
@@ -81,15 +81,13 @@ export function LibraryView() {
       <header className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pb-8 pt-8 sm:px-6 sm:pt-12">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-xl">
-            <p className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
-              Studio
-            </p>
+            <p className="text-xs font-medium uppercase tracking-[0.22em] text-primary">Studio</p>
             <h1 className="mt-2 font-display text-5xl leading-none text-foreground sm:text-7xl">
               Inkframe
             </h1>
             <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
-              Turn photos and video stills into a comic. Add dialogue, pick a
-              layout, then read it with a page-turn and guided panel zoom.
+              Turn photos and video stills into a comic. Add dialogue, pick a layout, then read it
+              with a page-turn and guided panel zoom.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -140,14 +138,8 @@ export function LibraryView() {
         ) : (
           <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
             {comics.map((comic, i) => (
-              <li
-                key={comic.id}
-                className={`anim-rise stagger-${Math.min(i + 1, 5)}`}
-              >
-                <ComicCard
-                  comic={comic}
-                  onDelete={() => setPendingDelete(comic.id)}
-                />
+              <li key={comic.id} className={`anim-rise stagger-${Math.min(i + 1, 5)}`}>
+                <ComicCard comic={comic} onDelete={() => setPendingDelete(comic.id)} />
               </li>
             ))}
           </ul>
@@ -235,11 +227,13 @@ export function LibraryView() {
                   setImportText(e.target.value);
                   setImportError(false);
                 }}
-                placeholder='Paste JSON array or single comic object here...'
+                placeholder="Paste JSON array or single comic object here..."
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               {importError && (
-                <p className="text-xs text-destructive">Invalid comic JSON format. Please check the text.</p>
+                <p className="text-xs text-destructive">
+                  Invalid comic JSON format. Please check the text.
+                </p>
               )}
             </div>
             <DialogFooter>
@@ -277,11 +271,7 @@ function ComicCard({ comic, onDelete }: { comic: Comic; onDelete: () => void }) 
 
   return (
     <article className="group overflow-hidden rounded-xl bg-card paper-shadow transition-transform duration-200 ease-out hover:-translate-y-0.5 border border-border">
-      <Link
-        to="/read/$comicId"
-        params={{ comicId: comic.id }}
-        className="block"
-      >
+      <Link to="/read/$comicId" params={{ comicId: comic.id }} className="block">
         <div className="relative aspect-[2/3] overflow-hidden bg-secondary">
           <CoverCanvas comic={comic} mode="thumb" />
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent p-3 pt-8">

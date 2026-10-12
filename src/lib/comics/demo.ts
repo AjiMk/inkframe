@@ -77,6 +77,8 @@ export function createDemoComic(): Comic {
             build: "Slender, professional posture",
             age: "Late 20s",
           },
+          signatureOutfit: "Navy tailored business suit with white collared shirt",
+          palette: ["#1e293b", "#ffffff", "#451a03"],
           voice: "Internal monologue, measured, tense, quickening under fear",
         },
       },

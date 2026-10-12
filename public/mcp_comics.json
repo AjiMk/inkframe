@@ -82,12 +82,14 @@
             "build": "Slender, professional posture",
             "age": "Late 20s"
           },
+          "signatureOutfit": "Navy tailored business suit with white collared shirt",
+          "palette": ["#1e293b", "#ffffff", "#451a03"],
           "voice": "Internal monologue, measured, tense, quickening under fear"
         }
       }
     },
     "createdAt": 1790939054903,
-    "updatedAt": 1791734099259,
+    "updatedAt": 1791828354806,
     "pages": [
       {
         "id": "d-p1",
@@ -121,16 +123,14 @@
                 "text": "Bag. Keys. Subway. Home.",
                 "kind": "thought",
                 "x": 38,
-                "y": 37.91641963109354,
+                "y": 37.9164,
                 "w": 62,
                 "tail": "bl",
                 "speakerId": "elena"
               }
             ],
             "scene": {
-              "characterIds": [
-                "elena"
-              ],
+              "characterIds": ["elena"],
               "backgroundId": "sidewalk",
               "shot": "establishing",
               "action": "Elena steps out through the heavy glass doors of the dark office tower onto the deserted midnight sidewalk."
@@ -160,8 +160,8 @@
                 "id": "d-b5",
                 "text": "Shops shut. Signals green for nothing.",
                 "kind": "caption",
-                "x": 3.3014050129862,
-                "y": 19.43202404479578,
+                "x": 3.3014,
+                "y": 19.432,
                 "w": 62,
                 "tail": "none"
               },
@@ -169,17 +169,15 @@
                 "id": "d-b6",
                 "text": "Too quiet. Don’t look back.",
                 "kind": "thought",
-                "x": 33.75323090402728,
-                "y": 33.147603754940704,
+                "x": 33.7532,
+                "y": 33.1476,
                 "w": 64,
                 "tail": "bl",
                 "speakerId": "elena"
               }
             ],
             "scene": {
-              "characterIds": [
-                "elena"
-              ],
+              "characterIds": ["elena"],
               "backgroundId": "sidewalk",
               "shot": "wide",
               "action": "Elena walks four empty city blocks under solitary streetlights, clutching her briefcase as signals stay green for no traffic."
@@ -209,8 +207,8 @@
                 "id": "d-b8",
                 "text": "Pipe overhead. Water on concrete.",
                 "kind": "caption",
-                "x": 2.380636480270363,
-                "y": 8.091032608695652,
+                "x": 2.3806,
+                "y": 8.091,
                 "w": 62,
                 "tail": "none"
               },
@@ -218,17 +216,15 @@
                 "id": "d-b9",
                 "text": "Just a leak. Keep walking.",
                 "kind": "thought",
-                "x": 35.52996213662108,
-                "y": 28.07308135704875,
+                "x": 35.53,
+                "y": 28.073,
                 "w": 64,
                 "tail": "bl",
                 "speakerId": "elena"
               }
             ],
             "scene": {
-              "characterIds": [
-                "elena"
-              ],
+              "characterIds": ["elena"],
               "backgroundId": "sidewalk",
               "shot": "medium",
               "action": "Elena slows down near an overhead dripping pipe, listening to the rhythmic splash of water on concrete."
@@ -259,7 +255,7 @@
                 "text": "…Mommy…",
                 "kind": "shout",
                 "x": 60,
-                "y": 43.390954380764164,
+                "y": 43.391,
                 "w": 40,
                 "tail": "none"
               },
@@ -268,7 +264,7 @@
                 "text": "Thin. Close. Not on the street. She runs.",
                 "kind": "caption",
                 "x": 52,
-                "y": 6.303977272727274,
+                "y": 6.304,
                 "w": 48,
                 "tail": "none"
               },
@@ -276,8 +272,8 @@
                 "id": "d-b12",
                 "text": "A kid? Out here?",
                 "kind": "thought",
-                "x": 1.8694495728635356,
-                "y": 7.710371376811597,
+                "x": 1.8694,
+                "y": 7.7104,
                 "w": 46,
                 "tail": "bl",
                 "speakerId": "elena"
@@ -286,17 +282,15 @@
                 "id": "d-b13",
                 "text": "Don’t think. Find them.",
                 "kind": "thought",
-                "x": 2.950840191507338,
-                "y": 14.071352108036894,
+                "x": 2.9508,
+                "y": 14.0714,
                 "w": 64,
                 "tail": "bl",
                 "speakerId": "elena"
               }
             ],
             "scene": {
-              "characterIds": [
-                "elena"
-              ],
+              "characterIds": ["elena"],
               "backgroundId": "alley",
               "shot": "medium",
               "action": "Elena turns off the main sidewalk into the shadows of a side street, following a faint child-like cry."
@@ -326,8 +320,8 @@
                 "id": "d-b15",
                 "text": "Cry stops the moment she sees it.",
                 "kind": "caption",
-                "x": 2.7412773414275433,
-                "y": 8.100255270092227,
+                "x": 2.7413,
+                "y": 8.1003,
                 "w": 62,
                 "tail": "none"
               },
@@ -335,17 +329,15 @@
                 "id": "d-b16",
                 "text": "Where are you? Who left this?",
                 "kind": "thought",
-                "x": 5.457521043902744,
-                "y": 25.668601778656125,
+                "x": 5.4575,
+                "y": 25.6686,
                 "w": 68,
                 "tail": "bl",
                 "speakerId": "elena"
               }
             ],
             "scene": {
-              "characterIds": [
-                "elena"
-              ],
+              "characterIds": ["elena"],
               "backgroundId": "alley",
               "shot": "close-up",
               "action": "Elena crouches near an abandoned toy left alone on the rain-soaked pavement with no child in sight."
@@ -375,8 +367,8 @@
                 "id": "d-b18",
                 "text": "Whole block. At once.",
                 "kind": "caption",
-                "x": 2.498763964076728,
-                "y": 8.676198122529645,
+                "x": 2.4988,
+                "y": 8.6762,
                 "w": 52,
                 "tail": "none"
               },
@@ -384,17 +376,15 @@
                 "id": "d-b19",
                 "text": "No. No, no—",
                 "kind": "thought",
-                "x": 20.134274180930625,
-                "y": 24.174551218708828,
+                "x": 20.1343,
+                "y": 24.1746,
                 "w": 48,
                 "tail": "bl",
                 "speakerId": "elena"
               }
             ],
             "scene": {
-              "characterIds": [
-                "elena"
-              ],
+              "characterIds": ["elena"],
               "backgroundId": "alley",
               "shot": "dutch",
               "action": "Streetlights and window signs suddenly extinguish across the entire city block, plunging Elena into absolute darkness."
@@ -424,20 +414,18 @@
                 "id": "d-b21",
                 "text": "It was behind me the whole time.",
                 "kind": "thought",
-                "x": 0.7731013549457089,
-                "y": 44.96156538208169,
+                "x": 0.7731,
+                "y": 44.9616,
                 "w": 72,
                 "tail": "bl",
                 "speakerId": "elena"
               }
             ],
             "scene": {
-              "characterIds": [
-                "elena"
-              ],
+              "characterIds": ["elena"],
               "backgroundId": "alley",
               "shot": "close-up",
-              "action": "Elena freezes in fear as silence settles over the blacked-out alleyway."
+              "action": "Elena freezes in fear as silence settles over the blacked-out alleyway and an unseen presence looms behind her."
             }
           }
         ]

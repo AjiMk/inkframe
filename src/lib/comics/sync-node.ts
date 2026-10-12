@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Comic } from "./types.ts";
-import { createComic, defaultCoverConfig } from "./factory.ts";
+import { createDemoComic } from "./demo.ts";
 
 /** Path to the shared comics JSON storage file. */
 export const DEFAULT_STORAGE_PATH = path.resolve(process.cwd(), "public/mcp_comics.json");
@@ -48,19 +48,7 @@ export function readComicsFromDisk(filePath: string = DEFAULT_STORAGE_PATH): Com
     console.error(`[inkframe-sync] Failed to read ${filePath}:`, err);
   }
 
-  const sampleComic = createComic("Last One Out", "Inkframe Studio");
-  sampleComic.coverConfig = {
-    ...defaultCoverConfig(),
-    template: "classic",
-    titleStyle: "classic-3d",
-    tagline: "A LATE-SHIFT HORROR",
-    subtitle: "THE CRY WAS NOT A CHILD",
-    titleColor: "#fef08a",
-    accentColor: "#dc2626",
-    issueNumber: "#1",
-    issuePrice: "25¢",
-  };
-  const initial = [sampleComic];
+  const initial = [createDemoComic()];
   try {
     atomicWriteJsonSync(filePath, initial);
   } catch (err) {
