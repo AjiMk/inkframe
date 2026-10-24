@@ -23,6 +23,7 @@ import {
   deleteCharacterFromComic,
   deleteBackgroundFromComic,
 } from "../lib/comics/continuity.ts";
+import { importStoryboard, type Storyboard } from "../lib/comics/story-importer.ts";
 import type {
   Comic,
   PageLayoutId,
@@ -586,6 +587,55 @@ server.tool(
           {
             type: "text",
             text: `Applied "${filter}" filter to Panel ${panelIndex + 1} on Page ${pageId}.`,
+          },
+        ],
+      };
+    });
+  },
+);
+
+// Tool 7b: Set Panel Image
+server.tool(
+  "set_panel_image",
+  "Set or clear the visual artwork image for a specific panel in a comic",
+  {
+    comicId: z.string().describe("ID of the comic"),
+    pageId: z.string().describe("ID of the page"),
+    panelIndex: z.number().int().min(0).describe("Panel index on page (0-based)"),
+    image: z
+      .string()
+      .nullable()
+      .describe("Image reference URI (e.g. 'url:/comics/...', 'data:image/...'), or null to clear"),
+  },
+  async ({ comicId, pageId, panelIndex, image }) => {
+    return mutateStore((store) => {
+      const comic = store.get(comicId);
+      if (!comic) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Comic "${comicId}" not found.` }],
+        };
+      }
+      const page = comic.pages.find((p) => p.id === pageId);
+      if (!page) {
+        return { isError: true, content: [{ type: "text", text: `Page "${pageId}" not found.` }] };
+      }
+      const panel = page.panels[panelIndex];
+      if (!panel) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `Panel index ${panelIndex} out of bounds.` }],
+        };
+      }
+
+      panel.image = image;
+      comic.updatedAt = Date.now();
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Set image on Panel ${panelIndex + 1} of Page ${pageId} in "${comic.title}".`,
           },
         ],
       };
@@ -1324,6 +1374,81 @@ server.tool(
         },
       ],
     };
+  },
+);
+
+// Tool 16: Import Storyboard
+server.tool(
+  "import_storyboard",
+  "Import a story-agent narrative breakdown into Inkframe as a comic book with Story Bible, characters, backgrounds, widescreen panel layouts, bubbles, and stills",
+  {
+    storyJson: z.string().describe("JSON string of the story breakdown, or file path to story.json"),
+    comicId: z.string().optional().describe("Optional explicit comic ID"),
+    title: z.string().optional().describe("Comic title override"),
+    author: z.string().optional().describe("Comic author override"),
+    framesDir: z.string().optional().describe("Directory containing rendered frame stills"),
+    filter: z
+      .enum([
+        "none",
+        "ink",
+        "noir",
+        "halftone",
+        "sepia",
+        "vintage",
+        "pop-art",
+        "cyber-neon",
+        "graphic-novel",
+        "anime-cel",
+        "pencil-sketch",
+        "manga-screentone",
+        "anaglyph-3d",
+        "golden-pulp",
+        "dark-knight",
+        "technicolor",
+      ])
+      .optional()
+      .describe("Optional comic aesthetic filter to apply across all panels"),
+  },
+  async ({ storyJson, comicId, title, author, framesDir, filter }) => {
+    return mutateStore((store) => {
+      let parsed: Storyboard;
+      try {
+        if (fs.existsSync(storyJson)) {
+          parsed = JSON.parse(fs.readFileSync(storyJson, "utf-8"));
+        } else {
+          parsed = JSON.parse(storyJson);
+        }
+      } catch (err) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Failed to parse storyboard JSON: ${err instanceof Error ? err.message : String(err)}`,
+            },
+          ],
+        };
+      }
+
+      const res = importStoryboard(parsed, {
+        comicId,
+        title,
+        author,
+        framesDir,
+        filter: filter as PanelFilter | undefined,
+      });
+
+      store.set(res.comic.id, res.comic);
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Successfully imported storyboard into comic "${res.comic.title}" (ID: ${res.comic.id}): ${res.pagesCount} pages, ${res.panelsCount} panels, ${res.imagesAssignedCount} frame images assigned, ${res.copiedAssetsCount} assets copied.`,
+          },
+        ],
+      };
+    });
   },
 );
 
