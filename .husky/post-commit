@@ -1,0 +1,2 @@
+# Cannot block the commit; warns loudly so it can be amended before push.
+node scripts/check-pii.mjs --head || echo "⚠ Amend this commit before pushing."

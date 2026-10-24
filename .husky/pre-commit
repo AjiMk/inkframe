@@ -1,0 +1,14 @@
+node scripts/check-pii.mjs || exit 1
+npx secretlint --secretlintignore .secretlintignore $(git diff --cached --name-only --diff-filter=ACMR) || exit 1
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks git --pre-commit --staged --redact --config .gitleaks.toml || exit 1
+else
+  echo "⚠ gitleaks not installed (https://github.com/gitleaks/gitleaks#installing); CI will still run it"
+fi
+npx lint-staged || exit 1
+npm run typecheck || exit 1
+npm test || exit 1
+# CVE check only when dependencies changed (full check also runs on pre-push)
+if git diff --cached --name-only | grep -qE '^package(-lock)?\.json$'; then
+  node scripts/audit-deps.mjs || exit 1
+fi
