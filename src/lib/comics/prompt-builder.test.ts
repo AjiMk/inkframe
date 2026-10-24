@@ -138,4 +138,34 @@ describe("AI Prompt Builder (Generic, Midjourney, Flux)", () => {
     assert.ok(result.warnings.some((w) => w.includes("nonexistent_loc")));
     assert.ok(result.warnings.some((w) => w.includes("ghost_char")));
   });
+
+  it("includes all reference images when character has multiple imageRefs", () => {
+    const comic = createComic("Multi Image Test", "Author Multi");
+    comic.assetContext = {
+      styleGuide: "Comic art",
+      backgrounds: {},
+      characters: {
+        surabhi: {
+          id: "surabhi",
+          name: "Surabhi",
+          appearance: "Detective attire",
+          imageRef: "asset:surabhi_front",
+          imageRefs: ["asset:surabhi_front", "asset:surabhi_side", "asset:surabhi_action"],
+        },
+      },
+    };
+    const result = buildPanelPrompt(comic, undefined, undefined, {
+      characterIds: ["surabhi"],
+      actionDescription: "Surabhi investigates the scene",
+    });
+
+    assert.equal(result.referenceImages.length, 3);
+    assert.equal(result.referenceImages[0].url, "asset:surabhi_front");
+    assert.equal(result.referenceImages[0].label, "Surabhi (#1)");
+    assert.equal(result.referenceImages[1].url, "asset:surabhi_side");
+    assert.equal(result.referenceImages[1].label, "Surabhi (#2)");
+    assert.equal(result.referenceImages[2].url, "asset:surabhi_action");
+    assert.equal(result.referenceImages[2].label, "Surabhi (#3)");
+  });
 });
+

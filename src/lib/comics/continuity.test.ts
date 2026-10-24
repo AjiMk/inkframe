@@ -121,6 +121,14 @@ describe("Continuity Auditor (checkContinuity)", () => {
     assert.equal(imgIssue.severity, "warning");
     assert.ok(invIssue);
     assert.equal(invIssue.severity, "warning");
+
+    // Providing imageRefs instead satisfies the image check
+    comic.assetContext!.characters!.elena.imageRefs = ["asset:elena-multi-1"];
+    const report2 = checkContinuity(comic);
+    const imgIssue2 = report2.issues.find(
+      (i) => i.type === "missing-character-image" && i.characterId === "elena",
+    );
+    assert.equal(imgIssue2, undefined);
   });
 
   it("warns when a panel has rendered artwork but no scene continuity", () => {

@@ -124,13 +124,23 @@ server.resource(
     };
 
     const characters = Object.fromEntries(
-      Object.entries(rawContext.characters ?? {}).map(([cId, c]) => [
-        cId,
-        {
-          ...c,
-          hasImage: Boolean(c.imageRef),
-        },
-      ]),
+      Object.entries(rawContext.characters ?? {}).map(([cId, c]) => {
+        const imgs =
+          c.imageRefs && c.imageRefs.length > 0
+            ? c.imageRefs
+            : c.imageRef
+              ? [c.imageRef]
+              : [];
+        return [
+          cId,
+          {
+            ...c,
+            hasImage: imgs.length > 0,
+            imageCount: imgs.length,
+            imageRefs: imgs,
+          },
+        ];
+      }),
     );
 
     const backgrounds = Object.fromEntries(
@@ -641,7 +651,11 @@ server.tool(
             .optional()
             .describe("Known wardrobe outfits"),
           voice: z.string().optional().describe("Speech habits and dialogue style"),
-          imageRef: z.string().optional().describe("Optional character sheet reference image"),
+          imageRef: z.string().optional().describe("Optional character sheet reference image (legacy single image)"),
+          imageRefs: z
+            .array(z.string())
+            .optional()
+            .describe("Optional array of character sheet reference images"),
         }),
       )
       .optional()
@@ -675,7 +689,23 @@ server.tool(
       if (characters) {
         if (!comic.assetContext.characters) comic.assetContext.characters = {};
         for (const char of characters) {
-          comic.assetContext.characters[char.id] = char;
+          const existingChar = comic.assetContext.characters[char.id];
+          let resolvedRefs: string[] = [];
+          if (char.imageRefs && char.imageRefs.length > 0) {
+            resolvedRefs = char.imageRefs.filter(Boolean);
+          } else if (char.imageRef) {
+            resolvedRefs = [char.imageRef];
+          } else if (existingChar?.imageRefs && existingChar.imageRefs.length > 0) {
+            resolvedRefs = existingChar.imageRefs;
+          } else if (existingChar?.imageRef) {
+            resolvedRefs = [existingChar.imageRef];
+          }
+
+          comic.assetContext.characters[char.id] = {
+            ...char,
+            imageRef: resolvedRefs[0] || char.imageRef || undefined,
+            imageRefs: resolvedRefs.length > 0 ? resolvedRefs : undefined,
+          };
         }
       }
 
@@ -891,6 +921,96 @@ server.tool(
   },
 );
 
+function resolveReferenceImage(imageRef: string):
+  | { type: "image"; data: string; mimeType: string }
+  | { isError: true; message: string } {
+  const mimeMap: Record<string, string> = {
+    ".webp": "image/webp",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+  };
+
+  // 1. asset: scheme (stored on disk in .inkframe/assets/)
+  if (imageRef.startsWith("asset:")) {
+    const assetId = imageRef.slice(6);
+    const assetsDir = path.resolve(process.cwd(), ".inkframe/assets");
+    if (fs.existsSync(assetsDir)) {
+      const files = fs.readdirSync(assetsDir);
+      const matched = files.find((f) => f === assetId || f.startsWith(`${assetId}.`));
+      if (matched) {
+        const filePath = path.join(assetsDir, matched);
+        const buffer = fs.readFileSync(filePath);
+        const ext = path.extname(matched).toLowerCase();
+        const mime = mimeMap[ext] ?? "image/webp";
+        return {
+          type: "image",
+          data: buffer.toString("base64"),
+          mimeType: mime,
+        };
+      }
+    }
+    return {
+      isError: true,
+      message: `Asset file "${assetId}" was not found in .inkframe/assets directory.`,
+    };
+  }
+
+  // 2. data: URI scheme
+  if (imageRef.startsWith("data:")) {
+    const match = imageRef.match(/^data:([^;]+);base64,(.+)$/);
+    if (match) {
+      return {
+        type: "image",
+        data: match[2],
+        mimeType: match[1],
+      };
+    }
+    return {
+      isError: true,
+      message: "Malformed data URI reference image.",
+    };
+  }
+
+  // 3. url: scheme pointing to public/ demo assets
+  if (imageRef.startsWith("url:")) {
+    const publicPath = path.resolve(
+      process.cwd(),
+      "public",
+      imageRef.slice(4).replace(/^\//, ""),
+    );
+    if (fs.existsSync(publicPath)) {
+      const buffer = fs.readFileSync(publicPath);
+      const ext = path.extname(publicPath).toLowerCase();
+      const mime = mimeMap[ext] ?? "image/jpeg";
+      return {
+        type: "image",
+        data: buffer.toString("base64"),
+        mimeType: mime,
+      };
+    }
+    return {
+      isError: true,
+      message: `Public asset "${imageRef}" not found on disk.`,
+    };
+  }
+
+  // 4. idb: scheme (in browser IndexedDB only)
+  if (imageRef.startsWith("idb:")) {
+    return {
+      isError: true,
+      message: `Reference image "${imageRef}" is stored in local browser IndexedDB only. Open the Story Bible in the web editor while running npm run dev to sync reference images with the MCP server.`,
+    };
+  }
+
+  return {
+    isError: true,
+    message: `Unsupported image reference: "${imageRef}".`,
+  };
+}
+
 // Tool 11: Get Reference Image (Returns visual model sheet as MCP image content)
 server.tool(
   "get_reference_image",
@@ -903,8 +1023,16 @@ server.tool(
     id: z
       .string()
       .describe("Identifier of the character or background (e.g. 'elena' or 'neon_alley')"),
+    index: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe(
+        "Optional zero-based index of the reference image when multiple images are available (defaults to returning all reference images, or the specified index)",
+      ),
   },
-  async ({ comicId, kind, id }) => {
+  async ({ comicId, kind, id, index }) => {
     const store = loadStore();
     const comic = store.get(comicId);
     if (!comic) {
@@ -912,130 +1040,111 @@ server.tool(
     }
 
     const ctx = comic.assetContext ?? {};
-    const ref = kind === "character" ? ctx.characters?.[id] : ctx.backgrounds?.[id];
-    if (!ref) {
-      return {
-        isError: true,
-        content: [
-          {
-            type: "text",
-            text: `${kind === "character" ? "Character" : "Background"} reference "${id}" not found in comic "${comic.title}".`,
-          },
-        ],
-      };
-    }
-
-    const imageRef = ref.imageRef;
-    if (!imageRef) {
-      return {
-        isError: true,
-        content: [
-          {
-            type: "text",
-            text: `No reference image attached to ${kind} "${ref.name}" (ID: ${id}).`,
-          },
-        ],
-      };
-    }
-
-    const mimeMap: Record<string, string> = {
-      ".webp": "image/webp",
-      ".png": "image/png",
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".gif": "image/gif",
-      ".svg": "image/svg+xml",
-    };
-
-    // 1. asset: scheme (stored on disk in .inkframe/assets/)
-    if (imageRef.startsWith("asset:")) {
-      const assetId = imageRef.slice(6);
-      const assetsDir = path.resolve(process.cwd(), ".inkframe/assets");
-      if (fs.existsSync(assetsDir)) {
-        const files = fs.readdirSync(assetsDir);
-        const matched = files.find((f) => f === assetId || f.startsWith(`${assetId}.`));
-        if (matched) {
-          const filePath = path.join(assetsDir, matched);
-          const buffer = fs.readFileSync(filePath);
-          const ext = path.extname(matched).toLowerCase();
-          const mime = mimeMap[ext] ?? "image/webp";
+    const targetImages: string[] = [];
+    if (kind === "character") {
+      const char = ctx.characters?.[id];
+      if (!char) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `Character reference "${id}" not found in comic "${comic.title}".`,
+            },
+          ],
+        };
+      }
+      const charImages =
+        char.imageRefs && char.imageRefs.length > 0
+          ? char.imageRefs
+          : char.imageRef
+            ? [char.imageRef]
+            : [];
+      if (charImages.length === 0) {
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: `No reference image attached to character "${char.name}" (ID: ${id}).`,
+            },
+          ],
+        };
+      }
+      if (index !== undefined) {
+        if (index < 0 || index >= charImages.length) {
           return {
+            isError: true,
             content: [
               {
-                type: "image",
-                data: buffer.toString("base64"),
-                mimeType: mime,
+                type: "text",
+                text: `Index ${index} is out of bounds for character "${char.name}". It has ${charImages.length} reference image(s).`,
               },
             ],
           };
         }
+        targetImages.push(charImages[index]);
+      } else {
+        targetImages.push(...charImages);
       }
-      return {
-        isError: true,
-        content: [
-          {
-            type: "text",
-            text: `Asset file "${assetId}" was not found in .inkframe/assets directory.`,
-          },
-        ],
-      };
-    }
-
-    // 2. data: URI scheme
-    if (imageRef.startsWith("data:")) {
-      const match = imageRef.match(/^data:([^;]+);base64,(.+)$/);
-      if (match) {
+    } else {
+      const bg = ctx.backgrounds?.[id];
+      if (!bg) {
         return {
+          isError: true,
           content: [
             {
-              type: "image",
-              data: match[2],
-              mimeType: match[1],
+              type: "text",
+              text: `Background reference "${id}" not found in comic "${comic.title}".`,
             },
           ],
         };
       }
-    }
-
-    // 3. url: scheme pointing to public/ demo assets
-    if (imageRef.startsWith("url:")) {
-      const publicPath = path.resolve(
-        process.cwd(),
-        "public",
-        imageRef.slice(4).replace(/^\//, ""),
-      );
-      if (fs.existsSync(publicPath)) {
-        const buffer = fs.readFileSync(publicPath);
-        const ext = path.extname(publicPath).toLowerCase();
-        const mime = mimeMap[ext] ?? "image/jpeg";
+      if (!bg.imageRef) {
         return {
+          isError: true,
           content: [
             {
-              type: "image",
-              data: buffer.toString("base64"),
-              mimeType: mime,
+              type: "text",
+              text: `No reference image attached to background "${bg.name}" (ID: ${id}).`,
             },
           ],
         };
       }
+      targetImages.push(bg.imageRef);
     }
 
-    // 4. idb: scheme (in browser IndexedDB only)
-    if (imageRef.startsWith("idb:")) {
+    const contentItems: Array<
+      { type: "image"; data: string; mimeType: string } | { type: "text"; text: string }
+    > = [];
+    let hasSuccess = false;
+
+    for (let i = 0; i < targetImages.length; i++) {
+      const imgRef = targetImages[i];
+      const res = resolveReferenceImage(imgRef);
+      if ("isError" in res) {
+        contentItems.push({
+          type: "text",
+          text:
+            targetImages.length > 1
+              ? `[Image #${i + 1} (${imgRef})]: ${res.message}`
+              : res.message,
+        });
+      } else {
+        hasSuccess = true;
+        contentItems.push(res);
+      }
+    }
+
+    if (!hasSuccess) {
       return {
         isError: true,
-        content: [
-          {
-            type: "text",
-            text: `Reference image "${imageRef}" is stored in local browser IndexedDB only. Open the Story Bible in the web editor while running npm run dev to sync reference images with the MCP server.`,
-          },
-        ],
+        content: contentItems,
       };
     }
 
     return {
-      isError: true,
-      content: [{ type: "text", text: `Unsupported image reference: "${imageRef}".` }],
+      content: contentItems,
     };
   },
 );
@@ -1055,16 +1164,26 @@ server.tool(
     }
 
     const ctx = comic.assetContext ?? {};
-    const characters = Object.entries(ctx.characters ?? {}).map(([id, c]) => ({
-      id,
-      name: c.name,
-      role: c.role ?? null,
-      appearance: c.appearance,
-      hasImage: Boolean(c.imageRef),
-      invariantsCount: c.invariants?.length ?? 0,
-      hasVoice: Boolean(c.voice),
-      traits: c.traits ?? null,
-    }));
+    const characters = Object.entries(ctx.characters ?? {}).map(([id, c]) => {
+      const imgs =
+        c.imageRefs && c.imageRefs.length > 0
+          ? c.imageRefs
+          : c.imageRef
+            ? [c.imageRef]
+            : [];
+      return {
+        id,
+        name: c.name,
+        role: c.role ?? null,
+        appearance: c.appearance,
+        hasImage: imgs.length > 0,
+        imageCount: imgs.length,
+        imageRefs: imgs,
+        invariantsCount: c.invariants?.length ?? 0,
+        hasVoice: Boolean(c.voice),
+        traits: c.traits ?? null,
+      };
+    });
 
     const backgrounds = Object.entries(ctx.backgrounds ?? {}).map(([id, b]) => ({
       id,

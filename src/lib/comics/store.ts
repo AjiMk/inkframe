@@ -199,16 +199,46 @@ async function migrateReferencesToAssets(comics: Comic[]): Promise<Comic[] | nul
       let charsChanged = false;
       const updatedChars = { ...newAssetContext.characters };
       for (const [id, char] of Object.entries(updatedChars)) {
-        if (char.imageRef?.startsWith("idb:")) {
-          const mediaId = char.imageRef.slice(4);
+        let charUpdated = false;
+        let newImageRef = char.imageRef;
+        const newImageRefs = char.imageRefs ? [...char.imageRefs] : undefined;
+
+        if (newImageRef?.startsWith("idb:")) {
+          const mediaId = newImageRef.slice(4);
           const blob = await getMedia(mediaId);
           if (blob) {
             const ok = await uploadAssetToDev(mediaId, blob);
             if (ok) {
-              updatedChars[id] = { ...char, imageRef: `asset:${mediaId}` };
-              charsChanged = true;
+              newImageRef = `asset:${mediaId}`;
+              charUpdated = true;
             }
           }
+        }
+
+        if (newImageRefs) {
+          for (let i = 0; i < newImageRefs.length; i++) {
+            const ref = newImageRefs[i];
+            if (ref?.startsWith("idb:")) {
+              const mediaId = ref.slice(4);
+              const blob = await getMedia(mediaId);
+              if (blob) {
+                const ok = await uploadAssetToDev(mediaId, blob);
+                if (ok) {
+                  newImageRefs[i] = `asset:${mediaId}`;
+                  charUpdated = true;
+                }
+              }
+            }
+          }
+        }
+
+        if (charUpdated) {
+          updatedChars[id] = {
+            ...char,
+            imageRef: newImageRef,
+            imageRefs: newImageRefs,
+          };
+          charsChanged = true;
         }
       }
       if (charsChanged) {
@@ -755,6 +785,11 @@ export function getComicMediaRefs(comic: Comic): string[] {
   if (comic.assetContext?.characters) {
     for (const char of Object.values(comic.assetContext.characters)) {
       if (char.imageRef) set.add(char.imageRef);
+      if (char.imageRefs) {
+        for (const ref of char.imageRefs) {
+          if (ref) set.add(ref);
+        }
+      }
     }
   }
   if (comic.assetContext?.backgrounds) {
