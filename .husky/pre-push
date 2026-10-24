@@ -1,0 +1,2 @@
+#!/bin/sh
+node scripts/audit-deps.mjs || exit 1
