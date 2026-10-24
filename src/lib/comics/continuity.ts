@@ -86,7 +86,10 @@ export function checkContinuity(comic: Comic): ContinuityReport {
 
   // 2. Audit character sheets completeness
   for (const [charId, char] of Object.entries(characters)) {
-    if (!char.imageRef || !char.imageRef.trim()) {
+    const hasCharImages =
+      (char.imageRefs && char.imageRefs.some((r) => Boolean(r && r.trim()))) ||
+      Boolean(char.imageRef && char.imageRef.trim());
+    if (!hasCharImages) {
       issues.push({
         id: `missing-image-${charId}`,
         type: "missing-character-image",

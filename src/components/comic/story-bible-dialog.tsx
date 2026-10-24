@@ -169,7 +169,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
   const [charName, setCharName] = useState("");
   const [charRole, setCharRole] = useState("");
   const [charAppearance, setCharAppearance] = useState("");
-  const [charImageRef, setCharImageRef] = useState<string | undefined>(undefined);
+  const [charImageRefs, setCharImageRefs] = useState<string[]>([]);
   const [isUploadingCharImg, setIsUploadingCharImg] = useState(false);
   const [charAliases, setCharAliases] = useState("");
   const [charTraitFace, setCharTraitFace] = useState("");
@@ -210,7 +210,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setCharName("");
     setCharRole("");
     setCharAppearance("");
-    setCharImageRef(undefined);
+    setCharImageRefs([]);
     setCharAliases("");
     setCharTraitFace("");
     setCharTraitHair("");
@@ -230,7 +230,13 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setCharName(char.name);
     setCharRole(char.role ?? "");
     setCharAppearance(char.appearance);
-    setCharImageRef(char.imageRef);
+    const initialImages: string[] = [];
+    if (char.imageRefs && char.imageRefs.length > 0) {
+      initialImages.push(...char.imageRefs.filter(Boolean));
+    } else if (char.imageRef) {
+      initialImages.push(char.imageRef);
+    }
+    setCharImageRefs(initialImages);
     setCharAliases(char.aliases ? char.aliases.join(", ") : "");
     setCharTraitFace(char.traits?.face ?? "");
     setCharTraitHair(char.traits?.hair ?? "");
@@ -262,7 +268,7 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setCharName("");
     setCharRole("");
     setCharAppearance("");
-    setCharImageRef(undefined);
+    setCharImageRefs([]);
     setCharAliases("");
     setCharTraitFace("");
     setCharTraitHair("");
@@ -275,30 +281,36 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
     setCharAdvancedOpen(false);
   }
 
-  function handleRemoveCharImage() {
-    if (charImageRef && pendingCharUploads.current.has(charImageRef)) {
-      void deleteMediaRef(charImageRef);
-      pendingCharUploads.current.delete(charImageRef);
+  function handleRemoveCharImage(indexToRemove: number) {
+    const refToRemove = charImageRefs[indexToRemove];
+    if (refToRemove && pendingCharUploads.current.has(refToRemove)) {
+      void deleteMediaRef(refToRemove);
+      pendingCharUploads.current.delete(refToRemove);
     }
-    setCharImageRef(undefined);
+    setCharImageRefs((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   }
 
-  async function handleCharImageUpload(file: File) {
-    if (!file.type.startsWith("image/")) {
+  async function handleCharImagesUpload(files: FileList | File[]) {
+    const validFiles = Array.from(files).filter((f) => f.type.startsWith("image/"));
+    if (validFiles.length === 0) {
       toast.error("Please select a valid image file.");
       return;
     }
     setIsUploadingCharImg(true);
     try {
-      const blob = await compressImage(file, 800, 0.85);
-      const ref = await putReferenceMedia(blob);
-      for (const oldRef of pendingCharUploads.current) {
-        void deleteMediaRef(oldRef);
+      const addedRefs: string[] = [];
+      for (const file of validFiles) {
+        const blob = await compressImage(file, 800, 0.85);
+        const ref = await putReferenceMedia(blob);
+        pendingCharUploads.current.add(ref);
+        addedRefs.push(ref);
       }
-      pendingCharUploads.current.clear();
-      pendingCharUploads.current.add(ref);
-      setCharImageRef(ref);
-      toast.success("Character reference portrait attached.");
+      setCharImageRefs((prev) => [...prev, ...addedRefs]);
+      toast.success(
+        addedRefs.length > 1
+          ? `Attached ${addedRefs.length} reference images.`
+          : "Attached reference image.",
+      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to process image.");
     } finally {
@@ -341,6 +353,8 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
       .filter(Boolean);
     const voice = charVoice.trim() || undefined;
 
+    const validImages = charImageRefs.filter(Boolean);
+
     const newChar: CharacterReference = {
       id,
       name: charName.trim(),
@@ -352,10 +366,11 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
       palette: palette.length > 0 ? palette : undefined,
       invariants: invariants.length > 0 ? invariants : undefined,
       voice,
-      imageRef: charImageRef,
+      imageRef: validImages[0] || undefined,
+      imageRefs: validImages.length > 0 ? validImages : undefined,
     };
-    if (charImageRef) {
-      pendingCharUploads.current.delete(charImageRef);
+    for (const ref of validImages) {
+      pendingCharUploads.current.delete(ref);
     }
     for (const ref of pendingCharUploads.current) {
       void deleteMediaRef(ref);
@@ -836,44 +851,62 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                     )}
                   </div>
 
-                  {/* Reference Image Upload */}
-                  <div className="space-y-1">
-                    <Label className="text-xs">Reference Portrait Image (Optional)</Label>
-                    <div className="flex items-center gap-3">
-                      <div className="size-16 rounded-md overflow-hidden border border-border shrink-0 bg-secondary/50">
-                        <MediaThumbnail
-                          refVal={charImageRef}
-                          alt="Character Reference"
-                          fallback={<Users className="size-6 text-muted-foreground/50" />}
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1.5 flex-1">
-                        <label className="inline-flex items-center justify-center h-8 px-3 rounded-md border border-input bg-background text-xs font-medium hover:bg-accent cursor-pointer transition-colors w-fit gap-1.5">
-                          <ImagePlus className="size-3.5" />
-                          <span>
-                            {isUploadingCharImg ? "Processing..." : "Upload Portrait Image"}
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) void handleCharImageUpload(f);
-                              e.target.value = "";
-                            }}
+                  {/* Reference Images Upload (Multiple) */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold">
+                        Reference Images{" "}
+                        {charImageRefs.length > 0 ? `(${charImageRefs.length})` : "(Optional)"}
+                      </Label>
+                      <span className="text-[10px] text-muted-foreground">
+                        Multiple model sheets, angles, expressions
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      {charImageRefs.map((refVal, idx) => (
+                        <div
+                          key={`${refVal}-${idx}`}
+                          className="group relative size-16 rounded-md overflow-hidden border border-border shrink-0 bg-secondary/50 shadow-2xs"
+                        >
+                          <MediaThumbnail
+                            refVal={refVal}
+                            alt={`Reference ${idx + 1}`}
+                            fallback={<Users className="size-5 text-muted-foreground/50" />}
                           />
-                        </label>
-                        {charImageRef && (
+                          {idx === 0 && (
+                            <span className="absolute bottom-0.5 left-0.5 rounded bg-primary/90 px-1 py-0.2 text-[8px] font-bold text-primary-foreground leading-tight">
+                              Primary
+                            </span>
+                          )}
                           <button
                             type="button"
-                            onClick={handleRemoveCharImage}
-                            className="text-[11px] text-destructive hover:underline text-left w-fit"
+                            onClick={() => handleRemoveCharImage(idx)}
+                            aria-label={`Remove reference image ${idx + 1}`}
+                            className="absolute top-0.5 right-0.5 size-4 rounded-full bg-destructive/90 text-destructive-foreground opacity-90 hover:opacity-100 flex items-center justify-center shadow-xs transition-opacity"
                           >
-                            Remove portrait reference
+                            <X className="size-2.5" />
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      ))}
+
+                      <label className="inline-flex flex-col items-center justify-center size-16 rounded-md border border-dashed border-input hover:border-primary/50 bg-background/50 hover:bg-accent/40 cursor-pointer transition-all gap-1 text-center shrink-0">
+                        <ImagePlus className="size-4 text-muted-foreground" />
+                        <span className="text-[10px] text-muted-foreground font-medium leading-none">
+                          {isUploadingCharImg ? "..." : "Add"}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => {
+                            const files = e.target.files;
+                            if (files && files.length > 0) void handleCharImagesUpload(files);
+                            e.target.value = "";
+                          }}
+                        />
+                      </label>
                     </div>
                   </div>
 
@@ -928,17 +961,35 @@ export function StoryBibleDialog({ open, onOpenChange, comic }: Props) {
                       className="group flex flex-col justify-between rounded-lg border border-border bg-card p-3 shadow-xs hover:border-foreground/30 transition-all"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="size-14 rounded-md overflow-hidden border border-border shrink-0 bg-secondary">
-                          <MediaThumbnail
-                            refVal={char.imageRef}
-                            alt={char.name}
-                            fallback={
-                              <span className="text-xs font-bold text-muted-foreground uppercase">
-                                {char.name.slice(0, 2)}
-                              </span>
-                            }
-                          />
-                        </div>
+                        {(() => {
+                          const imgs =
+                            char.imageRefs && char.imageRefs.length > 0
+                              ? char.imageRefs
+                              : char.imageRef
+                                ? [char.imageRef]
+                                : [];
+                          return (
+                            <div className="relative size-14 rounded-md overflow-hidden border border-border shrink-0 bg-secondary">
+                              <MediaThumbnail
+                                refVal={imgs[0]}
+                                alt={char.name}
+                                fallback={
+                                  <span className="text-xs font-bold text-muted-foreground uppercase">
+                                    {char.name.slice(0, 2)}
+                                  </span>
+                                }
+                              />
+                              {imgs.length > 1 && (
+                                <span
+                                  title={`${imgs.length} reference images`}
+                                  className="absolute bottom-0.5 right-0.5 rounded bg-black/75 px-1 py-0.2 text-[8px] font-bold text-white shadow-2xs backdrop-blur-xs leading-none"
+                                >
+                                  +{imgs.length}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div className="min-w-0 flex-1 space-y-1">
                           <div className="flex items-center justify-between gap-1">
                             <h4 className="text-sm font-bold text-foreground truncate">

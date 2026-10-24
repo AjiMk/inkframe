@@ -169,10 +169,21 @@ describe("Story Bible & Continuity Manager Store Actions", () => {
       imageRef: "idb:hq_backdrop",
     });
 
+    store.upsertCharacter(comicId, {
+      id: "multi_hero",
+      name: "Multi Hero",
+      appearance: "Multi appearance",
+      imageRef: "idb:hero_avatar_1",
+      imageRefs: ["idb:hero_avatar_1", "idb:hero_avatar_2", "idb:hero_avatar_3"],
+    });
+
     const comic = useComicStore.getState().comics.find((c) => c.id === comicId)!;
     const mediaRefs = getComicMediaRefs(comic);
 
     assert.ok(mediaRefs.includes("idb:hero_avatar"));
+    assert.ok(mediaRefs.includes("idb:hero_avatar_1"));
+    assert.ok(mediaRefs.includes("idb:hero_avatar_2"));
+    assert.ok(mediaRefs.includes("idb:hero_avatar_3"));
     assert.ok(mediaRefs.includes("idb:hq_backdrop"));
   });
 

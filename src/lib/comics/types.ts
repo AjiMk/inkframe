@@ -131,6 +131,7 @@ export interface CharacterReference {
   outfits?: CharacterOutfit[];
   voice?: string;
   imageRef?: string;
+  imageRefs?: string[];
 }
 
 export interface AssetReferenceContext {

@@ -21,6 +21,7 @@ export interface CharacterPromptPart {
   invariants?: string[];
   voice?: string;
   imageRef?: string;
+  imageRefs?: string[];
 }
 
 export interface ReferenceImageItem {
@@ -138,6 +139,13 @@ export function buildPanelPrompt(
       ? `${outfitMatch.label} (${outfitMatch.description})`
       : char.signatureOutfit;
 
+    const charImages: string[] = [];
+    if (char.imageRefs && char.imageRefs.length > 0) {
+      charImages.push(...char.imageRefs.filter(Boolean));
+    } else if (char.imageRef) {
+      charImages.push(char.imageRef);
+    }
+
     characterParts.push({
       id: char.id,
       name: char.name,
@@ -146,15 +154,18 @@ export function buildPanelPrompt(
       outfit: outfitSummary,
       invariants: char.invariants,
       voice: char.voice,
-      imageRef: char.imageRef,
+      imageRef: charImages[0] || char.imageRef,
+      imageRefs: charImages.length > 0 ? charImages : undefined,
     });
 
-    if (char.imageRef) {
-      referenceImages.push({
-        id: char.id,
-        url: char.imageRef,
-        type: "character",
-        label: char.name,
+    if (charImages.length > 0) {
+      charImages.forEach((imgRef, idx) => {
+        referenceImages.push({
+          id: char.id,
+          url: imgRef,
+          type: "character",
+          label: charImages.length > 1 ? `${char.name} (#${idx + 1})` : char.name,
+        });
       });
     } else {
       warnings.push(`Character "${char.name}" has no visual portrait reference attached.`);
